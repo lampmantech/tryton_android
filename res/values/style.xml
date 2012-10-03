@@ -16,20 +16,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<!-- This is the default locale (english) translation file -->
 <resources>
-  <string name="app_name">Tryton</string>
   
-  <string name="menu_config">Configure</string>
-  
-  <!-- Login labels -->
-  <string name="login_user">User</string>
-  <string name="login_password">Password</string>
-  <string name="login_send">Login</string>
-  
-  <!-- Configuration labels -->
-  <string name="config_host_title">Host</string>
-  <string name="config_host_desc">Your Tryton server host (including port)</string>
-  <string name="config_database_title">Database</string>
-  <string name="config_database_desc">The database on your host to connect to</string>
+  <dimen name="content_margin">5dip</dimen>
+
+  <integer name="login_text_size_em">10</integer>
+
+  <style name="TrytonTheme" parent="android:Theme.NoTitleBar">
+  </style>
 </resources>
