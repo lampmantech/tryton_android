@@ -16,15 +16,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<!-- This is the default locale (english) translation file -->
-<resources>
-    <string name="app_name">Tryton</string>
-
-    <string name="menu_config">Configure</string>
-    
-    <!-- Configuration labels -->
-    <string name="config_host_title">Host</string>
-    <string name="config_host_desc">Your Tryton server host (including port)</string>
-    <string name="config_database_title">Database</string>
-    <string name="config_database_desc">The database on your host to connect to</string>
-</resources>
+<!--
+    This is the configuration (preferences) screen layout definition.
+    It is loaded from the org.tryton.client.Configure activity.
+    Make sure the keys are the same in both files.
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+  <EditTextPreference
+      android:key="host"
+      android:title="@string/config_host_title"
+      android:summary="@string/config_host_desc" />
+  <EditTextPreference
+      android:key="database"
+      android:title="@string/config_database_title"
+      android:summary="@string/config_database_desc" />
+</PreferenceScreen>
