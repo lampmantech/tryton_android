@@ -25,6 +25,8 @@ import org.alexd.jsonrpc.JSONRPCParams;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import org.tryton.client.models.Preferences;
+
 /** Tryton requester.
  * It makes asynchronous calls to the tryton server set by setHost.
  * Responses are given back to caller through handlers. */
@@ -34,6 +36,8 @@ public class TrytonCall {
     public static final int CALL_VERSION_NOK = -1;
     public static final int CALL_LOGIN_OK = 1;
     public static final int CALL_LOGIN_NOK = -2;
+    public static final int CALL_PREFERENCES_OK = 2;
+    public static final int CALL_PREFERENCES_NOK = -3;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -117,6 +121,32 @@ public class TrytonCall {
             }
         } catch (Exception e) {
             m.what = CALL_LOGIN_NOK;
+            m.obj = e;
+        }
+        m.sendToTarget();
+        return true;
+    }
+
+    public static boolean getPreferences(int userId, String cookie, Handler h) {
+        if (c == null) {
+            return false;
+        }
+        Message m = h.obtainMessage();
+        try {
+            Object resp = c.call("model.res.user.get_preferences",
+                                 userId, cookie, true, new JSONObject());
+            Object obj = null;
+            if (resp instanceof JSONObject) {
+                Preferences prefs = new Preferences((JSONObject) resp);
+                m.what = CALL_PREFERENCES_OK;
+                m.obj = prefs;
+            } else {
+                // Unknown result
+                m.what = CALL_PREFERENCES_NOK;
+                m.obj = new Exception("Unknown response type " + resp);
+            }
+        } catch (Exception e) {
+            m.what = CALL_PREFERENCES_NOK;
             m.obj = e;
         }
         m.sendToTarget();

@@ -32,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.tryton.client.data.Session;
+import org.tryton.client.models.Preferences;
 import org.tryton.client.tools.TrytonCall;
 
 /** Start activity. Shows login form. */
@@ -119,15 +120,14 @@ public class Start extends Activity implements Handler.Callback {
             if (msg.arg1 != 0) {
                 // Login successfull. Save data in session
                 Object[] resp = (Object[]) msg.obj;
+                int userId = (Integer) resp[0];
+                String cookie = (String) resp[1];
                 Session.current.user = this.login.getText().toString();
                 Session.current.password = this.login.getText().toString();
-                Session.current.userId = (Integer) resp[0];
-                Session.current.cookie = (String) resp[1];
-                // Go to menu
-                Intent i = new Intent(this, org.tryton.client.Menu.class);
-                this.startActivity(i);
-                // Kill the current activity until logout
-                this.finish();
+                Session.current.userId = userId;
+                Session.current.cookie = cookie;
+                // Get user preferences
+                TrytonCall.getPreferences(userId, cookie, new Handler(this));
             } else {
                 // Show login error
                 Toast t = Toast.makeText(this, R.string.login_bad_login,
@@ -135,7 +135,17 @@ public class Start extends Activity implements Handler.Callback {
                 t.show();
             }
             break;
+        case TrytonCall.CALL_PREFERENCES_OK:
+            // Save the preferences
+            Session.current.prefs = (Preferences) msg.obj;
+            // Go to menu
+            Intent i = new Intent(this, org.tryton.client.Menu.class);
+            this.startActivity(i);
+            // Kill the current activity until logout
+            this.finish();
+            break;
         case TrytonCall.CALL_LOGIN_NOK:
+        case TrytonCall.CALL_PREFERENCES_NOK:
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
             b.setMessage(R.string.network_error);

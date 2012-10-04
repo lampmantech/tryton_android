@@ -15,23 +15,20 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package org.tryton.client.data;
+package org.tryton.client.models;
 
-import org.tryton.client.models.Preferences;
+import org.json.JSONObject;
 
-/** The user session that is stored in memory and is flushed when the
- * application is killed.
- */
-public class Session {
+/** User preferences as set on the server */
+public class Preferences {
 
-    /** The running session */
-    public static Session current = new Session();
+    private JSONObject source;
 
-    public String user;
-    public String password;
-    public int userId = -1;
-    public String cookie;
-    public Preferences prefs;
+    public Preferences(JSONObject source) {
+        this.source = source;
+    }
 
-    private Session() {}
+    public String toJSONString() {
+        return this.source.toString();
+    }
 }
