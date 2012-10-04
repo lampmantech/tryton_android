@@ -17,6 +17,7 @@
       </intent-filter>
     </activity>
     <activity android:name="Configure" />
+    <activity android:name="Menu" />
     
   </application>
   <!-- Request permissions -->

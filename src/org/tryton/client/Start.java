@@ -31,6 +31,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.tryton.client.data.Session;
 import org.tryton.client.tools.TrytonCall;
 
 /** Start activity. Shows login form. */
@@ -47,6 +48,13 @@ public class Start extends Activity implements Handler.Callback {
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
+        // Check if user is already logged in to skip login
+        if (Session.current.userId != -1) {
+            Intent i = new Intent(this, org.tryton.client.Menu.class);
+            this.startActivity(i);
+            this.finish();
+            return;
+        }
         if (state != null) {
             // Recreated from a saved state
             this.serverVersion = state.getString("version");
@@ -109,9 +117,17 @@ public class Start extends Activity implements Handler.Callback {
             break;
         case TrytonCall.CALL_LOGIN_OK:
             if (msg.arg1 != 0) {
+                // Login successfull. Save data in session
                 Object[] resp = (Object[]) msg.obj;
-                int id = (Integer) resp[0];
-                String cookie = (String) resp[1];
+                Session.current.user = this.login.getText().toString();
+                Session.current.password = this.login.getText().toString();
+                Session.current.userId = (Integer) resp[0];
+                Session.current.cookie = (String) resp[1];
+                // Go to menu
+                Intent i = new Intent(this, org.tryton.client.Menu.class);
+                this.startActivity(i);
+                // Kill the current activity until logout
+                this.finish();
             } else {
                 // Show login error
                 Toast t = Toast.makeText(this, R.string.login_bad_login,
