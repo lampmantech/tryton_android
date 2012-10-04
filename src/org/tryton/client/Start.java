@@ -20,19 +20,80 @@ package org.tryton.client;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
+
+import org.tryton.client.tools.TrytonCall;
 
 /** Start activity. Shows login form. */
-public class Start extends Activity {
+public class Start extends Activity implements Handler.Callback {
+
+    private String serverVersion;
+
+    private TextView versionLabel;
 
     /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onCreate(Bundle state) {
+        super.onCreate(state);
+        if (state != null) {
+            // Recreated from a saved state
+            this.serverVersion = state.getString("version");
+        }
+        // Load configuration for TrytonCall
+        TrytonCall.setHost(Configure.getHost(this));
         // Load views from xml resource
         setContentView(R.layout.main);
-        
+        this.versionLabel = (TextView) this.findViewById(R.id.server_version);
+        // Update server version label
+        this.updateVersionLabel();
+    }
+
+    /** Save current state before killing, if necessary (called by system) */
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(this.serverVersion, "version");
+    }
+
+    /** Called when activity comes to front */
+    @Override
+    public void onStart() {
+        super.onStart();
+        // If server is unknown try to get its version
+        // When returning from configuration TrytonCall host may have changed
+        if (this.serverVersion == null) {
+            TrytonCall.serverVersion(new Handler(this));
+        }
+    }
+
+    /** Update display according to stored version */
+    public void updateVersionLabel() {
+        if (this.serverVersion == null) {
+            // Unknown version
+            this.versionLabel.setText(null);
+        } else {
+            this.versionLabel.setText(this.serverVersion);
+        }
+    }
+
+    /** Handle TrytonCall feedback. */
+    public boolean handleMessage(Message msg) {
+        switch (msg.what) {
+        case TrytonCall.CALL_VERSION_OK:
+            this.serverVersion = (String) msg.obj;
+            this.updateVersionLabel();
+            break;
+        }
+        return true;
+    }
+
+    // Mapped by xml on login button click
+    public void login(View v) {
+        System.out.println("Click");
     }
 
     //////////////////

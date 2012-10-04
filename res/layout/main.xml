@@ -48,8 +48,17 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:text="@string/login_send"
-        android:drawableLeft="@drawable/connect" />
+        android:drawableLeft="@drawable/connect"
+        android:onClick="login" />
   </LinearLayout>
+  <!-- Server version note -->
+  <TextView android:id="@+id/server_version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="@dimen/content_margin"
+            android:layout_marginBottom="@dimen/content_margin" />
 
 </RelativeLayout>
 

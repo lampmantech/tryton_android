@@ -17,25 +17,14 @@
 */
 package org.tryton.client;
 
-import android.app.AlertDialog;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.Toast;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Properties;
+
+import org.tryton.client.tools.TrytonCall;
 
 /** Configuration activity.
  * The configuration screen is mainly loaded from the xml resource.
@@ -53,6 +42,13 @@ public class Configure extends PreferenceActivity {
         super.onCreate(state);
         // Load preferences from xml
         this.addPreferencesFromResource(R.layout.configure);
+    }
+
+    /** Called when the activity is stopped. */
+    public void onStop() {
+        super.onStop();
+        // Refresh TrytonCall with the new values
+        TrytonCall.setHost(Configure.getHost(this));
     }
 
     /** Check if the application is configured. */
