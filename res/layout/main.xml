@@ -43,13 +43,13 @@
               android:layout_height="wrap_content"
               android:minEms="@integer/login_text_size_em"
               android:inputType="textPassword" />
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right"
-        android:text="@string/login_send"
-        android:drawableLeft="@drawable/connect"
-        android:onClick="login" />
+    <Button android:id="@+id/login_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:text="@string/login_send"
+            android:drawableLeft="@drawable/connect"
+            android:onClick="login" />
   </LinearLayout>
   <!-- Server version note -->
   <TextView android:id="@+id/server_version"

@@ -44,11 +44,11 @@ public class Configure extends PreferenceActivity {
         this.addPreferencesFromResource(R.layout.configure);
     }
 
-    /** Called when the activity is stopped. */
-    public void onStop() {
-        super.onStop();
+    /** Called when the activity is interrupted (or quitted). */
+    public void onPause() {
+        super.onPause();
         // Refresh TrytonCall with the new values
-        TrytonCall.setHost(Configure.getHost(this));
+        TrytonCall.setup(Configure.getHost(this), Configure.getDatabase(this));
     }
 
     /** Check if the application is configured. */

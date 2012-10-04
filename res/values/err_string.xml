@@ -18,20 +18,6 @@
 -->
 <!-- This is the default locale (english) translation file -->
 <resources>
-  <string name="app_name">Tryton</string>
-  
-  <string name="menu_config">Configure</string>
-  
-  <!-- Login labels -->
-  <string name="login_user">User</string>
-  <string name="login_password">Password</string>
-  <string name="login_send">Login</string>
-  <string name="login_server_unavailable">Server unavailable</string>
-  <string name="login_bad_login">Bad login or password</string>
-  
-  <!-- Configuration labels -->
-  <string name="config_host_title">Host</string>
-  <string name="config_host_desc">Your Tryton server host (including port)</string>
-  <string name="config_database_title">Database</string>
-  <string name="config_database_desc">The database on your host to connect to</string>
+  <string name="error">An error has occured</string>
+  <string name="network_error">Unable dial with the server. Check your network status and try later.</string>
 </resources>

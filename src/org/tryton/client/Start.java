@@ -18,6 +18,7 @@
 package org.tryton.client;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,7 +26,10 @@ import android.os.Message;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.tryton.client.tools.TrytonCall;
 
@@ -35,6 +39,9 @@ public class Start extends Activity implements Handler.Callback {
     private String serverVersion;
 
     private TextView versionLabel;
+    private EditText login;
+    private EditText password;
+    private Button loginBtn;
 
     /** Called when the activity is first created. */
     @Override
@@ -45,10 +52,13 @@ public class Start extends Activity implements Handler.Callback {
             this.serverVersion = state.getString("version");
         }
         // Load configuration for TrytonCall
-        TrytonCall.setHost(Configure.getHost(this));
+        TrytonCall.setup(Configure.getHost(this), Configure.getDatabase(this));
         // Load views from xml resource
         setContentView(R.layout.main);
         this.versionLabel = (TextView) this.findViewById(R.id.server_version);
+        this.login = (EditText) this.findViewById(R.id.login);
+        this.password = (EditText) this.findViewById(R.id.password);
+        this.loginBtn = (Button) this.findViewById(R.id.login_btn);
         // Update server version label
         this.updateVersionLabel();
     }
@@ -61,22 +71,25 @@ public class Start extends Activity implements Handler.Callback {
 
     /** Called when activity comes to front */
     @Override
-    public void onStart() {
-        super.onStart();
-        // If server is unknown try to get its version
+    public void onResume() {
+        super.onResume();
         // When returning from configuration TrytonCall host may have changed
-        if (this.serverVersion == null) {
-            TrytonCall.serverVersion(new Handler(this));
-        }
+        TrytonCall.serverVersion(new Handler(this));
     }
 
     /** Update display according to stored version */
     public void updateVersionLabel() {
         if (this.serverVersion == null) {
-            // Unknown version
-            this.versionLabel.setText(null);
+            // Unknown version, server is unavailable
+            this.versionLabel.setText(R.string.login_server_unavailable);
+            this.login.setEnabled(false);
+            this.password.setEnabled(false);
+            this.loginBtn.setEnabled(false);
         } else {
             this.versionLabel.setText(this.serverVersion);
+            this.login.setEnabled(true);
+            this.password.setEnabled(true);
+            this.loginBtn.setEnabled(true);
         }
     }
 
@@ -87,13 +100,40 @@ public class Start extends Activity implements Handler.Callback {
             this.serverVersion = (String) msg.obj;
             this.updateVersionLabel();
             break;
+        case TrytonCall.CALL_VERSION_NOK:
+            this.serverVersion = null;
+            this.updateVersionLabel();
+            if (msg.obj instanceof Exception) {
+                ((Exception)msg.obj).printStackTrace();
+            }
+            break;
+        case TrytonCall.CALL_LOGIN_OK:
+            if (msg.arg1 != 0) {
+                Object[] resp = (Object[]) msg.obj;
+                int id = (Integer) resp[0];
+                String cookie = (String) resp[1];
+            } else {
+                // Show login error
+                Toast t = Toast.makeText(this, R.string.login_bad_login,
+                                         Toast.LENGTH_LONG);
+                t.show();
+            }
+            break;
+        case TrytonCall.CALL_LOGIN_NOK:
+            AlertDialog.Builder b = new AlertDialog.Builder(this);
+            b.setTitle(R.string.error);
+            b.setMessage(R.string.network_error);
+            b.show();
+            break;
         }
         return true;
     }
 
     // Mapped by xml on login button click
     public void login(View v) {
-        System.out.println("Click");
+        TrytonCall.login(this.login.getText().toString(),
+                         this.password.getText().toString(),
+                         new Handler(this));
     }
 
     //////////////////
