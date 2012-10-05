@@ -19,6 +19,7 @@ package org.tryton.client;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -44,6 +45,7 @@ public class Start extends Activity implements Handler.Callback {
     private EditText login;
     private EditText password;
     private Button loginBtn;
+    private ProgressDialog loadingDialog;
 
     /** Called when the activity is first created. */
     @Override
@@ -104,6 +106,9 @@ public class Start extends Activity implements Handler.Callback {
 
     /** Handle TrytonCall feedback. */
     public boolean handleMessage(Message msg) {
+        // Close the loading dialog if present
+        this.hideLoadingDialog();
+        // Process message
         switch (msg.what) {
         case TrytonCall.CALL_VERSION_OK:
             this.serverVersion = (String) msg.obj;
@@ -157,9 +162,30 @@ public class Start extends Activity implements Handler.Callback {
 
     // Mapped by xml on login button click
     public void login(View v) {
+        // Show loading dialog
+        this.showLoadingDialog();
+        // Launch call (will be handled by handleMessage on response)
         TrytonCall.login(this.login.getText().toString(),
                          this.password.getText().toString(),
                          new Handler(this));
+    }
+
+    /** Show the loading dialog if not already shown. */
+    public void showLoadingDialog() {
+        if (this.loadingDialog == null) {
+            this.loadingDialog = new ProgressDialog(this);
+            this.loadingDialog.setIndeterminate(true);
+            this.loadingDialog.setMessage(this.getString(R.string.login_logging_in));
+            this.loadingDialog.show();
+        }        
+    }
+
+    /** Hide the loading dialog if shown. */
+    public void hideLoadingDialog() {
+        if (this.loadingDialog != null) {
+            this.loadingDialog.dismiss();
+            this.loadingDialog = null;
+        }
     }
 
     //////////////////

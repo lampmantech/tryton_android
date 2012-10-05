@@ -63,29 +63,34 @@ public class TrytonCall {
         return true;
     }
 
-    public static boolean serverVersion(Handler h) {
+    public static boolean serverVersion(final Handler h) {
         if (c == null) {
             return false;
         }
-        Message m = h.obtainMessage();
-        try {
-            Object resp = c.call("common.server.version",
-                                 JSONObject.NULL, JSONObject.NULL);
-            String version = null;            
-            if (resp instanceof String && (String) resp != "") {
-                // Ok, send version back
-                m.what = CALL_VERSION_OK;
-                m.obj = resp;
-            } else {
-                // Nok
-                m.what = CALL_VERSION_NOK;
-                m.obj = new Exception("Incorrect response type " + resp);
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                try {
+                    Object resp = c.call("common.server.version",
+                                         JSONObject.NULL, JSONObject.NULL);
+                    String version = null;            
+                    if (resp instanceof String && (String) resp != "") {
+                        // Ok, send version back
+                        m.what = CALL_VERSION_OK;
+                        m.obj = resp;
+                    } else {
+                        // Nok
+                        m.what = CALL_VERSION_NOK;
+                        m.obj = new Exception("Incorrect response type "
+                                              + resp);
+                    }
+                } catch (Exception e) {
+                    m.what = CALL_VERSION_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
             }
-        } catch (Exception e) {
-            m.what = CALL_VERSION_NOK;
-            m.obj = e;
-        }
-        m.sendToTarget();
+        }.start();
         return true;
     }
 
@@ -93,63 +98,73 @@ public class TrytonCall {
      * Message will contain success on arg1 and if success obj will be
      * a array with obj[0] as user id (integer) and obj[1] the cookie (string).
      */
-    public static boolean login(String user, String password, Handler h) {
+    public static boolean login(final String user, final String password,
+                                final Handler h) {
         if (c == null) {
             return false;
         }
-        Message m = h.obtainMessage();
-        try {
-            Object resp = c.call("common.db.login", user, password);
-            boolean success = false;
-            Object obj = null;
-            if (resp instanceof Boolean
-                && ((Boolean)resp).booleanValue() == false) {
-                // Login failed
-                m.what = CALL_LOGIN_OK;
-                m.arg1 = 0;
-            } else if (resp instanceof JSONArray
-                       && ((JSONArray)resp).length() == 2) {
-                // Login succeeded
-                m.what = CALL_LOGIN_OK;
-                m.arg1 = 1;
-                m.obj = new Object[]{((JSONArray)resp).getInt(0),
-                                     ((JSONArray)resp).getString(1)};
-            } else {
-                // Unknown result
-                m.what = CALL_LOGIN_NOK;
-                m.obj = new Exception("Unknown response type " + resp);
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                try {
+                    Object resp = c.call("common.db.login", user, password);
+                    boolean success = false;
+                    Object obj = null;
+                    if (resp instanceof Boolean
+                        && ((Boolean)resp).booleanValue() == false) {
+                        // Login failed
+                        m.what = CALL_LOGIN_OK;
+                        m.arg1 = 0;
+                    } else if (resp instanceof JSONArray
+                               && ((JSONArray)resp).length() == 2) {
+                        // Login succeeded
+                        m.what = CALL_LOGIN_OK;
+                        m.arg1 = 1;
+                        m.obj = new Object[]{((JSONArray)resp).getInt(0),
+                                             ((JSONArray)resp).getString(1)};
+                    } else {
+                        // Unknown result
+                        m.what = CALL_LOGIN_NOK;
+                        m.obj = new Exception("Unknown response type " + resp);
+                    }
+                } catch (Exception e) {
+                    m.what = CALL_LOGIN_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
             }
-        } catch (Exception e) {
-            m.what = CALL_LOGIN_NOK;
-            m.obj = e;
-        }
-        m.sendToTarget();
+        }.start();
         return true;
     }
 
-    public static boolean getPreferences(int userId, String cookie, Handler h) {
+    public static boolean getPreferences(final int userId, final String cookie,
+                                         final Handler h) {
         if (c == null) {
             return false;
         }
-        Message m = h.obtainMessage();
-        try {
-            Object resp = c.call("model.res.user.get_preferences",
-                                 userId, cookie, true, new JSONObject());
-            Object obj = null;
-            if (resp instanceof JSONObject) {
-                Preferences prefs = new Preferences((JSONObject) resp);
-                m.what = CALL_PREFERENCES_OK;
-                m.obj = prefs;
-            } else {
-                // Unknown result
-                m.what = CALL_PREFERENCES_NOK;
-                m.obj = new Exception("Unknown response type " + resp);
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                try {
+                    Object resp = c.call("model.res.user.get_preferences",
+                                         userId, cookie, true, new JSONObject());
+                    Object obj = null;
+                    if (resp instanceof JSONObject) {
+                        Preferences prefs = new Preferences((JSONObject) resp);
+                        m.what = CALL_PREFERENCES_OK;
+                        m.obj = prefs;
+                    } else {
+                        // Unknown result
+                        m.what = CALL_PREFERENCES_NOK;
+                        m.obj = new Exception("Unknown response type " + resp);
+                    }
+                } catch (Exception e) {
+                    m.what = CALL_PREFERENCES_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
             }
-        } catch (Exception e) {
-            m.what = CALL_PREFERENCES_NOK;
-            m.obj = e;
-        }
-        m.sendToTarget();
+        }.start();
         return true;
     }
 }
