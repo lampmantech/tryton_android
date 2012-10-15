@@ -19,12 +19,19 @@ package org.tryton.client.tools;
 
 import android.os.Handler;
 import android.os.Message;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.alexd.jsonrpc.JSONRPCClient;
 import org.alexd.jsonrpc.JSONRPCException;
 import org.alexd.jsonrpc.JSONRPCParams;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Preferences;
 
 /** Tryton requester.
@@ -38,6 +45,8 @@ public class TrytonCall {
     public static final int CALL_LOGIN_NOK = -2;
     public static final int CALL_PREFERENCES_OK = 2;
     public static final int CALL_PREFERENCES_NOK = -3;
+    public static final int CALL_MENUS_OK = 3;
+    public static final int CALL_MENUS_NOK = -4;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -160,6 +169,149 @@ public class TrytonCall {
                     }
                 } catch (Exception e) {
                     m.what = CALL_PREFERENCES_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;
+    }
+
+    /** Utility function to search and read models in one function call. */
+    private static JSONArray search(int userId, String cookie,
+                                    Preferences prefs, String model,
+                                    List args, int offset, int count) {
+        if (c == null) {
+            return null;
+        }
+        // First step: search ids
+        JSONArray jsArgs = new JSONArray();
+        if (args != null) {
+            // TODO: convert the list of arguments to a JSONArray
+        }
+        try {
+            Object resp = c.call(model + ".search", userId, cookie, jsArgs,
+                                 offset, count, JSONObject.NULL, prefs.json());
+            if (resp instanceof JSONArray) {
+                // Get the ids
+                JSONArray jsIds = (JSONArray) resp;
+                int[] ids = new int[jsIds.length()];
+                for (int i = 0; i < ids.length; i++) {
+                    ids[i] = jsIds.getInt(i);
+                }
+                // Read the models
+                resp = c.call(model + ".read", userId, cookie, jsIds,
+                              new JSONArray(), prefs.json());
+                if (resp instanceof JSONArray) {
+                    // We've got them!
+                    return (JSONArray) resp;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /** Get the full menu as a list of top level entries with children. */
+    public static boolean getMenus(final int userId, final String cookie,
+                                   final Preferences prefs, final Handler h) {
+        /* The procedure is broken into 5 parts:
+         * Request the menus from the server
+         * Request the icon ids and name from the server
+         * Get the icons for the menu entries from the server
+         * Build all menu entries individually
+         * Build the tree */
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                try {
+                    // Get the first "1000" menu entries
+                    JSONArray jsMenus = search(userId, cookie, prefs,
+                                               "model.ir.ui.menu",
+                                               null,
+                                               0, 1000);
+                    // Get icon ids
+                    Map<String, Integer> iconIds = new HashMap<String, Integer>();
+                    Object oIconIds = c.call("model.ir.ui.icon.list_icons",
+                                             userId, cookie,
+                                             prefs.json());
+                    if (oIconIds instanceof JSONArray) {
+                        // Convert the JSONArray to the map
+                        JSONArray jsIconIds = (JSONArray) oIconIds;
+                        for (int i = 0; i < jsIconIds.length(); i++) {
+                            JSONArray jsIconId = jsIconIds.getJSONArray(i);
+                            String name = jsIconId.getString(1);
+                            int id = jsIconId.getInt(0);
+                            iconIds.put(name, id);
+                        }
+                    }
+                    // We've got the icon ids, get the icons themselves for each
+                    // menu entry
+                    Map<String, String> icons = new HashMap<String, String>();
+                    // Look for the used ids
+                    JSONArray usefullIconIds = new JSONArray();
+                    Set<String> readIds = new HashSet<String>();
+                    for (int i = 0; i < jsMenus.length(); i++) {
+                        JSONObject jsMenu = jsMenus.getJSONObject(i);
+                        String iconName = jsMenu.getString("icon");
+                        if (iconName != null && !iconName.equals("")
+                            && !readIds.contains(iconName)
+                            && iconIds.containsKey(iconName)) {
+                            readIds.add(iconName);
+                            usefullIconIds.put(iconIds.get(iconName));
+                        }
+                    }
+                    // Get them
+                    Object oIcons = c.call("model.ir.ui.icon.read", userId,
+                                           cookie, usefullIconIds,
+                                           new JSONArray(),
+                                           prefs.json());
+                    if (oIcons instanceof JSONArray) {
+                        JSONArray jsIcons = (JSONArray) oIcons;
+                        for (int i = 0; i < jsIcons.length(); i++) {
+                            JSONObject jsIcon = jsIcons.getJSONObject(i);
+                            String name = jsIcon.getString("name");
+                            String svg = jsIcon.getString("icon");
+                            icons.put(name, svg);
+                        }
+                    }
+                    // We have all we need, create menu entries and return them
+                    // First build all entries
+                    Map<Integer, MenuEntry> allMenus = new HashMap<Integer, MenuEntry>();
+                    for (int i = 0; i < jsMenus.length(); i++) {
+                        JSONObject jsMenu = jsMenus.getJSONObject(i);
+                        MenuEntry menu = new MenuEntry(jsMenu.getString("name"),
+                                                       jsMenu.getInt("sequence"));
+                        // TODO: add svn drawable
+                        allMenus.put(jsMenu.getInt("id"), menu);
+                    }
+                    // Second pass, build tree
+                    List<MenuEntry> topLevelMenu = new ArrayList<MenuEntry>();
+                    for (int i = 0; i < jsMenus.length(); i++) {
+                        JSONObject jsMenu = jsMenus.getJSONObject(i);
+                        MenuEntry menu = allMenus.get(jsMenu.getInt("id"));
+                        JSONArray childrenId = jsMenu.getJSONArray("childs");
+                        // Append children of this entry
+                        for (int j = 0; j < childrenId.length(); j++) {
+                            int childId = childrenId.getInt(j);
+                            menu.addChild(allMenus.get(childId));
+                        }
+                        if (jsMenu.isNull("parent")) {
+                            // This is a top level menu entry
+                            topLevelMenu.add(menu);
+                          }
+                    }
+                    // We've got our menu tree, sort it by sequence
+                    MenuEntry.SequenceSorter.recursiveSort(topLevelMenu);
+                    // All done, return it
+                    m.what = CALL_MENUS_OK;
+                    m.obj = topLevelMenu;
+                } catch (Exception e) {
+                    m.what = CALL_MENUS_NOK;
                     m.obj = e;
                 }
                 m.sendToTarget();

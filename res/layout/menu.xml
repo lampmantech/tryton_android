@@ -1,4 +1,5 @@
-/*
+<?xml version="1.0" encoding="utf-8"?>
+<!--
     Tryton Android
     Copyright (C) 2012 SARL SCOP Scil (contact@scil.coop)
 
@@ -14,21 +15,16 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-package org.tryton.client.models;
-
-import org.json.JSONObject;
-
-/** User preferences as set on the server */
-public class Preferences {
-
-    private JSONObject source;
-
-    public Preferences(JSONObject source) {
-        this.source = source;
-    }
-
-    public JSONObject json() {
-        return this.source;
-    }
-}
+-->
+<!--
+    This is the menu screen layout definition.
+    It is loaded from the org.tryton.client.Menu activity.
+    Each list item is defined in menu_entry_item.xml.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="fill_parent"
+             android:layout_height="fill_parent">
+  <ListView android:id="@+id/menu_list"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+</FrameLayout>

@@ -29,6 +29,9 @@
   <string name="login_server_unavailable">Server unavailable</string>
   <string name="login_bad_login">Bad login or password</string>
   <string name="login_logging_in">Logging in</string>
+
+  <!-- Menu labels -->
+  <string name="menu_loading">Loading menu</string>
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string>
