@@ -18,6 +18,8 @@
 package org.tryton.client.models;
 
 import android.graphics.drawable.Drawable;
+import com.larvalabs.svgandroid.SVG;
+import com.larvalabs.svgandroid.SVGParser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,7 +30,9 @@ import java.io.Serializable;
 public class MenuEntry implements Serializable {
 
     private String label;
-    private Drawable icon;
+    // icon is declared transient as Drawables are not serializable
+    private transient Drawable icon;
+    private String iconSource;
     private int sequence;
     private List<MenuEntry> children;
 
@@ -48,6 +52,19 @@ public class MenuEntry implements Serializable {
 
     public void addChild(MenuEntry child) {
         this.children.add(child);
+    }
+
+    public Drawable getIcon() {
+        if (this.icon == null && this.iconSource != null) {
+            System.out.println("Creating svg for " + label);
+            SVG svg = SVGParser.getSVGFromString(this.iconSource);
+            this.icon = svg.createPictureDrawable();
+        }
+        return icon;
+    }
+
+    public void setIconSource(String source) {
+        this.iconSource = source;
     }
    
     public static class SequenceSorter implements Comparator<MenuEntry> {

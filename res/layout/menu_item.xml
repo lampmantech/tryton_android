@@ -19,12 +19,19 @@
 <!-- This is the layout for a MenuEntry in the menu list.
 It is merged by a org.tryton.client.views.MenuEntryItem as a RelativeLayout -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
+  <ImageView android:id="@+id/menu_icon"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
+             android:layout_centerVertical="true"
+             android:minWidth="44dip"
+             android:minHeight="44dip" />
   <TextView android:id="@+id/menu_label"
             android:layout_width="fill_parent"
             android:layout_height="44dip"
             android:layout_alignParentTop="true"
+            android:layout_toRightOf="@id/menu_icon"
             android:layout_marginTop="@dimen/content_margin"
             android:layout_marginBottom="@dimen/content_margin"
-            android:gravity="center_vertical"
-            android:layout_marginLeft="35dip"/>
+            android:gravity="center_vertical" />
 </merge>

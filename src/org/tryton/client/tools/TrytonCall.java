@@ -19,6 +19,9 @@ package org.tryton.client.tools;
 
 import android.os.Handler;
 import android.os.Message;
+import com.larvalabs.svgandroid.SVG;
+import com.larvalabs.svgandroid.SVGParseException;
+import com.larvalabs.svgandroid.SVGParser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -282,11 +285,26 @@ public class TrytonCall {
                     // We have all we need, create menu entries and return them
                     // First build all entries
                     Map<Integer, MenuEntry> allMenus = new HashMap<Integer, MenuEntry>();
+                    Map<String, SVG> parsedSvg = new HashMap<String, SVG>();
                     for (int i = 0; i < jsMenus.length(); i++) {
                         JSONObject jsMenu = jsMenus.getJSONObject(i);
                         MenuEntry menu = new MenuEntry(jsMenu.getString("name"),
                                                        jsMenu.getInt("sequence"));
-                        // TODO: add svn drawable
+                        String iconName = jsMenu.getString("icon");
+                        SVG svg = parsedSvg.get(iconName);
+                        if (svg == null && icons.get(iconName) != null) {
+                            // Create it
+                            try {
+                                System.out.println("Creating svg for " + iconName);
+                                svg = SVGParser.getSVGFromString(icons.get(iconName));
+                                parsedSvg.put(iconName, svg);
+                            } catch (SVGParseException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        if (svg != null) {
+                            menu.setIconSource(icons.get(iconName));
+                        }
                         allMenus.put(jsMenu.getInt("id"), menu);
                     }
                     // Second pass, build tree

@@ -23,6 +23,7 @@ import org.tryton.client.models.MenuEntry;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
 
@@ -31,6 +32,7 @@ public class MenuEntryItem extends RelativeLayout {
     private MenuEntry entry;
 
     private TextView label;
+    private ImageView icon;
 
     public MenuEntryItem(Context context, MenuEntry menu) {
         super(context);
@@ -38,12 +40,14 @@ public class MenuEntryItem extends RelativeLayout {
                                              this,
                                              true);
         this.label = (TextView) this.findViewById(R.id.menu_label);
+        this.icon = (ImageView) this.findViewById(R.id.menu_icon);
         this.reuse(menu);
     }
 
     public void reuse(MenuEntry menu) {
         this.entry = menu;
         this.label.setText(this.entry.getLabel());
+        this.icon.setImageDrawable(this.entry.getIcon());
     }
 
     public MenuEntry getMenuEntry() {
