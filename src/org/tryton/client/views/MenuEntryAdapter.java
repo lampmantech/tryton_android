@@ -68,7 +68,7 @@ public class MenuEntryAdapter extends BaseAdapter {
             // Reusing allows to update a view that goes off-screen to reduce
             // scrolling cpu usage (thus smoothing it).
             MenuEntryItem item = (MenuEntryItem) convertView;
-            item.reuse(m);
+            item.reuse(m, parent.getContext());
             return item;
         } else {
             // Not reusing. Create the view from scratch.

@@ -21,13 +21,19 @@ import org.tryton.client.R;
 import org.tryton.client.models.MenuEntry;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
+import com.larvalabs.svgandroid.SVG;
+import com.larvalabs.svgandroid.SVGParser;
 
 public class MenuEntryItem extends RelativeLayout {
+
+    /** Memory cache for default icon */
+    private static Drawable defaultFolderIcon = null;
 
     private MenuEntry entry;
 
@@ -41,13 +47,28 @@ public class MenuEntryItem extends RelativeLayout {
                                              true);
         this.label = (TextView) this.findViewById(R.id.menu_label);
         this.icon = (ImageView) this.findViewById(R.id.menu_icon);
-        this.reuse(menu);
+        this.reuse(menu, context);
     }
 
-    public void reuse(MenuEntry menu) {
+    public void reuse(MenuEntry menu, Context ctx) {
         this.entry = menu;
         this.label.setText(this.entry.getLabel());
-        this.icon.setImageDrawable(this.entry.getIcon());
+        if (this.entry.getIcon() != null) {
+            this.icon.setImageDrawable(this.entry.getIcon());
+        } else {
+            this.setDefaultIcon(ctx);
+        }
+    }
+
+    private void setDefaultIcon(Context ctx) {
+        if (this.entry.getChildren().size() > 0) {
+            if (defaultFolderIcon == null) {
+                SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
+                                                       R.raw.tryton_open);
+                defaultFolderIcon = svg.createPictureDrawable();
+            }
+            this.icon.setImageDrawable(defaultFolderIcon);
+        }
     }
 
     public MenuEntry getMenuEntry() {
