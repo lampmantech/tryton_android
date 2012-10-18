@@ -41,8 +41,8 @@ public class JSONRPCHttpClient extends JSONRPCClient
  	/**
 	 * Construct a JsonRPCClient with the given httpClient and service uri
 	 *
-     * @param client
-     *            httpClient to use
+	 * @param client
+	 *            httpClient to use
 	 * @param uri
 	 *            uri of the service
 	 */
