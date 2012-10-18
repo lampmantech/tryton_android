@@ -149,6 +149,22 @@ public class TrytonCall {
         return true;
     }
 
+    /** Logout. This is a send and forget call (don't expect any result) */
+    public static boolean logout(final int userId, final String cookie) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                try {
+                    Object resp = c.call("common.db.logout", userId, cookie);
+                } catch (Exception e) {
+                }
+            }
+        }.start();
+        return true;
+    }
+
     public static boolean getPreferences(final int userId, final String cookie,
                                          final Handler h) {
         if (c == null) {

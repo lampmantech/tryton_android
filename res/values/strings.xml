@@ -19,8 +19,10 @@
 <!-- This is the default locale (english) translation file -->
 <resources>
   <string name="app_name">Tryton</string>
-  
-  <string name="menu_config">Configure</string>
+
+  <!-- General strings -->
+  <string name="general_config">Configure</string>
+  <string name="general_logout">Logout</string>
   
   <!-- Login labels -->
   <string name="login_user">User</string>

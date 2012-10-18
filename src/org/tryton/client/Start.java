@@ -39,6 +39,19 @@ import org.tryton.client.tools.TrytonCall;
 /** Start activity. Shows login form. */
 public class Start extends Activity implements Handler.Callback {
 
+    /** Boolean to wake up login or make it inactive when user is logged in.
+     * The activity goes down when user logs in and is woken up when the
+     * user logs out.
+     */
+    private static boolean awake = true;
+
+    public static boolean isAwake() {
+        return awake;
+    }
+    public static void wakeUp() {
+        awake = true;
+    }
+
     private String serverVersion;
 
     private TextView versionLabel;
@@ -51,13 +64,6 @@ public class Start extends Activity implements Handler.Callback {
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        // Check if user is already logged in to skip login
-        if (Session.current.userId != -1) {
-            Intent i = new Intent(this, org.tryton.client.Menu.class);
-            this.startActivity(i);
-            this.finish();
-            return;
-        }
         if (state != null) {
             // Recreated from a saved state
             this.serverVersion = state.getString("version");
@@ -70,6 +76,13 @@ public class Start extends Activity implements Handler.Callback {
         this.login = (EditText) this.findViewById(R.id.login);
         this.password = (EditText) this.findViewById(R.id.password);
         this.loginBtn = (Button) this.findViewById(R.id.login_btn);
+        // Init is done, check if user is already logged in to skip login
+        if (Session.current.userId != -1) {
+            Intent i = new Intent(this, org.tryton.client.Menu.class);
+            this.startActivity(i);
+            awake = false; // zzzz
+            return;
+        }
         // Update server version label
         this.updateVersionLabel();
     }
@@ -84,6 +97,11 @@ public class Start extends Activity implements Handler.Callback {
     @Override
     public void onResume() {
         super.onResume();
+        if (!isAwake()) {
+            // zzz (quit)
+            this.finish();
+            return;
+        }
         // When returning from configuration TrytonCall host may have changed
         TrytonCall.serverVersion(new Handler(this));
     }
@@ -146,8 +164,8 @@ public class Start extends Activity implements Handler.Callback {
             // Go to menu
             Intent i = new Intent(this, org.tryton.client.Menu.class);
             this.startActivity(i);
-            // Kill the current activity until logout
-            this.finish();
+            // Falling asleep...
+            awake = false;
             break;
         case TrytonCall.CALL_LOGIN_NOK:
         case TrytonCall.CALL_PREFERENCES_NOK:
@@ -197,7 +215,7 @@ public class Start extends Activity implements Handler.Callback {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Create and add configuration entry
         MenuItem config = menu.add(Menu.NONE, MENU_CONFIG_ID, 0,
-                                   this.getString(R.string.menu_config));
+                                   this.getString(R.string.general_config));
         config.setIcon(android.R.drawable.ic_menu_preferences);
         return true;
     }

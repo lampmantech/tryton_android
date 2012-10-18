@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -143,4 +144,38 @@ public class Menu extends Activity implements Handler.Callback,
             this.startActivity(i);
         }
     }
+
+    //////////////////
+    // Menu section //
+    //////////////////
+    private static final int MENU_LOGOUT_ID = 0;
+    /** Called on menu initialization */
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        // Create and add configuration entry
+        MenuItem config = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 0,
+                                   this.getString(R.string.general_logout));
+        config.setIcon(android.R.drawable.ic_menu_preferences);
+        return true;
+    }
+
+    /** Called on menu selection */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case MENU_LOGOUT_ID:
+            // Clear on server then on client
+            TrytonCall.logout(Session.current.userId, Session.current.cookie);
+            Session.current.clear();
+            // Call back the login screen.
+            // FLAG_ACTIVITY_CLEAR_TOP will erase all activities on top of it.
+            Intent i = new Intent(this, Start.class);
+            Start.wakeUp();
+            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            this.startActivity(i);
+            break;
+        }
+        return true;
+    }
+
 }

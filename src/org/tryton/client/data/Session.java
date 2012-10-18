@@ -34,4 +34,13 @@ public class Session {
     public Preferences prefs;
 
     private Session() {}
+
+    public void clear() {
+        this.user = null;
+        this.password = null;
+        this.userId = -1;
+        this.cookie = null;
+        this.prefs = null;
+    }
+
 }
