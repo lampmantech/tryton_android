@@ -49,8 +49,8 @@ public class JSONRPCHttpClient extends JSONRPCClient
 	 */
 	private String serviceUri;
 	
-	// HTTP 1.0
-	private static final ProtocolVersion PROTOCOL_VERSION = new ProtocolVersion("HTTP", 1, 0);
+	// HTTP 1.1
+	private static final ProtocolVersion PROTOCOL_VERSION = new ProtocolVersion("HTTP", 1, 1);
 	
  	/**
 	 * Construct a JsonRPCClient with the given httpClient and service uri
