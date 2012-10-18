@@ -75,4 +75,9 @@ public class Configure extends PreferenceActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         return prefs.getString("database", "");
     }
+
+    /** Get a code to uniquely identify the targeted database. */
+    public static String getDatabaseCode(Context ctx) {
+        return getHost(ctx) + "/" + getDatabase(ctx);
+    }
 }

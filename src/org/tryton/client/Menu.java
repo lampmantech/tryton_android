@@ -24,16 +24,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
+import org.tryton.client.data.MenuCache;
 import org.tryton.client.views.MenuEntryAdapter;
 import org.tryton.client.views.MenuEntryItem;
 
@@ -68,10 +71,23 @@ public class Menu extends Activity implements Handler.Callback,
             entriesInitializer = null; // Reset as it will now be saved in state
         }
         if (this.entries.size() == 0) {
+            // There is no menu, check in cache and load it if empty
+            List<MenuEntry> cachedMenus = null;
+            try {
+                cachedMenus = MenuCache.load(this);
+            } catch (IOException e) {
+                Log.w("Tryton", "Unable to load menu cache", e);
+            }
+            if (cachedMenus != null) {
+                // Got it
+                this.entries = cachedMenus;
+            } else {
             // Launch menu loading as it is empty
-            this.showLoadingDialog();
-            TrytonCall.getMenus(Session.current.userId, Session.current.cookie,
-                                Session.current.prefs, new Handler(this));
+                this.showLoadingDialog();
+                TrytonCall.getMenus(Session.current.userId,
+                                    Session.current.cookie,
+                                    Session.current.prefs, new Handler(this));
+            }
         }
         // Init view
         this.setContentView(R.layout.menu);
@@ -119,6 +135,13 @@ public class Menu extends Activity implements Handler.Callback,
         switch (msg.what) {
         case TrytonCall.CALL_MENUS_OK:
             List<MenuEntry> menus = (List) msg.obj;
+            // Cache the menu
+            try {
+                MenuCache.save(menus, this);
+            } catch (IOException e) {
+                Log.w("Tryton", "Unable to cache menus", e);
+            }
+            // Update the view
             this.entries = menus;
             this.updateMenus(menus);
             break;
