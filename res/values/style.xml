@@ -20,6 +20,8 @@
   
   <dimen name="content_margin">5dip</dimen>
 
+  <dimen name="icon_size">36dip</dimen>
+
   <integer name="login_text_size_em">10</integer>
 
   <style name="TrytonTheme" parent="android:Theme.NoTitleBar">
