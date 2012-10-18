@@ -1272,15 +1272,22 @@ public class SVGParser {
                         }
                     }
                     int[] colors = new int[gradient.colors.size()];
-                    for (int i = 0; i < colors.length; i++) {
-                        colors[i] = gradient.colors.get(i);
+                    if (gradient.colors.size() == 1) {
+                    	// Need at least 2 colors. Mimik a solid gradient
+                    	colors = new int[]{gradient.colors.get(0),
+                    	                   gradient.colors.get(0)};
+                    } else {
+                        for (int i = 0; i < colors.length; i++) {
+                            colors[i] = gradient.colors.get(i);
+                        }
                     }
                     float[] positions = new float[gradient.positions.size()];
                     for (int i = 0; i < positions.length; i++) {
                         positions[i] = gradient.positions.get(i);
                     }
                     if (colors.length == 0) {
-                        Log.d("BAD", "BAD");
+                        Log.d(TAG, "Trying to register a linear gradient without colors. Aborded.");
+                        return;
                     }
                     LinearGradient g = new LinearGradient(gradient.x1, gradient.y1, gradient.x2, gradient.y2, colors, positions, Shader.TileMode.CLAMP);
                     if (gradient.matrix != null) {
@@ -1324,6 +1331,8 @@ public class SVGParser {
                         }
                         gradientMap.put(gradient.id, g);
                         gradientRefMap.put(gradient.id, gradient);
+                    } else {
+                        Log.d(TAG, "Trying to register a radial gradient without colors. Aborded.");
                     }
                 }
             } else if (localName.equals("g")) {
