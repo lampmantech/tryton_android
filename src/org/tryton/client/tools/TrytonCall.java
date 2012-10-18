@@ -63,7 +63,7 @@ public class TrytonCall {
             c = null;
             return false;
         }
-        if (!host.startsWith("http://")) {
+        if (!host.startsWith("http://") && !host.startsWith("https://")) {
             host = "http://" + host;
         }
         if (!host.endsWith("/")) {

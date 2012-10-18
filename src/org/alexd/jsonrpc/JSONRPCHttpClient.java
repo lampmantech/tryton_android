@@ -2,14 +2,28 @@ package org.alexd.jsonrpc;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.net.Socket;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -51,6 +65,27 @@ public class JSONRPCHttpClient extends JSONRPCClient
 		serviceUri = uri;
 	}
 	
+	private class AllowAllSSLSocketFactory extends SSLSocketFactory {
+		SSLContext sslContext = SSLContext.getInstance("TLS");
+		public AllowAllSSLSocketFactory( java.security.KeyStore truststore) throws Exception {
+			super(truststore);
+			X509TrustManager acceptAll = new X509TrustManager() {
+				public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+				public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+				public boolean isClientTrusted(X509Certificate[] chain) { return true; }
+				public boolean isServerTrusted(X509Certificate[] chain) { return true; }
+				public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[] {}; }
+			};
+			sslContext.init(null, new TrustManager[] { acceptAll }, null);
+		}
+		public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, java.net.UnknownHostException {
+			return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+		}
+		public Socket createSocket() throws IOException {
+			return sslContext.getSocketFactory().createSocket();
+		}
+	}
+	
 	/**
 	 * Construct a JsonRPCClient with the given service uri
 	 * 
@@ -59,7 +94,23 @@ public class JSONRPCHttpClient extends JSONRPCClient
 	 */
 	public JSONRPCHttpClient(String uri)
 	{
-		this(new DefaultHttpClient(), uri);
+		SSLSocketFactory allowAllsslFactory = null;
+		try {
+			allowAllsslFactory = new AllowAllSSLSocketFactory(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		allowAllsslFactory.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+		// Quick ugly fix to accept ssl certificates
+	    
+		HttpParams params = new BasicHttpParams();
+		SchemeRegistry registry = new SchemeRegistry();
+		registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+		registry.register(new Scheme("https", allowAllsslFactory, 443));
+ 
+		SingleClientConnManager ccm = new SingleClientConnManager(params, registry);
+		httpClient = new DefaultHttpClient(ccm, params);
+		serviceUri = uri;
 	}
 
 	protected JSONObject doJSONRequest(JSONObject jsonRequest) throws JSONRPCException
