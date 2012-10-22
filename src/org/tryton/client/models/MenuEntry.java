@@ -29,21 +29,40 @@ import java.io.Serializable;
 /** A menu entry */
 public class MenuEntry implements Serializable {
 
+    private int id;
     private String label;
+    private String actionType;
+    private int actionId;
     // icon is declared transient as Drawables are not serializable
     private transient Drawable icon;
     private String iconSource;
     private int sequence;
     private List<MenuEntry> children;
 
-    public MenuEntry(String label, int sequence) {
+    public MenuEntry(int id, String label, int sequence,
+                     String actionType, int actionId) {
+        this.id = id;
         this.label = label;
         this.sequence = sequence;
         this.children = new ArrayList<MenuEntry>();
+        this.actionType = actionType;
+        this.actionId = actionId;
+    }
+
+    public int getId() {
+        return this.id;
     }
 
     public String getLabel() {
         return this.label;
+    }
+
+    public String getActionType() {
+        return this.actionType;
+    }
+    
+    public int getActionId() {
+        return this.actionId;
     }
 
     public List<MenuEntry> getChildren() {

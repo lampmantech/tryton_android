@@ -32,9 +32,13 @@ import org.alexd.jsonrpc.JSONRPCClient;
 import org.alexd.jsonrpc.JSONRPCException;
 import org.alexd.jsonrpc.JSONRPCParams;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.tryton.client.models.MenuEntry;
+import org.tryton.client.models.Model;
+import org.tryton.client.models.ModelView;
+import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.Preferences;
 
 /** Tryton requester.
@@ -50,6 +54,8 @@ public class TrytonCall {
     public static final int CALL_PREFERENCES_NOK = -3;
     public static final int CALL_MENUS_OK = 3;
     public static final int CALL_MENUS_NOK = -4;
+    public static final int CALL_VIEWS_OK = 4;
+    public static final int CALL_VIEWS_NOK = -5;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -304,8 +310,21 @@ public class TrytonCall {
                     Map<String, SVG> parsedSvg = new HashMap<String, SVG>();
                     for (int i = 0; i < jsMenus.length(); i++) {
                         JSONObject jsMenu = jsMenus.getJSONObject(i);
-                        MenuEntry menu = new MenuEntry(jsMenu.getString("name"),
-                                                       jsMenu.getInt("sequence"));
+                        String action = null;
+                        if (!jsMenu.isNull("action")) {
+                            action = jsMenu.getString("action");
+                        }
+                        String actionType = null;
+                        int actionId = -1;
+                        if (action != null) {
+                            String[] split = action.split(",");
+                            actionType = split[0];
+                            actionId = Integer.parseInt(split[1]);
+                        }
+                        MenuEntry menu = new MenuEntry(jsMenu.getInt("id"),
+                                                       jsMenu.getString("name"),
+                                                       jsMenu.getInt("sequence"),
+                                                       actionType, actionId);
                         String iconName = jsMenu.getString("icon");
                         SVG svg = parsedSvg.get(iconName);
                         if (svg == null && icons.get(iconName) != null) {
@@ -346,6 +365,66 @@ public class TrytonCall {
                     m.obj = topLevelMenu;
                 } catch (Exception e) {
                     m.what = CALL_MENUS_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;
+    }
+
+    public static boolean getViews(final int userId, final String cookie,
+                                   final Preferences prefs,
+                                   final MenuEntry entry,
+                                   final Handler h) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                JSONArray action = new JSONArray();
+                action.put("ir.ui.menu");
+                action.put(entry.getId());
+                try {
+                    Object oViews = c.call("model.ir.action.keyword.get_keyword",
+                                           userId, cookie, "tree_open", action,
+                                           prefs.json());
+                    if (oViews instanceof JSONArray) {
+                        // Get the view by type and other general data
+                        JSONArray jsViews = (JSONArray) oViews;
+                        JSONObject jsView = jsViews.getJSONObject(0);
+                        String model = jsView.getString("res_model");
+                        String name = jsView.getString("rec_name");
+                        JSONArray jsViewTypes = jsView.getJSONArray("views");
+                        // Get each view
+                        ModelViewTypes modelViews = new ModelViewTypes(model);
+                        for (int i = 0; i < jsViewTypes.length(); i++) {
+                            JSONArray jsTypeId = jsViewTypes.getJSONArray(i);
+                            int viewId = jsTypeId.getInt(0);
+                            String type = jsTypeId.getString(1);
+                            // Get the view itself
+                            Object oView = c.call("model." + model
+                                                  + ".fields_view_get",
+                                                  userId, cookie, viewId,
+                                                  type, prefs.json());
+                            if (oView instanceof JSONObject) {
+                                // Register the view for its type
+                                JSONObject jsFields = (JSONObject) oView;
+                                ModelView mView = new ModelView(jsFields);
+                                ArchParser.buildTree(mView);
+                                modelViews.putView(type, mView);
+                            }
+                        }
+                        // Send them back
+                        m.what = CALL_VIEWS_OK;
+                        m.obj = modelViews;
+                    }
+                } catch (JSONException e) {
+                    m.what = CALL_VIEWS_NOK;
+                    m.obj = e;
+                } catch (JSONRPCException e) {
+                    m.what = CALL_VIEWS_NOK;
                     m.obj = e;
                 }
                 m.sendToTarget();

@@ -82,7 +82,7 @@ public class Menu extends Activity implements Handler.Callback,
                 // Got it
                 this.entries = cachedMenus;
             } else {
-            // Launch menu loading as it is empty
+                // Launch menu loading as it is empty
                 this.showLoadingDialog();
                 TrytonCall.getMenus(Session.current.userId,
                                     Session.current.cookie,
@@ -164,6 +164,11 @@ public class Menu extends Activity implements Handler.Callback,
             // Setup a new instance of Menu and call it
             Menu.setup(clickedMenu.getChildren());
             Intent i = new Intent(this, Menu.class);
+            this.startActivity(i);
+        } else if (clickedMenu.getActionType() != null) {
+            // Setup a tree view and go to it
+            TreeView.setup(clickedMenu);
+            Intent i = new Intent(this, TreeView.class);
             this.startActivity(i);
         }
     }

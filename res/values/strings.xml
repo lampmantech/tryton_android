@@ -34,6 +34,9 @@
 
   <!-- Menu labels -->
   <string name="menu_loading">Loading menu</string>
+
+  <!-- View labels -->
+  <string name="view_loading">Loading views</string>
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string>

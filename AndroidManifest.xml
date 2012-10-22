@@ -18,6 +18,7 @@
     </activity>
     <activity android:name="Configure" />
     <activity android:name="Menu" />
+    <activity android:name="TreeView" />
     
   </application>
   <!-- Request permissions -->
