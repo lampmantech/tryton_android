@@ -34,6 +34,9 @@ public class MenuEntryItem extends RelativeLayout {
 
     /** Memory cache for default icon */
     private static Drawable defaultFolderIcon = null;
+    private static Drawable defaultWizardIcon = null;
+    private static Drawable defaultReportIcon = null;
+    private static Drawable defaultURLIcon = null;
 
     private MenuEntry entry;
 
@@ -68,6 +71,33 @@ public class MenuEntryItem extends RelativeLayout {
                 defaultFolderIcon = svg.createPictureDrawable();
             }
             this.icon.setImageDrawable(defaultFolderIcon);
+        } else if (this.entry.getActionType() != null) {
+            if (this.entry.getActionType().equals("ir.action.wizard")) {
+                if (defaultWizardIcon == null) {
+                    SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
+                                                           R.raw.tryton_executable);
+                    defaultWizardIcon = svg.createPictureDrawable();
+                }
+                this.icon.setImageDrawable(defaultWizardIcon);
+            } else if (this.entry.getActionType().equals("ir.action.report")) {
+                if (defaultReportIcon == null) {
+                    SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
+                                                           R.raw.tryton_print);
+                    defaultReportIcon = svg.createPictureDrawable();
+                }
+                this.icon.setImageDrawable(defaultReportIcon);
+            } else if (this.entry.getActionType().equals("ir.action.url")) {
+                if (defaultURLIcon == null) {
+                    SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
+                                                           R.raw.tryton_web_browser);
+                    defaultURLIcon = svg.createPictureDrawable();
+                }
+                this.icon.setImageDrawable(defaultURLIcon);
+            } else {
+                this.icon.setImageDrawable(null);
+            }
+        } else {
+            this.icon.setImageDrawable(null);
         }
     }
 
