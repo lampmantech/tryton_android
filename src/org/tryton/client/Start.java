@@ -218,6 +218,7 @@ public class Start extends Activity implements Handler.Callback {
         MenuItem config = menu.add(Menu.NONE, MENU_CONFIG_ID, 0,
                                    this.getString(R.string.general_config));
         config.setIcon(android.R.drawable.ic_menu_preferences);
+        // Create and add about entry
         MenuItem about = menu.add(Menu.NONE, MENU_ABOUT_ID, 10,
                                   this.getString(R.string.general_about));
         about.setIcon(android.R.drawable.ic_menu_info_details);
@@ -234,6 +235,7 @@ public class Start extends Activity implements Handler.Callback {
             this.startActivity(i);
             break;
         case MENU_ABOUT_ID:
+            // Show about
             i = new Intent(this, About.class);
             this.startActivity(i);
         }

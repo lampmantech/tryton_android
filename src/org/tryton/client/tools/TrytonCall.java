@@ -432,6 +432,7 @@ public class TrytonCall {
         return true;
     }
 
+    /** Get some data for a model */
     public static boolean getData(final int userId, final String cookie,
                            final Preferences prefs,
                            final String modelName,
@@ -445,6 +446,7 @@ public class TrytonCall {
                 Message m = h.obtainMessage();
                 List<Model> allData = new ArrayList<Model>();
                 try {
+                    // Simply search the data and add them to a list
                     JSONArray result = search(userId, cookie, prefs,
                                               "model." + modelName,
                                               null, offset, count);
@@ -453,6 +455,7 @@ public class TrytonCall {
                         Model data = new Model(modelName, jsData);
                         allData.add(data);
                     }
+                    // Send back the list to the handler
                     m.what = CALL_DATA_OK;
                     m.obj = allData;
                 } catch (Exception e) {

@@ -24,17 +24,24 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** The representation of a view. */
+/** The representation of a view of a given type. It is built in two steps
+ * first get the information from the server (arch and so on), then
+ * build models which represent the arch in data shape.
+ * See TrytonCall for the generation with ArchParser. */
 public class ModelView {
 
     protected String modelName;
     protected String type;
     protected String arch;
+    /** The fields given by the server, indexed by name */
     protected Map<String, Model> fields;
     protected String title;
+    /** The arch in data shape. Accessible only once build is called.
+     * It contains fields form the fields map with some extra data. */
     protected List<Model> builtFields;
 
-
+    /** Create the view from server data. It must be built to be used
+     *  in the application */
     public ModelView(JSONObject json) throws JSONException {
         this.arch = json.getString("arch");
         this.type = json.getString("type");
@@ -79,6 +86,8 @@ public class ModelView {
         return this.builtFields;
     }
 
+    /** Build the structure. It represent arch and fields
+     * in a combined way. See ArchParser. */
     public void build(List<Model> structure) {
         this.builtFields = structure;
     }

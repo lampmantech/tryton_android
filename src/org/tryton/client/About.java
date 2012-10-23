@@ -23,13 +23,16 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.TextView;
 
+/** The about screen. */
 public class About extends Activity {
 
     public void onCreate(Bundle state) {
         super.onCreate(state);
+        // Load the view
         this.setContentView(R.layout.about);
         TextView version = (TextView) this.findViewById(R.id.about_version);
         try {
+            // Get version number from package manager and display it
             PackageManager pm = this.getPackageManager();
             PackageInfo info = pm.getPackageInfo(this.getPackageName(), 0);
             String v = info.versionName;

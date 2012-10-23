@@ -32,6 +32,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 
+/** Tool to build models from arch and fields. */
 public class ArchParser {
     
     private static final int TYPE_UNDEFINED = 0;
@@ -39,13 +40,18 @@ public class ArchParser {
     private static final int TYPE_FORM = 2;
     private static final int TYPE_GRAPH = 3;
     
+    /** Build a tree view. It lists the fields of the ModelView in the order
+     * the arch defines and add some presentation attributes. */
     public static void buildTree(ModelView view) {
         try {
+            // Initialize SAX parser
             SAXParserFactory spf = SAXParserFactory.newInstance();
             SAXParser sp = spf.newSAXParser();
             XMLReader xr = sp.getXMLReader();
+            // Set handler that triggers actions on parsing
             ArchHandler handler = new ArchHandler(view.getFields());
             xr.setContentHandler(handler);
+            // Parse and set result
             xr.parse(new InputSource(new StringReader(view.getArch())));
             view.setTitle(handler.getTitle());
             view.build(handler.getResult());

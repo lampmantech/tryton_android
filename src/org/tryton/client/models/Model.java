@@ -25,7 +25,8 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-/** The representation of a generic model */
+/** The representation of a generic model. It can either be some data
+ * fields definition... */
 public class Model implements Serializable {
 
     private String className;
@@ -54,10 +55,12 @@ public class Model implements Serializable {
         return this.className;
     }
     
+    /** Get all attribute names */
     public Set<String> getAttributeNames() {
         return this.attributes.keySet();
     }
 
+    /** Get the value of an attribute */
     public Object get(String attributeName) {
         return this.attributes.get(attributeName);
     }
