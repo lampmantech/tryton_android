@@ -17,6 +17,7 @@
       </intent-filter>
     </activity>
     <activity android:name="Configure" />
+    <activity android:name="About" />
     <activity android:name="Menu" />
     <activity android:name="TreeView" />
     

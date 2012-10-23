@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tryton Android
+    Copyright (C) 2012 SARL SCOP Scil (contact@scil.coop)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!-- This is the layout for the about popup.
+It is loaded in org.tryton.client.About -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:padding="@dimen/content_margin">
+  <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:padding="@dimen/content_margin">
+    <TextView android:id="@+id/about_version"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_gravity="center"
+              android:layout_marginBottom="@dimen/paragraph_spacing"
+              android:textColor="#fff"
+              android:gravity="center_vertical"
+              android:drawableLeft="@drawable/tryton_icon" />
+    <TextView android:id="@+id/about_author"
+              android:layout_width="wrap_content"
+              android:layout_height="fill_parent"
+              android:layout_marginBottom="@dimen/paragraph_spacing"
+              android:text="@string/about_author"
+              android:autoLink="web"
+              android:textColor="#fff" />
+    <TextView android:id="@+id/about_licence"
+              android:layout_width="wrap_content"
+              android:layout_height="fill_parent"
+              android:layout_marginBottom="@dimen/paragraph_spacing"
+              android:text="@string/about_licence"
+              android:autoLink="web"
+              android:textColor="#fff" />
+    <TextView android:id="@+id/about_source"
+              android:layout_width="wrap_content"
+              android:layout_height="fill_parent"
+              android:layout_marginBottom="@dimen/paragraph_spacing"
+              android:text="@string/about_source"
+              android:autoLink="web"
+              android:textColor="#fff" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_marginBottom="@dimen/paragraph_spacing"
+        android:text="@string/about_svg_android"
+        android:autoLink="web"
+        android:textColor="#fff" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_marginBottom="@dimen/paragraph_spacing"
+        android:text="@string/svg_android_notice"
+        android:autoLink="web"
+        android:textColor="#fff" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_marginBottom="@dimen/paragraph_spacing"
+        android:text="@string/about_jsonrpc"
+        android:autoLink="web"
+        android:textColor="#fff" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_marginBottom="@dimen/paragraph_spacing"
+        android:text="@string/mit_notice"
+        android:autoLink="web"
+        android:textColor="#fff" />
+  </LinearLayout>
+</ScrollView>

@@ -210,6 +210,7 @@ public class Start extends Activity implements Handler.Callback {
     // Menu section //
     //////////////////
     private static final int MENU_CONFIG_ID = 0;
+    private static final int MENU_ABOUT_ID = 1;
     /** Called on menu initialization */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -217,6 +218,9 @@ public class Start extends Activity implements Handler.Callback {
         MenuItem config = menu.add(Menu.NONE, MENU_CONFIG_ID, 0,
                                    this.getString(R.string.general_config));
         config.setIcon(android.R.drawable.ic_menu_preferences);
+        MenuItem about = menu.add(Menu.NONE, MENU_ABOUT_ID, 10,
+                                  this.getString(R.string.general_about));
+        about.setIcon(android.R.drawable.ic_menu_info_details);
         return true;
     }
 
@@ -229,6 +233,9 @@ public class Start extends Activity implements Handler.Callback {
             Intent i = new Intent(this, Configure.class);
             this.startActivity(i);
             break;
+        case MENU_ABOUT_ID:
+            i = new Intent(this, About.class);
+            this.startActivity(i);
         }
         return true;
     }

@@ -19,6 +19,7 @@
 <resources>
   
   <dimen name="content_margin">5dip</dimen>
+  <dimen name="paragraph_spacing">15dip</dimen>
 
   <dimen name="icon_size">36dip</dimen>
 
