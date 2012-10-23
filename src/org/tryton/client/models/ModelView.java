@@ -82,4 +82,12 @@ public class ModelView {
     public void build(List<Model> structure) {
         this.builtFields = structure;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof ModelView
+                && ((ModelView)o).modelName.equals(this.modelName)
+                && ((ModelView)o).type.equals(this.type)
+                && ((ModelView)o).arch.equals(this.arch));
+    }
 }

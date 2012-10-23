@@ -25,12 +25,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.widget.ListView;
 import java.io.IOException;
+import java.util.List;
 
 import org.tryton.client.models.MenuEntry;
+import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
+import org.tryton.client.views.TreeFullAdapter;
 
 public class TreeView extends Activity implements Handler.Callback {
 
@@ -50,7 +54,9 @@ public class TreeView extends Activity implements Handler.Callback {
     private static ModelViewTypes viewTypesInitializer;
     
     private ModelViewTypes viewTypes;
-    private ProgressDialog loadingDialog;    
+    private List<Model> data;
+    private ProgressDialog loadingDialog;
+    private ListView tree;
 
     @Override
     public void onCreate(Bundle state) {
@@ -69,7 +75,8 @@ public class TreeView extends Activity implements Handler.Callback {
             viewTypesInitializer = null; // Reset (consume setup)
         }
         // Init view
-
+        this.setContentView(R.layout.tree);
+        this.tree = (ListView) this.findViewById(R.id.tree_list);
     }
     
     public void onSaveInstanceState(Bundle outState) {
@@ -77,6 +84,11 @@ public class TreeView extends Activity implements Handler.Callback {
         outState.putSerializable("viewTypes", this.viewTypes);
     }
 
+    private void updateList() {
+        TreeFullAdapter adapt = new TreeFullAdapter(this.viewTypes.getView("tree"),
+                                                    this.data);
+        this.tree.setAdapter(adapt);
+    }
 
     public void showLoadingDialog() {
         if (this.loadingDialog == null) {
@@ -103,14 +115,26 @@ public class TreeView extends Activity implements Handler.Callback {
         switch (msg.what) {
         case TrytonCall.CALL_VIEWS_OK:
             ModelViewTypes viewTypes = (ModelViewTypes) msg.obj;
+            this.viewTypes = viewTypes;
+            // Load data
+            String model = viewTypes.getModelName();
+            this.showLoadingDialog();
+            Session s = Session.current;
+            TrytonCall.getData(s.userId, s.cookie, s.prefs, model, 0, 10,
+                                new Handler(this));
             break;
         case TrytonCall.CALL_VIEWS_NOK:
+        case TrytonCall.CALL_DATA_NOK:
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
             b.setMessage(R.string.network_error);
             b.show();
             ((Exception)msg.obj).printStackTrace();
             break;
+        case TrytonCall.CALL_DATA_OK:
+            List<Model> data = (List) msg.obj;
+            this.data = data;
+            this.updateList();
         }
         return true;
     }

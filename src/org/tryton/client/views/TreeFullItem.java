@@ -1,0 +1,74 @@
+/*
+    Tryton Android
+    Copyright (C) 2012 SARL SCOP Scil (contact@scil.coop)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+package org.tryton.client.views;
+
+import org.tryton.client.R;
+import org.tryton.client.models.Model;
+import org.tryton.client.models.ModelView;
+
+import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.LinearLayout;
+import java.util.ArrayList;
+import java.util.List;
+
+public class TreeFullItem extends LinearLayout {
+
+    private ModelView modelView;
+    private Model model;
+    private List<TextView> values;
+
+    public TreeFullItem(Context context, ModelView modelView, Model model) {
+        super(context);
+        this.setOrientation(LinearLayout.VERTICAL);
+        this.modelView = modelView;
+        this.values = new ArrayList<TextView>();
+        for (int i = 0; i < this.modelView.getStructure().size(); i++) {
+            TextView t = new TextView(context);
+            this.values.add(t);
+            this.addView(t);
+        }
+        this.reuse(model);
+    }
+
+    public void reuse(Model model) {
+        this.model = model;
+        List<Model> structure = this.modelView.getStructure();
+        for (int i = 0; i < structure.size(); i++) {
+            TextView t = this.values.get(i);
+            Model field = structure.get(i);
+            String fieldName = (String) field.get("name");
+            String name = (String) field.get("string");
+            if (name == null) {
+                name = (String) field.get("name");
+            }
+            String value = this.model.get(fieldName).toString();
+            t.setText(name + " " + value);
+        } 
+    }
+
+    public Model getModel() {
+        return this.model;
+    }
+
+    public ModelView getModelView() {
+        return this.modelView;
+    }
+}

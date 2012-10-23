@@ -56,6 +56,8 @@ public class TrytonCall {
     public static final int CALL_MENUS_NOK = -4;
     public static final int CALL_VIEWS_OK = 4;
     public static final int CALL_VIEWS_NOK = -5;
+    public static final int CALL_DATA_OK = 5;
+    public static final int CALL_DATA_NOK = -6;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -205,7 +207,8 @@ public class TrytonCall {
     /** Utility function to search and read models in one function call. */
     private static JSONArray search(int userId, String cookie,
                                     Preferences prefs, String model,
-                                    List args, int offset, int count) {
+                                    List args, int offset, int count)
+        throws JSONRPCException, JSONException {
         if (c == null) {
             return null;
         }
@@ -214,26 +217,22 @@ public class TrytonCall {
         if (args != null) {
             // TODO: convert the list of arguments to a JSONArray
         }
-        try {
-            Object resp = c.call(model + ".search", userId, cookie, jsArgs,
-                                 offset, count, JSONObject.NULL, prefs.json());
-            if (resp instanceof JSONArray) {
-                // Get the ids
-                JSONArray jsIds = (JSONArray) resp;
-                int[] ids = new int[jsIds.length()];
-                for (int i = 0; i < ids.length; i++) {
-                    ids[i] = jsIds.getInt(i);
-                }
-                // Read the models
-                resp = c.call(model + ".read", userId, cookie, jsIds,
-                              new JSONArray(), prefs.json());
-                if (resp instanceof JSONArray) {
-                    // We've got them!
-                    return (JSONArray) resp;
-                }
+        Object resp = c.call(model + ".search", userId, cookie, jsArgs,
+                             offset, count, JSONObject.NULL, prefs.json());
+        if (resp instanceof JSONArray) {
+            // Get the ids
+            JSONArray jsIds = (JSONArray) resp;
+            int[] ids = new int[jsIds.length()];
+            for (int i = 0; i < ids.length; i++) {
+                ids[i] = jsIds.getInt(i);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            // Read the models
+            resp = c.call(model + ".read", userId, cookie, jsIds,
+                          new JSONArray(), prefs.json());
+            if (resp instanceof JSONArray) {
+                // We've got them!
+                return (JSONArray) resp;
+            }
         }
         return null;
     }
@@ -425,6 +424,39 @@ public class TrytonCall {
                     m.obj = e;
                 } catch (JSONRPCException e) {
                     m.what = CALL_VIEWS_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;
+    }
+
+    public static boolean getData(final int userId, final String cookie,
+                           final Preferences prefs,
+                           final String modelName,
+                           final int offset, final int count,
+                           final Handler h) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                List<Model> allData = new ArrayList<Model>();
+                try {
+                    JSONArray result = search(userId, cookie, prefs,
+                                              "model." + modelName,
+                                              null, offset, count);
+                    for (int i = 0; i < result.length(); i++) {
+                        JSONObject jsData = result.getJSONObject(i);
+                        Model data = new Model(modelName, jsData);
+                        allData.add(data);
+                    }
+                    m.what = CALL_DATA_OK;
+                    m.obj = allData;
+                } catch (Exception e) {
+                    m.what = CALL_DATA_NOK;
                     m.obj = e;
                 }
                 m.sendToTarget();
