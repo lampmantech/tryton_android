@@ -18,13 +18,13 @@
 package org.tryton.client.models;
 
 import android.graphics.drawable.Drawable;
-import com.larvalabs.svgandroid.SVG;
-import com.larvalabs.svgandroid.SVGParser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.io.Serializable;
+
+import org.tryton.client.tools.SVGFactory;
 
 /** A menu entry */
 public class MenuEntry implements Serializable {
@@ -36,6 +36,7 @@ public class MenuEntry implements Serializable {
     // icon is declared transient as Drawables are not serializable
     private transient Drawable icon;
     private String iconSource;
+    private String iconName;
     private int sequence;
     private List<MenuEntry> children;
 
@@ -74,15 +75,15 @@ public class MenuEntry implements Serializable {
     }
 
     public Drawable getIcon() {
-        if (this.icon == null && this.iconSource != null) {
-            System.out.println("Creating svg for " + label);
-            SVG svg = SVGParser.getSVGFromString(this.iconSource);
-            this.icon = svg.createPictureDrawable();
+        if (this.icon == null
+            && this.iconSource != null && this.iconName != null) {
+            this.icon = SVGFactory.getDrawable(this.iconName, this.iconSource);
         }
         return icon;
     }
 
-    public void setIconSource(String source) {
+    public void setIconSource(String iconName, String source) {
+        this.iconName = iconName;
         this.iconSource = source;
     }
    

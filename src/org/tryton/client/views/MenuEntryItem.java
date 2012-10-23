@@ -19,6 +19,7 @@ package org.tryton.client.views;
 
 import org.tryton.client.R;
 import org.tryton.client.models.MenuEntry;
+import org.tryton.client.tools.SVGFactory;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -27,16 +28,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
-import com.larvalabs.svgandroid.SVG;
-import com.larvalabs.svgandroid.SVGParser;
 
 public class MenuEntryItem extends RelativeLayout {
-
-    /** Memory cache for default icon */
-    private static Drawable defaultFolderIcon = null;
-    private static Drawable defaultWizardIcon = null;
-    private static Drawable defaultReportIcon = null;
-    private static Drawable defaultURLIcon = null;
 
     private MenuEntry entry;
 
@@ -65,34 +58,26 @@ public class MenuEntryItem extends RelativeLayout {
 
     private void setDefaultIcon(Context ctx) {
         if (this.entry.getChildren().size() > 0) {
-            if (defaultFolderIcon == null) {
-                SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
-                                                       R.raw.tryton_open);
-                defaultFolderIcon = svg.createPictureDrawable();
-            }
-            this.icon.setImageDrawable(defaultFolderIcon);
+            Drawable folderIcon = SVGFactory.getDrawable("tryton-open",
+                                                         R.raw.tryton_open,
+                                                         ctx);
+            this.icon.setImageDrawable(folderIcon);
         } else if (this.entry.getActionType() != null) {
             if (this.entry.getActionType().equals("ir.action.wizard")) {
-                if (defaultWizardIcon == null) {
-                    SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
-                                                           R.raw.tryton_executable);
-                    defaultWizardIcon = svg.createPictureDrawable();
-                }
-                this.icon.setImageDrawable(defaultWizardIcon);
+                Drawable wizardIcon = SVGFactory.getDrawable("tryton-executable",
+                                                             R.raw.tryton_executable,
+                                                             ctx);
+                this.icon.setImageDrawable(wizardIcon);
             } else if (this.entry.getActionType().equals("ir.action.report")) {
-                if (defaultReportIcon == null) {
-                    SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
-                                                           R.raw.tryton_print);
-                    defaultReportIcon = svg.createPictureDrawable();
-                }
-                this.icon.setImageDrawable(defaultReportIcon);
+                Drawable reportIcon = SVGFactory.getDrawable("tryton-print",
+                                                             R.raw.tryton_print,
+                                                             ctx);
+                this.icon.setImageDrawable(reportIcon);
             } else if (this.entry.getActionType().equals("ir.action.url")) {
-                if (defaultURLIcon == null) {
-                    SVG svg = SVGParser.getSVGFromResource(ctx.getResources(),
-                                                           R.raw.tryton_web_browser);
-                    defaultURLIcon = svg.createPictureDrawable();
-                }
-                this.icon.setImageDrawable(defaultURLIcon);
+                Drawable urlIcon = SVGFactory.getDrawable("tryton-web-browser",
+                                                          R.raw.tryton_web_browser,
+                                                          ctx);
+                this.icon.setImageDrawable(urlIcon);
             } else {
                 this.icon.setImageDrawable(null);
             }
