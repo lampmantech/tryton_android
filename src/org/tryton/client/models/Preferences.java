@@ -17,6 +17,7 @@
 */
 package org.tryton.client.models;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /** User preferences as set on the server */
@@ -26,6 +27,43 @@ public class Preferences {
 
     public Preferences(JSONObject source) {
         this.source = source;
+    }
+
+    public String getDateFormat() {
+        try {
+            JSONObject locale = this.source.getJSONObject("locale");
+            return locale.getString("date");
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    public char getThousandsSeparator() {
+        try {
+            JSONObject locale = this.source.getJSONObject("locale");
+            String sep = locale.getString("thousands_sep");
+            if (sep.length() > 0) {
+                return locale.getString("thousands_sep").charAt(0);
+            } else {
+                return ' ';
+            }
+        } catch (JSONException e) {
+            return ' ';
+        }
+    }
+
+    public char getDecimalPoint() {
+        try {
+            JSONObject locale = this.source.getJSONObject("locale");
+            String decPoint = locale.getString("decimal_point");
+            if (decPoint.length() > 0) {
+                return locale.getString("decimal_point").charAt(0);
+            } else {
+                return '.';
+            }
+        } catch (JSONException e) {
+            return '.';
+        }
     }
 
     public JSONObject json() {

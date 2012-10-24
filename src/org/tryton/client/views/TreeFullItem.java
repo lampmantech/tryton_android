@@ -18,6 +18,7 @@
 package org.tryton.client.views;
 
 import org.tryton.client.R;
+import org.tryton.client.data.Session;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.tools.TreeViewFactory;
@@ -60,7 +61,9 @@ public class TreeFullItem extends LinearLayout {
             if (name == null) {
                 name = (String) field.get("name");
             }
-            String value = TreeViewFactory.getView(field, this.model, ctx);
+            String value = TreeViewFactory.getView(field, this.model,
+                                                   Session.current.prefs,
+                                                   ctx);
             t.setText(name + " " + value);
         } 
     }

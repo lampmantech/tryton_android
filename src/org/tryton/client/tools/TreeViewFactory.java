@@ -19,17 +19,21 @@ package org.tryton.client.tools;
 
 import android.content.Context;
 import android.util.Log;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.tryton.client.R;
 import org.tryton.client.models.Model;
+import org.tryton.client.models.Preferences;
 
 /** Factory to convert various data types to string for tree views. */
 public class TreeViewFactory {
 
-    public static String getView(Model field, Model data, Context ctx) {
+    public static String getView(Model field, Model data,
+                                 Preferences prefs,Context ctx) {
         String name = (String) field.get("name");
         if (name == null || data.get(name) == null) {
             return null;
@@ -61,7 +65,6 @@ public class TreeViewFactory {
         } else if (type.equals("sha")) {
             System.out.println("Sha type not supported yet");
         } else if (type.equals("float") || type.equals("numeric")) {
-            String digits = (String) data.get("digits");
             double dval = 0;
             if (value instanceof JSONObject) {
                 JSONObject jsVal = (JSONObject) value;
@@ -73,16 +76,28 @@ public class TreeViewFactory {
             } else {
                 dval = (Double)value;
             }
-            String format = "%.2f";
+            // Set default format
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setDecimalSeparator(prefs.getDecimalPoint());
+            symbols.setGroupingSeparator(prefs.getThousandsSeparator());
+            String format = "###,##0.###";
+            // Get digits format
+            String digits = (String) field.get("digits");
+            System.out.println(digits);
             if (digits != null && digits != JSONObject.NULL) {
-                digits = digits.substring(1, digits.length() - 2);
+                digits = digits.substring(1, digits.length() - 1);
                 String[] split = digits.split(",");
-                int intNum = Integer.parseInt(split[0]);
-                int decNum = Integer.parseInt(split[1]);
-                format = "%." + decNum +"f";
+                int intNum = Integer.parseInt(split[0].trim());
+                int decNum = Integer.parseInt(split[1].trim());
+                format = "###,##0";
+                format += ".";
+                for (int i = 0; i < decNum; i++) {
+                    format += "0";
+                }
             }
-            // TODO: use preferences for decimal formatting
-            return String.format(format, dval);
+            System.out.println(format);
+            DecimalFormat formatter = new DecimalFormat(format, symbols);
+            return formatter.format(dval);
         } else if (type.equals("date")) {
             JSONObject jsDate = (JSONObject) value;
             try {
@@ -90,6 +105,14 @@ public class TreeViewFactory {
                 int month = jsDate.getInt("month");
                 int day = jsDate.getInt("day");
                 // TODO: use preferences for date formatting
+                String format = prefs.getDateFormat();
+                if (format != null) {
+                    String result = format;
+                    result = result.replace("%d", String.format("%02d", day));
+                    result = result.replace("%m", String.format("%02d", month));
+                    result = result.replace("%Y", String.format("%04d", year));
+                    return result;
+                }
                 return String.format("%04d/%02d/%02d", year, month, day);
             } catch (JSONException e) {
                 // TODO: invalid date
