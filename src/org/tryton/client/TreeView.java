@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.MenuItem;
 import android.widget.ListView;
 import java.io.IOException;
 import java.util.List;
@@ -139,5 +140,29 @@ public class TreeView extends Activity implements Handler.Callback {
         return true;
     }
 
+    //////////////////
+    // Menu section //
+    //////////////////
+    private static final int MENU_LOGOUT_ID = 0;
+    /** Called on menu initialization */
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        // Create and add configuration entry
+        MenuItem config = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 0,
+                                   this.getString(R.string.general_logout));
+        config.setIcon(android.R.drawable.ic_menu_preferences);
+        return true;
+    }
+
+    /** Called on menu selection */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case MENU_LOGOUT_ID:
+            Start.logout(this);
+            break;
+        }
+        return true;
+    }
 
 }

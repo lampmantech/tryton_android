@@ -192,15 +192,7 @@ public class Menu extends Activity implements Handler.Callback,
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case MENU_LOGOUT_ID:
-            // Clear on server then on client
-            TrytonCall.logout(Session.current.userId, Session.current.cookie);
-            Session.current.clear();
-            // Call back the login screen.
-            // FLAG_ACTIVITY_CLEAR_TOP will erase all activities on top of it.
-            Intent i = new Intent(this, Start.class);
-            Start.wakeUp();
-            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            this.startActivity(i);
+            Start.logout(this);
             break;
         }
         return true;

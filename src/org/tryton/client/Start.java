@@ -48,9 +48,6 @@ public class Start extends Activity implements Handler.Callback {
     public static boolean isAwake() {
         return awake;
     }
-    public static void wakeUp() {
-        awake = true;
-    }
 
     private String serverVersion;
 
@@ -186,6 +183,19 @@ public class Start extends Activity implements Handler.Callback {
         TrytonCall.login(this.login.getText().toString(),
                          this.password.getText().toString(),
                          new Handler(this));
+    }
+
+    /** Logout from an other activity. Brings back login screen. */
+    public static void logout(Activity caller) {
+        // Clear on server then on client
+        TrytonCall.logout(Session.current.userId, Session.current.cookie);
+        Session.current.clear();
+        // Call back the login screen.
+        // FLAG_ACTIVITY_CLEAR_TOP will erase all activities on top of it.
+        Intent i = new Intent(caller, Start.class);
+        awake = true;
+        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        caller.startActivity(i);
     }
 
     /** Show the loading dialog if not already shown. */
