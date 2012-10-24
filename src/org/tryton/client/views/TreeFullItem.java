@@ -20,6 +20,7 @@ package org.tryton.client.views;
 import org.tryton.client.R;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
+import org.tryton.client.tools.TreeViewFactory;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -45,10 +46,10 @@ public class TreeFullItem extends LinearLayout {
             this.values.add(t);
             this.addView(t);
         }
-        this.reuse(model);
+        this.reuse(model, context);
     }
 
-    public void reuse(Model model) {
+    public void reuse(Model model, Context ctx) {
         this.model = model;
         List<Model> structure = this.modelView.getStructure();
         for (int i = 0; i < structure.size(); i++) {
@@ -59,7 +60,7 @@ public class TreeFullItem extends LinearLayout {
             if (name == null) {
                 name = (String) field.get("name");
             }
-            String value = this.model.get(fieldName).toString();
+            String value = TreeViewFactory.getView(field, this.model, ctx);
             t.setText(name + " " + value);
         } 
     }

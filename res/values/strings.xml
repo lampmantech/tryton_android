@@ -24,6 +24,8 @@
   <string name="general_config">Configure</string>
   <string name="general_logout">Logout</string>
   <string name="general_about">About</string>
+  <string name="general_true">Yes</string>
+  <string name="general_false">No</string>
   
   <!-- Login labels -->
   <string name="login_user">User</string>
