@@ -147,10 +147,10 @@ public class TreeView extends Activity implements Handler.Callback {
     /** Called on menu initialization */
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
-        // Create and add configuration entry
-        MenuItem config = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 0,
+        // Create and add logout entry
+        MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 0,
                                    this.getString(R.string.general_logout));
-        config.setIcon(android.R.drawable.ic_menu_preferences);
+        logout.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
         return true;
     }
 
