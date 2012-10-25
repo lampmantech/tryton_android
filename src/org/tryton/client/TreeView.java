@@ -39,6 +39,7 @@ import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 import org.tryton.client.views.TreeFullAdapter;
 import org.tryton.client.views.TreeSummaryAdapter;
+import org.tryton.client.views.TreeSummaryItem;
 
 public class TreeView extends Activity implements Handler.Callback {
 
@@ -218,12 +219,19 @@ public class TreeView extends Activity implements Handler.Callback {
         }
         // Set mode label
         MenuItem mode = menu.findItem(MENU_MODE_ID);
-        switch (this.mode) {
-        case MODE_SUMMARY:
-            mode.setTitle(R.string.tree_switch_mode_extended);
-            break;
-        case MODE_EXTENDED:
-            mode.setTitle(R.string.tree_switch_mode_summary);
+        if (mode != null) {
+            switch (this.mode) {
+            case MODE_SUMMARY:
+                mode.setTitle(R.string.tree_switch_mode_extended);
+                break;
+            case MODE_EXTENDED:
+                mode.setTitle(R.string.tree_switch_mode_summary);
+            }
+        }
+        // Remove mode switch if the view has less than 3 fields
+        int fieldsCount = this.viewTypes.getView("tree").getStructure().size();
+        if (fieldsCount <= TreeSummaryItem.FIELDS_COUNT) {
+            menu.removeItem(MENU_MODE_ID);
         }
         return true;
     }

@@ -33,6 +33,8 @@ import java.util.List;
 
 public class TreeSummaryItem extends LinearLayout {
 
+    public static final int FIELDS_COUNT = 2;
+
     private ModelView modelView;
     private Model model;
     private List<TextView> values;
@@ -42,7 +44,8 @@ public class TreeSummaryItem extends LinearLayout {
         this.setOrientation(LinearLayout.VERTICAL);
         this.modelView = modelView;
         this.values = new ArrayList<TextView>();
-        for (int i = 0; i < Math.min(this.modelView.getStructure().size(), 2);
+        for (int i = 0; i < Math.min(this.modelView.getStructure().size(),
+                                     FIELDS_COUNT);
              i++) {
             TextView t = new TextView(context);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -57,7 +60,8 @@ public class TreeSummaryItem extends LinearLayout {
     public void reuse(Model model, Context ctx) {
         this.model = model;
         List<Model> structure = this.modelView.getStructure();
-        for (int i = 0; i < Math.min(structure.size(), 2); i++) {
+        for (int i = 0; i < Math.min(structure.size(),
+                                     FIELDS_COUNT); i++) {
             TextView t = this.values.get(i);
             Model field = structure.get(i);
             String value = TreeViewFactory.getView(field, this.model,
