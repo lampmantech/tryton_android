@@ -30,7 +30,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.tryton.client.data.Session;
 import org.tryton.client.models.Preferences;
@@ -150,9 +149,10 @@ public class Start extends Activity implements Handler.Callback {
                 TrytonCall.getPreferences(userId, cookie, new Handler(this));
             } else {
                 // Show login error
-                Toast t = Toast.makeText(this, R.string.login_bad_login,
-                                         Toast.LENGTH_LONG);
-                t.show();
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setMessage(R.string.login_bad_login);
+                b.setPositiveButton(android.R.string.ok, null);
+                b.show();
             }
             break;
         case TrytonCall.CALL_PREFERENCES_OK:
