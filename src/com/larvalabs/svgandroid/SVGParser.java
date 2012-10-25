@@ -397,9 +397,12 @@ public class SVGParser {
      */
     private static Path doPath(String s) {
         int n = s.length();
+        Path p = new Path();
+        if (s.length() == 0) {
+            return p;
+        }
         ParserHelper ph = new ParserHelper(s, 0);
         ph.skipWhitespace();
-        Path p = new Path();
         float lastX = 0;
         float lastY = 0;
         float lastX1 = 0;
