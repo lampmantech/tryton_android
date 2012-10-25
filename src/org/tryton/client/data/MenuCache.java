@@ -54,6 +54,7 @@ public class MenuCache {
      * If the cache is not set it will return null
      * (beware of NullPointerExceptions)
      */
+    @SuppressWarnings("unchecked")
     public static List<MenuEntry> load(Context ctx)
         throws IOException {
         FileInputStream fis = ctx.openFileInput(CACHE_ID);

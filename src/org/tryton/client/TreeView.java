@@ -138,6 +138,7 @@ public class TreeView extends Activity implements Handler.Callback {
     }
 
     /** Handle TrytonCall feedback. */
+    @SuppressWarnings("unchecked")
     public boolean handleMessage(Message msg) {
         // Close the loading dialog if present
         this.hideLoadingDialog();
