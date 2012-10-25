@@ -162,9 +162,6 @@ public class TreeViewFactory {
         } else if (type.equals("reference")) {
             System.out.println("Reference type not supported yet");
         } else if (type.equals("many2one")) {
-            for (String key : data.getAttributeNames()) {
-                System.out.println(key + " - " + data.get(key));
-            }
             System.out.println("many2one type not supported yet");
         } else if (type.equals("many2many") || type.equals("one2many")) {
             JSONArray jsMany = (JSONArray) value;
@@ -178,7 +175,6 @@ public class TreeViewFactory {
         } else {
             System.out.println("Unknown type " + type);
         }
-        System.out.println(value.toString());
         return value.toString();
     }
 }
