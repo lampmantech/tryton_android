@@ -26,6 +26,8 @@
   <string name="general_about">About</string>
   <string name="general_true">Yes</string>
   <string name="general_false">No</string>
+  <string name="general_new_record">New record</string>
+  <string name="general_graph">Graph</string>
   
   <!-- Login labels -->
   <string name="login_user">User</string>
@@ -40,6 +42,8 @@
 
   <!-- View labels -->
   <string name="view_loading">Loading views</string>
+  <string name="tree_switch_mode_summary">Summary mode</string>
+  <string name="tree_switch_mode_extended">Extended mode</string>
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string>

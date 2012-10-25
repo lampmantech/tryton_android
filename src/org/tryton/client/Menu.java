@@ -181,7 +181,7 @@ public class Menu extends Activity implements Handler.Callback,
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
         // Create and add configuration entry
-        MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 0,
+        MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 100,
                                    this.getString(R.string.general_logout));
         logout.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
         return true;

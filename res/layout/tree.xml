@@ -27,4 +27,8 @@
   <ListView android:id="@+id/tree_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" />
+  <ExpandableListView android:id="@+id/tree_sum_list"
+                      android:layout_width="fill_parent"
+                      android:layout_height="fill_parent"
+                      android:visibility="gone" />
 </FrameLayout>

@@ -26,6 +26,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ExpandableListView;
 import android.widget.ListView;
 import java.io.IOException;
 import java.util.List;
@@ -36,6 +38,7 @@ import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 import org.tryton.client.views.TreeFullAdapter;
+import org.tryton.client.views.TreeSummaryAdapter;
 
 public class TreeView extends Activity implements Handler.Callback {
 
@@ -53,11 +56,19 @@ public class TreeView extends Activity implements Handler.Callback {
     }
     private static MenuEntry entryInitializer;
     private static ModelViewTypes viewTypesInitializer;
+
+    private static final int MODE_SUMMARY = 1;
+    private static final int MODE_EXTENDED = 2;
+
+    private static final int PAGING_SUMMARY = 40;
+    private static final int PAGING_EXTENDED = 10;
     
     private ModelViewTypes viewTypes;
     private List<Model> data;
+    private int mode;
     private ProgressDialog loadingDialog;
     private ListView tree;
+    private ExpandableListView sumtree;
 
     @Override
     public void onCreate(Bundle state) {
@@ -65,30 +76,48 @@ public class TreeView extends Activity implements Handler.Callback {
         // Init data
         if (state != null) {
             this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
+            this.mode = state.getInt("mode");
         } else if (entryInitializer != null) {
             this.showLoadingDialog();
             Session s = Session.current;
             TrytonCall.getViews(s.userId, s.cookie, s.prefs, entryInitializer,
                                 new Handler(this));
             entryInitializer = null; // Reset (consume setup)
+            this.mode = MODE_EXTENDED;
         } else if (viewTypesInitializer != null) {
             this.viewTypes = viewTypesInitializer;
             viewTypesInitializer = null; // Reset (consume setup)
+            this.mode = MODE_EXTENDED;
         }
         // Init view
         this.setContentView(R.layout.tree);
         this.tree = (ListView) this.findViewById(R.id.tree_list);
+        this.sumtree = (ExpandableListView) this.findViewById(R.id.tree_sum_list);
     }
     
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable("viewTypes", this.viewTypes);
+        outState.putInt("mode", this.mode);
     }
 
     private void updateList() {
-        TreeFullAdapter adapt = new TreeFullAdapter(this.viewTypes.getView("tree"),
-                                                    this.data);
-        this.tree.setAdapter(adapt);
+        switch (this.mode) {
+        case MODE_EXTENDED:
+            TreeFullAdapter adapt = new TreeFullAdapter(this.viewTypes.getView("tree"),
+                                                        this.data);
+            this.tree.setAdapter(adapt);
+            this.sumtree.setVisibility(View.GONE);
+            this.tree.setVisibility(View.VISIBLE);
+            break;
+        case MODE_SUMMARY:
+            TreeSummaryAdapter sumadapt = new TreeSummaryAdapter(this.viewTypes.getView("tree"), this.data);
+            this.sumtree.setAdapter(sumadapt);
+            this.sumtree.setVisibility(View.VISIBLE);
+            this.tree.setVisibility(View.GONE);
+            break;
+        }
+
     }
 
     public void showLoadingDialog() {
@@ -144,13 +173,46 @@ public class TreeView extends Activity implements Handler.Callback {
     // Menu section //
     //////////////////
     private static final int MENU_LOGOUT_ID = 0;
+    private static final int MENU_NEW_ID = 1;
+    private static final int MENU_GRAPH_ID = 2;
+    private static final int MENU_MODE_ID = 3;
     /** Called on menu initialization */
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
         // Create and add logout entry
-        MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 0,
+        MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 100,
                                    this.getString(R.string.general_logout));
         logout.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        // Set form entry (new data)
+        MenuItem add = menu.add(android.view.Menu.NONE, MENU_NEW_ID, 1,
+                                this.getString(R.string.general_new_record));
+        add.setIcon(android.R.drawable.ic_menu_add);
+        // Set view mode switch
+        MenuItem mode = menu.add(android.view.Menu.NONE, MENU_MODE_ID, 10,
+                                 this.getString(R.string.tree_switch_mode_summary));
+        mode.setIcon(android.R.drawable.ic_menu_crop);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(android.view.Menu menu) {
+        // Add graph entry if there is a graph view
+        if (this.viewTypes.getView("graph") != null
+            && menu.findItem(MENU_GRAPH_ID) == null) {
+            // Set graph entry
+            MenuItem graph = menu.add(android.view.Menu.NONE, MENU_GRAPH_ID, 2,
+                                      this.getString(R.string.general_graph));
+            graph.setIcon(android.R.drawable.ic_menu_gallery);
+        }
+        // Set mode label
+        MenuItem mode = menu.findItem(MENU_MODE_ID);
+        switch (this.mode) {
+        case MODE_SUMMARY:
+            mode.setTitle(R.string.tree_switch_mode_extended);
+            break;
+        case MODE_EXTENDED:
+            mode.setTitle(R.string.tree_switch_mode_summary);
+        }
         return true;
     }
 
@@ -161,6 +223,13 @@ public class TreeView extends Activity implements Handler.Callback {
         case MENU_LOGOUT_ID:
             Start.logout(this);
             break;
+        case MENU_MODE_ID:
+            if (this.mode == MODE_SUMMARY) {
+                this.mode = MODE_EXTENDED;
+            } else {
+                this.mode = MODE_SUMMARY;
+            }
+            this.updateList();
         }
         return true;
     }
