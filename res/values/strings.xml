@@ -42,6 +42,7 @@
 
   <!-- View labels -->
   <string name="view_loading">Loading views</string>
+  <string name="data_loading">Loading data</string>
   <string name="tree_switch_mode_summary">Summary mode</string>
   <string name="tree_switch_mode_extended">Extended mode</string>
   

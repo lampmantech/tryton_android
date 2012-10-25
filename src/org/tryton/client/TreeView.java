@@ -78,7 +78,7 @@ public class TreeView extends Activity implements Handler.Callback {
             this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
             this.mode = state.getInt("mode");
         } else if (entryInitializer != null) {
-            this.showLoadingDialog();
+            this.showLoadingDialog(LOADING_VIEWS);
             Session s = Session.current;
             TrytonCall.getViews(s.userId, s.cookie, s.prefs, entryInitializer,
                                 new Handler(this));
@@ -120,11 +120,22 @@ public class TreeView extends Activity implements Handler.Callback {
 
     }
 
-    public void showLoadingDialog() {
+    private static final int LOADING_VIEWS = 0;
+    private static final int LOADING_DATA = 1;
+    public void showLoadingDialog(int type) {
         if (this.loadingDialog == null) {
             this.loadingDialog = new ProgressDialog(this);
             this.loadingDialog.setIndeterminate(true);
-            this.loadingDialog.setMessage(this.getString(R.string.view_loading));
+            String message;
+            switch (type) {
+            case LOADING_VIEWS:
+                message = this.getString(R.string.view_loading);
+                break;
+            default:
+                message = this.getString(R.string.data_loading);
+                break;
+            }
+            this.loadingDialog.setMessage(message);
             this.loadingDialog.show();
         }        
     }
@@ -149,7 +160,7 @@ public class TreeView extends Activity implements Handler.Callback {
             this.viewTypes = viewTypes;
             // Load data
             String model = viewTypes.getModelName();
-            this.showLoadingDialog();
+            this.showLoadingDialog(LOADING_DATA);
             Session s = Session.current;
             TrytonCall.getData(s.userId, s.cookie, s.prefs, model, 0, 10,
                                 new Handler(this));
