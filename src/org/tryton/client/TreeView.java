@@ -30,6 +30,7 @@ import android.view.View;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.tryton.client.models.MenuEntry;
@@ -77,6 +78,13 @@ public class TreeView extends Activity implements Handler.Callback {
         // Init data
         if (state != null) {
             this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
+            if (state.containsKey("data_count")) {
+                int count = state.getInt("data_count");
+                this.data = new ArrayList<Model>();
+                for (int i = 0; i < count; i++) {
+                    this.data.add((Model)state.getSerializable("data_" + i));
+                }
+            }
             this.mode = state.getInt("mode");
         } else if (entryInitializer != null) {
             this.showLoadingDialog(LOADING_VIEWS);
@@ -94,11 +102,27 @@ public class TreeView extends Activity implements Handler.Callback {
         this.setContentView(R.layout.tree);
         this.tree = (ListView) this.findViewById(R.id.tree_list);
         this.sumtree = (ExpandableListView) this.findViewById(R.id.tree_sum_list);
+        // Load data if there isn't anyone or setup the list
+        if (this.data == null && this.viewTypes != null) {
+            this.showLoadingDialog(LOADING_DATA);
+            Session s = Session.current;
+            String model = this.viewTypes.getModelName();
+            TrytonCall.getData(s.userId, s.cookie, s.prefs, model, 0, 10,
+                                new Handler(this));
+        } else if (this.data != null) {
+            this.updateList();
+        }
     }
     
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable("viewTypes", this.viewTypes);
+        if (this.data != null) {
+            outState.putSerializable("data_count", this.data.size());
+            for (int i = 0; i < this.data.size(); i++) {
+                outState.putSerializable("data_" + i, this.data.get(i));
+            }
+        }
         outState.putInt("mode", this.mode);
     }
 
