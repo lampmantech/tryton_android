@@ -83,7 +83,6 @@ public class TreeViewFactory {
             String format = "###,##0.###";
             // Get digits format
             String digits = (String) field.get("digits");
-            System.out.println(digits);
             if (digits != null && digits != JSONObject.NULL) {
                 digits = digits.substring(1, digits.length() - 1);
                 String[] split = digits.split(",");
@@ -95,7 +94,6 @@ public class TreeViewFactory {
                     format += "0";
                 }
             }
-            System.out.println(format);
             DecimalFormat formatter = new DecimalFormat(format, symbols);
             return formatter.format(dval);
         } else if (type.equals("date")) {

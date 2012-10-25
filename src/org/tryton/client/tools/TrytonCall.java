@@ -344,6 +344,23 @@ public class TrytonCall {
                     }
                     // We've got our menu tree, sort it by sequence
                     MenuEntry.SequenceSorter.recursiveSort(topLevelMenu);
+                    // Trick: as we can't "double click" to open the view
+                    // of a parent entry we add a new child entry with the
+                    // same action to open it.
+                    for (int id : allMenus.keySet()) {
+                        MenuEntry entry = allMenus.get(id);
+                        if (entry.getChildren().size() != 0
+                            && entry.getActionType() != null) {
+                            MenuEntry child = new MenuEntry(entry.getId(),
+                                                            entry.getLabel(),
+                                                            entry.getSequence(),
+                                                            entry.getActionType(),
+                                                            entry.getActionId());
+                            child.setIconSource(entry.getIconName(),
+                                                entry.getIconSource());
+                            entry.preAppendChild(child);
+                        }
+                    }
                     // All done, return it
                     m.what = CALL_MENUS_OK;
                     m.obj = topLevelMenu;

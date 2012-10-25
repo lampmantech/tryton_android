@@ -58,6 +58,10 @@ public class MenuEntry implements Serializable {
         return this.label;
     }
 
+    public int getSequence() {
+        return this.sequence;
+    }
+
     public String getActionType() {
         return this.actionType;
     }
@@ -69,9 +73,13 @@ public class MenuEntry implements Serializable {
     public List<MenuEntry> getChildren() {
         return this.children;
     }
-
+    /** Add a child at the end */
     public void addChild(MenuEntry child) {
         this.children.add(child);
+    }
+    /** Add a child at the beginning */
+    public void preAppendChild(MenuEntry child) {
+        this.children.add(0, child);
     }
 
     public Drawable getIcon() {
@@ -85,6 +93,13 @@ public class MenuEntry implements Serializable {
     public void setIconSource(String iconName, String source) {
         this.iconName = iconName;
         this.iconSource = source;
+    }
+
+    public String getIconSource() {
+        return this.iconSource;
+    }
+    public String getIconName() {
+        return this.iconName;
     }
    
     public static class SequenceSorter implements Comparator<MenuEntry> {
