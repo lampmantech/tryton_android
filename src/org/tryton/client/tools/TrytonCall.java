@@ -213,6 +213,7 @@ public class TrytonCall {
         JSONArray jsArgs = new JSONArray();
         if (args != null) {
             // TODO: convert the list of arguments to a JSONArray
+            System.out.println("Giving parameters to search not supported yet");
         }
         Object resp = c.call(model + ".search", userId, cookie, jsArgs,
                              offset, count, JSONObject.NULL, prefs.json());
@@ -230,6 +231,29 @@ public class TrytonCall {
                 // We've got them!
                 return (JSONArray) resp;
             }
+        }
+        return null;
+    }
+
+    /** Get data from ids */
+    private static JSONArray read(int userId, String cookie,
+                                  Preferences prefs, String model,
+                                  List<Integer> ids)
+        throws JSONRPCException, JSONException {
+        if (c == null) {
+            return null;
+        }
+        // Prepare ids
+        JSONArray jsIds = new JSONArray();
+        for (int id : ids) {
+            jsIds.put(id);
+        }
+        // Read the models
+        Object resp = c.call(model + ".read", userId, cookie,
+                             jsIds, JSONObject.NULL, prefs.json());
+        if (resp instanceof JSONArray) {
+            // We've got them!
+            return (JSONArray) resp;
         }
         return null;
     }
@@ -434,6 +458,88 @@ public class TrytonCall {
         return true;
     }
 
+    private static void getRelationnals(int userId, String cookie,
+                                        Preferences prefs,
+                                        List<Model> models, Model relField) {
+        if (models.size() == 0) {
+            return;
+        }
+        String fieldName = relField.getString("name");
+        String relModelName = relField.getString("relation");
+        String type = relField.getString("type");
+        Map <Integer, List<Model>> whoWants = new HashMap<Integer,
+                                                          List<Model>>();
+        List<Integer> ids = new ArrayList<Integer>();
+        if (type.equals("many2one") || type.equals("one2one")) {
+            for (Model m : models) {
+                // Get the id of the relationnal data
+                Object value = m.get(fieldName);
+                if (value instanceof Model || value == JSONObject.NULL) {
+                    // This one is already loaded or not defined
+                    continue;
+                }
+                int id = (Integer) value;
+                ids.add(id);
+                // Register the model as requesting this id
+                if (whoWants.get(id) == null) {
+                    whoWants.put(id, new ArrayList<Model>());
+                }
+                whoWants.get(id).add(m);
+            }
+        } else if (type.equals("one2many") || type.equals("many2many")) {
+            for (Model m : models) {
+                // Get the ids of the relationnal data
+                Object value = m.get(fieldName);
+                if (value instanceof List || value == JSONObject.NULL) {
+                    // This one is already loaded or not defined
+                    continue;
+                }
+                JSONArray jsIds = (JSONArray) value;
+                for (int i = 0; i < jsIds.length(); i++) {
+                    try {
+                        int id = jsIds.getInt(i);
+                        ids.add(id);
+                        // Register the model as requesting this id
+                        if (whoWants.get(id) == null) {
+                            whoWants.put(id, new ArrayList<Model>());
+                        }
+                        whoWants.get(id).add(m);
+                    } catch (JSONException e) {
+                        // TODO: json exception
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        // Get all relationnal data
+        try {
+            JSONArray rels = read(userId, cookie, prefs,
+                                  "model." + relModelName,
+                                  ids);
+            for (int i = 0; i < rels.length(); i++) {
+                try {
+                    JSONObject oModel = rels.getJSONObject(i);
+                    Model model = new Model(relModelName, oModel);
+                    int id = (Integer) model.get("id");
+                    // Who wants this one? Take it!
+                    for (Model parent : whoWants.get(id)) {
+                        if (type.equals("many2one") || type.equals("one2one")) {
+                            parent.set2One(fieldName, model);
+                        } else {
+                            parent.add2Many(fieldName, model);
+                        }
+                    }
+                } catch (JSONException e) {
+                    // TODO json error
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            // TODO rpc or json error
+            e.printStackTrace();
+        }
+    }
+
     /** Get some data for a model */
     public static boolean getData(final int userId, final String cookie,
                            final Preferences prefs,
@@ -446,9 +552,36 @@ public class TrytonCall {
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
+                // Fields list by name
+                Map<String, Model> fields = new HashMap<String, Model>();
+                // Relational fields by name
+                Map<String, Model> relationnals = new HashMap<String, Model>();
+                // Data list
                 List<Model> allData = new ArrayList<Model>();
                 try {
-                    // Simply search the data and add them to a list
+                    // Get field types
+                    Object oFieldsRes = c.call("model." + modelName
+                                               + ".fields_get", userId,
+                                               cookie, JSONObject.NULL,
+                                               prefs.json());
+                    if (oFieldsRes instanceof JSONObject) {
+                        JSONObject fieldsRes = (JSONObject) oFieldsRes;
+                        JSONArray fieldNames = fieldsRes.names();
+                        for (int i = 0; i < fieldNames.length(); i++) {
+                            String name = fieldNames.getString(i);
+                            JSONObject jsData = fieldsRes.getJSONObject(name);
+                            Model field = new Model(modelName, jsData);
+                            fields.put(name, field);
+                            String type = field.getString("type");
+                            if (type.equals("many2many")
+                                || type.equals("one2many")
+                                || type.equals("many2one")
+                                || type.equals("one2one")) {
+                                relationnals.put(name, field);
+                            }
+                        }
+                    }
+                    // Search the data and add them to a list
                     JSONArray result = search(userId, cookie, prefs,
                                               "model." + modelName,
                                               null, offset, count);
@@ -456,6 +589,12 @@ public class TrytonCall {
                         JSONObject jsData = result.getJSONObject(i);
                         Model data = new Model(modelName, jsData);
                         allData.add(data);
+                    }
+                    // Check for relational fields and load them
+                    for (String name : relationnals.keySet()) {
+                        Model relField = relationnals.get(name);
+                        getRelationnals(userId, cookie, prefs, allData,
+                                        relField);
                     }
                     // Send back the list to the handler
                     m.what = CALL_DATA_OK;

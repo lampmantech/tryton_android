@@ -21,6 +21,7 @@ import android.content.Context;
 import android.util.Log;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -161,13 +162,22 @@ public class TreeViewFactory {
             }
         } else if (type.equals("reference")) {
             System.out.println("Reference type not supported yet");
-        } else if (type.equals("many2one")) {
-            System.out.println("many2one type not supported yet");
+        } else if (type.equals("many2one") || type.equals("one2one")) {
+            if (value instanceof Model) {
+                return ((Model) value).getString("name");
+            } else {
+                Log.w("Tryton", "Displaying a " + type + " field as id");
+            }
         } else if (type.equals("many2many") || type.equals("one2many")) {
-            JSONArray jsMany = (JSONArray) value;
-            return "( " + jsMany.length() + " )";
-        } else if (type.equals("one2one")) {
-            System.out.println("one2one type not supported yet");
+            if (value instanceof List) {
+                return "( " + ((List)value).size() + " )";
+            } else if (value instanceof JSONArray) {
+                // Case of non loaded relationals
+                JSONArray jsMany = (JSONArray) value;
+                return "( " + jsMany.length() + " )";
+            }
+            Log.w("Tryton", "Displaying a non identified field " + name + " "
+                  + value.getClass());
         } else if (type.equals("function")) {
             System.out.println("Function type not supported yet");
         } else if (type.equals("property")) {

@@ -18,6 +18,8 @@
 package org.tryton.client.models;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -63,5 +65,41 @@ public class Model implements Serializable {
     /** Get the value of an attribute */
     public Object get(String attributeName) {
         return this.attributes.get(attributeName);
+    }
+
+    /** Get the value of a string attribute.
+        Returns null if it is not a string */
+    public String getString(String attributeName) {
+        Object value = this.attributes.get(attributeName);
+        if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
+    }
+
+    public void set2One(String name, Model value) {
+        this.attributes.put(name, value);
+    }
+
+    /** Add a model to a many2many or one2many fields.
+        If the field is not yet a many2many or one2many (for example ids)
+        it is erased and replaced. */
+    @SuppressWarnings("unchecked")
+    public void add2Many(String name, Model value) {
+        if (!(this.attributes.get(name) instanceof List)) {
+            this.attributes.put(name, new ArrayList<Model>());
+        }
+        ((List<Model>)this.attributes.get(name)).add(value);
+    }
+    
+    /** Set human readable form for debugging */
+    @Override
+    public String toString() {
+        Object oName = this.attributes.get("name");
+        if (oName != null && oName instanceof String) {
+            return this.className + ":" + ((String) oName);
+        } else {
+            return super.toString();
+        }
     }
 }
