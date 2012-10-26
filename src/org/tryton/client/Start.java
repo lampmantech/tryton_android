@@ -72,13 +72,6 @@ public class Start extends Activity implements Handler.Callback {
         this.login = (EditText) this.findViewById(R.id.login);
         this.password = (EditText) this.findViewById(R.id.password);
         this.loginBtn = (Button) this.findViewById(R.id.login_btn);
-        // Init is done, check if user is already logged in to skip login
-        if (Session.current.userId != -1) {
-            Intent i = new Intent(this, org.tryton.client.Menu.class);
-            this.startActivity(i);
-            awake = false; // zzzz
-            return;
-        }
         // Update server version label
         this.updateVersionLabel();
     }
@@ -93,7 +86,19 @@ public class Start extends Activity implements Handler.Callback {
     @Override
     public void onResume() {
         super.onResume();
+        boolean starting = this.getIntent().getBooleanExtra("starting", true);
+        this.getIntent().putExtra("starting", false);
+        // On first start (when coming from dashboard) the intent is clean
+        // Check if user is already logged in to skip login on launch
+        if (starting && Session.current.userId != -1) {
+            System.out.println("Skipped");
+            Intent i = new Intent(this, org.tryton.client.Menu.class);
+            this.startActivity(i);
+            awake = false; // zzzz
+            return;
+        }
         if (!isAwake()) {
+            System.out.println("Killed");
             // zzz (quit)
             this.finish();
             return;
