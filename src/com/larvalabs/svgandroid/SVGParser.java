@@ -845,6 +845,9 @@ public class SVGParser {
         Gradient gradient = null;
         // Stack of transformation matrixes for group contents
         List<Matrix> groupMatrixes = new ArrayList<Matrix>();
+        // Stack of fill colors for group inheritance
+        List<String> groupFills = new ArrayList<String>();
+        List<String> groupStrokes = new ArrayList<String>();
 
         private SVGHandler(Picture picture) {
             this.picture = picture;
@@ -897,6 +900,18 @@ public class SVGParser {
             } else {
                 paint.setShader(null);
                 Integer color = SVGColors.colorValue(atts.getAttr("fill"));
+                if (color == null) {
+                    // Check for inherited group fill color
+                    for (int i = groupFills.size() - 1; i >= 0; i--) {
+                        String gFillString = groupFills.get(i);
+                        if (gFillString != null) {
+                            color = SVGColors.colorValue(gFillString);
+                            if (color != null) {
+                                break;
+                            }
+                        }
+                    }
+                }
                 if (color != null) {
                     doColor(atts, color, true);
                     paint.setStyle(Paint.Style.FILL);
@@ -935,6 +950,18 @@ public class SVGParser {
                 }
             } else {
                 color = SVGColors.colorValue(atts.getAttr("stroke"));
+            }
+            if (color == null) {
+                // Check for inherited group strokes
+                for (int i = groupStrokes.size() - 1; i >= 0; i--) {
+                    String gStrokeString = groupStrokes.get(i);
+                    if (gStrokeString != null) {
+                        color = SVGColors.colorValue(gStrokeString);
+                        if (color != null) {
+                            break;
+                        }
+                    }
+                }
             }
             if (color != null) {
                 doColor(atts, color, false);
@@ -1141,6 +1168,9 @@ public class SVGParser {
                     canvas.save();
                     canvas.concat(matrix);
                 }
+                // Add fill and stroke rules if any
+                groupFills.add(getStringAttr("fill", atts));
+                groupStrokes.add(getStringAttr("stroke", atts));
             } else if (!hidden && localName.equals("rect")) {
                 Float x = getFloatAttr("x", atts);
                 if (x == null) {
@@ -1353,6 +1383,9 @@ public class SVGParser {
                 // Pop group matrixes
                 groupMatrixes.remove(groupMatrixes.size() - 1);
                 canvas.restore();
+                // Pop fill and stroke
+                groupFills.remove(groupFills.size() - 1);
+                groupStrokes.remove(groupStrokes.size() - 1);
             }
         }
     }
