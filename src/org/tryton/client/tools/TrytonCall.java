@@ -1,19 +1,19 @@
 /*
-    Tryton Android
-    Copyright (C) 2012 SARL SCOP Scil (contact@scil.coop)
+  Tryton Android
+  Copyright (C) 2012 SARL SCOP Scil (contact@scil.coop)
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 package org.tryton.client.tools;
 
@@ -43,6 +43,7 @@ import org.tryton.client.models.Preferences;
  * Responses are given back to caller through handlers. */
 public class TrytonCall {
 
+    public static final int NOT_LOGGED = -256;
     public static final int CALL_VERSION_OK = 0;
     public static final int CALL_VERSION_NOK = -1;
     public static final int CALL_LOGIN_OK = 1;
@@ -55,6 +56,8 @@ public class TrytonCall {
     public static final int CALL_VIEWS_NOK = -5;
     public static final int CALL_DATA_OK = 5;
     public static final int CALL_DATA_NOK = -6;
+    public static final int CALL_DATACOUNT_OK = 6;
+    public static final int CALL_DATACOUNT_NOK = -7;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -154,6 +157,12 @@ public class TrytonCall {
         return true;
     }
 
+    /** Check if the response of a call is "Not logged in".
+     */
+    private static boolean isNotLogged(JSONRPCException e) {
+        return e.getMessage().equals("[\"NotLogged\"]");
+    }
+
     /** Logout. This is a send and forget call (don't expect any result) */
     public static boolean logout(final int userId, final String cookie) {
         if (c == null) {
@@ -190,6 +199,13 @@ public class TrytonCall {
                         // Unknown result
                         m.what = CALL_PREFERENCES_NOK;
                         m.obj = new Exception("Unknown response type " + resp);
+                    }
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_PREFERENCES_NOK;
+                        m.obj = e;
                     }
                 } catch (Exception e) {
                     m.what = CALL_PREFERENCES_NOK;
@@ -364,7 +380,7 @@ public class TrytonCall {
                         if (jsMenu.isNull("parent")) {
                             // This is a top level menu entry
                             topLevelMenu.add(menu);
-                          }
+                        }
                     }
                     // We've got our menu tree, sort it by sequence
                     MenuEntry.SequenceSorter.recursiveSort(topLevelMenu);
@@ -388,6 +404,13 @@ public class TrytonCall {
                     // All done, return it
                     m.what = CALL_MENUS_OK;
                     m.obj = topLevelMenu;
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_MENUS_NOK;
+                        m.obj = e;
+                    }
                 } catch (Exception e) {
                     m.what = CALL_MENUS_NOK;
                     m.obj = e;
@@ -449,8 +472,12 @@ public class TrytonCall {
                     m.what = CALL_VIEWS_NOK;
                     m.obj = e;
                 } catch (JSONRPCException e) {
-                    m.what = CALL_VIEWS_NOK;
-                    m.obj = e;
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_VIEWS_NOK;
+                        m.obj = e;
+                    }
                 }
                 m.sendToTarget();
             }
@@ -468,7 +495,7 @@ public class TrytonCall {
         String relModelName = relField.getString("relation");
         String type = relField.getString("type");
         Map <Integer, List<Model>> whoWants = new HashMap<Integer,
-                                                          List<Model>>();
+            List<Model>>();
         List<Integer> ids = new ArrayList<Integer>();
         if (type.equals("many2one") || type.equals("one2one")) {
             for (Model m : models) {
@@ -540,12 +567,46 @@ public class TrytonCall {
         }
     }
 
+    public static boolean getDataCount(final int userId, final String cookie,
+                                       final Preferences prefs,
+                                       final String modelName,
+                                       final Handler h) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                try {
+                    Object resp = c.call("model." + modelName + ".search",
+                                         userId, cookie, new JSONArray(),
+                                         0, 9999999, JSONObject.NULL,
+                                         prefs.json());
+                    if (resp instanceof JSONArray) {
+                        int count = ((JSONArray)resp).length();
+                        m.what = CALL_DATACOUNT_OK;
+                        m.obj = count;
+                    }
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_DATACOUNT_NOK;
+                        m.obj = e;
+                    }
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;
+    }
+
     /** Get some data for a model */
     public static boolean getData(final int userId, final String cookie,
-                           final Preferences prefs,
-                           final String modelName,
-                           final int offset, final int count,
-                           final Handler h) {
+                                  final Preferences prefs,
+                                  final String modelName,
+                                  final int offset, final int count,
+                                  final Handler h) {
         if (c == null) {
             return false;
         }
@@ -599,6 +660,13 @@ public class TrytonCall {
                     // Send back the list to the handler
                     m.what = CALL_DATA_OK;
                     m.obj = allData;
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_DATA_NOK;
+                        m.obj = e;
+                    }
                 } catch (Exception e) {
                     m.what = CALL_DATA_NOK;
                     m.obj = e;

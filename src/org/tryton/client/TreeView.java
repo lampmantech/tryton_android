@@ -29,6 +29,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
+import android.widget.TextView;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,8 +61,12 @@ public class TreeView extends Activity implements Handler.Callback {
     
     private MenuEntry origin;
     private ModelViewTypes viewTypes;
+    private int totalDataCount = -1;
+    private int dataOffset;
     private List<Model> data;
     private int mode;
+
+    private TextView pagination;
     private ProgressDialog loadingDialog;
     private ListView tree;
     private ExpandableListView sumtree;
@@ -73,6 +78,7 @@ public class TreeView extends Activity implements Handler.Callback {
         if (state != null) {
             this.origin = (MenuEntry) state.getSerializable("origin");
             this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
+            this.totalDataCount = state.getInt("totalDataCount");
             if (state.containsKey("data_count")) {
                 int count = state.getInt("data_count");
                 this.data = new ArrayList<Model>();
@@ -84,22 +90,20 @@ public class TreeView extends Activity implements Handler.Callback {
         } else if (entryInitializer != null) {
             this.origin = entryInitializer;
             entryInitializer = null;
-            this.loadViewsAndData();
             this.mode = MODE_EXTENDED;
         }
         // Init view
         this.setContentView(R.layout.tree);
         this.tree = (ListView) this.findViewById(R.id.tree_list);
         this.sumtree = (ExpandableListView) this.findViewById(R.id.tree_sum_list);
+        this.pagination = (TextView) this.findViewById(R.id.tree_pagination);
         // Load data if there isn't anyone or setup the list
-        if (this.data == null && this.viewTypes != null) {
-            this.showLoadingDialog(LOADING_DATA);
-            Session s = Session.current;
-            String model = this.viewTypes.getModelName();
-            TrytonCall.getData(s.userId, s.cookie, s.prefs, model, 0, 10,
-                                new Handler(this));
+        if (this.data == null && this.viewTypes == null) {
+            this.loadViewsAndData();
         } else if (this.data != null) {
             this.updateList();
+        } else {
+            this.loadData();
         }
     }
     
@@ -107,6 +111,7 @@ public class TreeView extends Activity implements Handler.Callback {
         super.onSaveInstanceState(outState);
         outState.putSerializable("origin", this.origin);
         outState.putSerializable("viewTypes", this.viewTypes);
+        outState.putInt("totalDataCount", this.totalDataCount);
         if (this.data != null) {
             outState.putSerializable("data_count", this.data.size());
             for (int i = 0; i < this.data.size(); i++) {
@@ -117,6 +122,13 @@ public class TreeView extends Activity implements Handler.Callback {
     }
 
     private void updateList() {
+        // Update paging display
+        String format = this.getString(R.string.tree_pagination);
+        this.pagination.setText(String.format(format,
+                                              this.dataOffset + 1,
+                                              this.dataOffset + this.data.size(),
+                                              this.totalDataCount));
+        // Update data
         switch (this.mode) {
         case MODE_EXTENDED:
             TreeFullAdapter adapt = new TreeFullAdapter(this.viewTypes.getView("tree"),
@@ -132,7 +144,35 @@ public class TreeView extends Activity implements Handler.Callback {
             this.tree.setVisibility(View.GONE);
             break;
         }
+    }
 
+    public void prevPage(View button) {
+        switch (this.mode) {
+        case MODE_EXTENDED:
+            this.dataOffset -= PAGING_EXTENDED;
+            break;
+        case MODE_SUMMARY:
+            this.dataOffset -= PAGING_SUMMARY;
+        }
+        if (this.dataOffset < 0) {
+            this.dataOffset = 0;
+        }
+        this.loadData();
+    }
+
+    public void nextPage(View button) {
+        int maxOffset = this.totalDataCount;
+        switch (this.mode) {
+        case MODE_EXTENDED:
+            this.dataOffset += PAGING_EXTENDED;
+            maxOffset -= PAGING_EXTENDED;
+            break;
+        case MODE_SUMMARY:
+            this.dataOffset += PAGING_SUMMARY;
+            maxOffset -= PAGING_SUMMARY;
+        }
+        this.dataOffset = Math.min(this.dataOffset, maxOffset);
+        this.loadData();
     }
 
     private static final int LOADING_VIEWS = 0;
@@ -170,6 +210,7 @@ public class TreeView extends Activity implements Handler.Callback {
                 ModelViewTypes views = ViewCache.load(this.origin, this);
                 if (views != null) {
                     this.viewTypes = views;
+                    this.loadData();
                 }
             } catch (IOException e) {
                 Log.i("Tryton",
@@ -185,11 +226,26 @@ public class TreeView extends Activity implements Handler.Callback {
 
     /** Load data */
     private void loadData() {
-            String model = this.viewTypes.getModelName();
-            this.showLoadingDialog(LOADING_DATA);
-            Session s = Session.current;
-            TrytonCall.getData(s.userId, s.cookie, s.prefs, model, 0, 10,
-                                new Handler(this));        
+        String model = this.viewTypes.getModelName();
+        Session s = Session.current;
+        if (this.totalDataCount == -1) {
+            // Get total
+            TrytonCall.getDataCount(s.userId, s.cookie, s.prefs, model,
+                                    new Handler(this));
+        } 
+        this.showLoadingDialog(LOADING_DATA);
+        int count = 10;
+        switch (this.mode) {
+        case MODE_EXTENDED:
+            count = PAGING_EXTENDED;
+            break;
+        case MODE_SUMMARY:
+            count = PAGING_SUMMARY;
+            break;
+        }
+        TrytonCall.getData(s.userId, s.cookie, s.prefs, model,
+                           this.dataOffset, count,
+                           new Handler(this));        
     }
 
     /** Handle TrytonCall feedback. */
@@ -213,16 +269,36 @@ public class TreeView extends Activity implements Handler.Callback {
             break;
         case TrytonCall.CALL_VIEWS_NOK:
         case TrytonCall.CALL_DATA_NOK:
+        case TrytonCall.CALL_DATACOUNT_NOK:
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
             b.setMessage(R.string.network_error);
             b.show();
             ((Exception)msg.obj).printStackTrace();
             break;
+        case TrytonCall.CALL_DATACOUNT_OK:
+            int count = (Integer) msg.obj;
+            this.totalDataCount = count;
+            if (this.data == null) {
+                // Wait for data callback
+            } else {
+                this.updateList();
+            }
+            break;
         case TrytonCall.CALL_DATA_OK:
             List<Model> data = (List) msg.obj;
             this.data = data;
-            this.updateList();
+            if (this.totalDataCount == -1) {
+                // Wait for data count callback
+            } else {
+                this.updateList();
+            }
+            break;
+        case TrytonCall.NOT_LOGGED:
+            // TODO: this is brutal
+            // Logout
+            Start.logout(this);
+            break;
         }
         return true;
     }
@@ -294,7 +370,7 @@ public class TreeView extends Activity implements Handler.Callback {
             } else {
                 this.mode = MODE_SUMMARY;
             }
-            this.updateList();
+            this.loadData();
         }
         return true;
     }

@@ -153,6 +153,11 @@ public class Menu extends Activity implements Handler.Callback,
             b.show();
             ((Exception)msg.obj).printStackTrace();
             break;
+        case TrytonCall.NOT_LOGGED:
+            // TODO: this is brutal
+            // Logout
+            Start.logout(this);
+            break;
         }
         return true;
     }

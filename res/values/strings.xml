@@ -45,6 +45,7 @@
   <string name="data_loading">Loading data</string>
   <string name="tree_switch_mode_summary">Summary mode</string>
   <string name="tree_switch_mode_extended">Extended mode</string>
+  <string name="tree_pagination">%1$d - %2$d of %3$d</string>
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string>

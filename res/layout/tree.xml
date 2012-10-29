@@ -21,9 +21,31 @@
     It is loaded from the org.tryton.client.Menu activity.
     Each list item is defined in menu_entry_item.xml.
 -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
              android:layout_width="fill_parent"
-             android:layout_height="fill_parent">
+             android:layout_height="fill_parent"
+             android:orientation="vertical">
+  <!-- Pagination header -->
+  <LinearLayout android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+    <ImageButton android:id="@+id/tree_prev_btn"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:onClick="prevPage"
+                 android:src="@drawable/tryton_go_previous" />
+    <TextView android:id="@+id/tree_pagination"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_weight="1"
+              android:gravity="center" />
+    <ImageButton android:id="@+id/tree_next_btn"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:onClick="nextPage"
+                 android:src="@drawable/tryton_go_next" />
+  </LinearLayout>
+  <!-- List. Only one is displayed at once by setting the other invisible -->
   <ListView android:id="@+id/tree_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent" />
@@ -31,4 +53,4 @@
                       android:layout_width="fill_parent"
                       android:layout_height="fill_parent"
                       android:visibility="gone" />
-</FrameLayout>
+</LinearLayout>
