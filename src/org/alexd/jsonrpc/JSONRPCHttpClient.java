@@ -23,7 +23,7 @@ import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -108,7 +108,7 @@ public class JSONRPCHttpClient extends JSONRPCClient
 		registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 		registry.register(new Scheme("https", allowAllsslFactory, 443));
  
-		SingleClientConnManager ccm = new SingleClientConnManager(params, registry);
+		ThreadSafeClientConnManager ccm = new ThreadSafeClientConnManager(params, registry);
 		httpClient = new DefaultHttpClient(ccm, params);
 		serviceUri = uri;
 	}
