@@ -474,7 +474,7 @@ public class TrytonCall {
             for (Model m : models) {
                 // Get the id of the relationnal data
                 Object value = m.get(fieldName);
-                if (value instanceof Model || value == JSONObject.NULL) {
+                if (value == null || value instanceof Model) {
                     // This one is already loaded or not defined
                     continue;
                 }
@@ -490,7 +490,7 @@ public class TrytonCall {
             for (Model m : models) {
                 // Get the ids of the relationnal data
                 Object value = m.get(fieldName);
-                if (value instanceof List || value == JSONObject.NULL) {
+                if (value == null || value instanceof List) {
                     // This one is already loaded or not defined
                     continue;
                 }

@@ -20,6 +20,7 @@ package org.tryton.client.models;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.Serializable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,7 +29,7 @@ import org.json.JSONObject;
  * first get the information from the server (arch and so on), then
  * build models which represent the arch in data shape.
  * See TrytonCall for the generation with ArchParser. */
-public class ModelView {
+public class ModelView implements Serializable {
 
     protected String modelName;
     protected String type;

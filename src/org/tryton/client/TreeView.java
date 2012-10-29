@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tryton.client.data.ViewCache;
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelViewTypes;
@@ -48,16 +49,8 @@ public class TreeView extends Activity implements Handler.Callback {
         Set the menu that triggers the view to load the views. */
     public static void setup(MenuEntry origin) {
         entryInitializer = origin;
-        viewTypesInitializer = null;
-    }
-    /** Use a static initializer to pass data to the activity on start.
-        Set the views available. */
-    public static void setup(ModelViewTypes viewTypes) {
-        entryInitializer = null;
-        viewTypesInitializer = viewTypes;
     }
     private static MenuEntry entryInitializer;
-    private static ModelViewTypes viewTypesInitializer;
 
     private static final int MODE_SUMMARY = 1;
     private static final int MODE_EXTENDED = 2;
@@ -65,6 +58,7 @@ public class TreeView extends Activity implements Handler.Callback {
     private static final int PAGING_SUMMARY = 40;
     private static final int PAGING_EXTENDED = 10;
     
+    private MenuEntry origin;
     private ModelViewTypes viewTypes;
     private List<Model> data;
     private int mode;
@@ -77,6 +71,7 @@ public class TreeView extends Activity implements Handler.Callback {
         super.onCreate(state);
         // Init data
         if (state != null) {
+            this.origin = (MenuEntry) state.getSerializable("origin");
             this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
             if (state.containsKey("data_count")) {
                 int count = state.getInt("data_count");
@@ -87,15 +82,9 @@ public class TreeView extends Activity implements Handler.Callback {
             }
             this.mode = state.getInt("mode");
         } else if (entryInitializer != null) {
-            this.showLoadingDialog(LOADING_VIEWS);
-            Session s = Session.current;
-            TrytonCall.getViews(s.userId, s.cookie, s.prefs, entryInitializer,
-                                new Handler(this));
-            entryInitializer = null; // Reset (consume setup)
-            this.mode = MODE_EXTENDED;
-        } else if (viewTypesInitializer != null) {
-            this.viewTypes = viewTypesInitializer;
-            viewTypesInitializer = null; // Reset (consume setup)
+            this.origin = entryInitializer;
+            entryInitializer = null;
+            this.loadViewsAndData();
             this.mode = MODE_EXTENDED;
         }
         // Init view
@@ -116,6 +105,7 @@ public class TreeView extends Activity implements Handler.Callback {
     
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        outState.putSerializable("origin", this.origin);
         outState.putSerializable("viewTypes", this.viewTypes);
         if (this.data != null) {
             outState.putSerializable("data_count", this.data.size());
@@ -173,6 +163,35 @@ public class TreeView extends Activity implements Handler.Callback {
         }
     }
 
+    /** Load views and data when done (by forwarding the call in handler) */
+    private void loadViewsAndData() {
+            // Check if views are available from cache
+            try {
+                ModelViewTypes views = ViewCache.load(this.origin, this);
+                if (views != null) {
+                    this.viewTypes = views;
+                }
+            } catch (IOException e) {
+                Log.i("Tryton",
+                      "Unable to load view cache for " + this.origin, e);
+            }
+            if (this.viewTypes == null) {
+                this.showLoadingDialog(LOADING_VIEWS);
+                Session s = Session.current;
+                TrytonCall.getViews(s.userId, s.cookie, s.prefs, this.origin,
+                                    new Handler(this));
+            }
+    }
+
+    /** Load data */
+    private void loadData() {
+            String model = this.viewTypes.getModelName();
+            this.showLoadingDialog(LOADING_DATA);
+            Session s = Session.current;
+            TrytonCall.getData(s.userId, s.cookie, s.prefs, model, 0, 10,
+                                new Handler(this));        
+    }
+
     /** Handle TrytonCall feedback. */
     @SuppressWarnings("unchecked")
     public boolean handleMessage(Message msg) {
@@ -181,14 +200,16 @@ public class TreeView extends Activity implements Handler.Callback {
         // Process message
         switch (msg.what) {
         case TrytonCall.CALL_VIEWS_OK:
+            // Save view and load data
             ModelViewTypes viewTypes = (ModelViewTypes) msg.obj;
+            try {
+                ViewCache.save(this.origin, viewTypes, this);
+            } catch (IOException e) {
+                Log.w("Tryton",
+                      "Unable to cache view data for " + this.origin, e);
+            }
             this.viewTypes = viewTypes;
-            // Load data
-            String model = viewTypes.getModelName();
-            this.showLoadingDialog(LOADING_DATA);
-            Session s = Session.current;
-            TrytonCall.getData(s.userId, s.cookie, s.prefs, model, 0, 10,
-                                new Handler(this));
+            this.loadData();
             break;
         case TrytonCall.CALL_VIEWS_NOK:
         case TrytonCall.CALL_DATA_NOK:

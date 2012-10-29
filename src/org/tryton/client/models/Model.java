@@ -39,18 +39,65 @@ public class Model implements Serializable {
         this.attributes = new HashMap<String, Object>();
     }
     
-    public Model(String className, JSONObject model) {
-        this.className = className;
-        this.attributes = new HashMap<String, Object>();
-        JSONArray keys = model.names();
+    /** Convert JSONObject to a map of attributes. */
+    private Map<String, Object> convertJSONObject(JSONObject o) {
+        if (o == JSONObject.NULL) {
+            return null;
+        }
+        Map<String, Object> value = new HashMap<String, Object>();
+        JSONArray keys = o.names();
+        if (keys == null) {
+            return value;
+        }
         for (int i = 0; i < keys.length(); i++) {
             try {
                 String name= keys.getString(i);
-                this.attributes.put(name, model.get(name));
+                Object subvalue = o.get(name);
+                if (subvalue == JSONObject.NULL) {
+                    value.put(name, null);
+                } else if (subvalue instanceof JSONObject) {
+                    Map<String, Object> mValue = this.convertJSONObject((JSONObject) subvalue);
+                    value.put(name, mValue);
+                } else if (subvalue instanceof JSONArray) {
+                    List<Object> lValue = this.convertJSONArray((JSONArray) subvalue);
+                    value.put(name, lValue);
+                } else {
+                    value.put(name, subvalue);
+                }
             } catch (JSONException e) {
                 // Unreachable
             }
         }
+        return value;
+    }
+
+    /** Convert JSONArray to List. */
+    private List<Object> convertJSONArray(JSONArray o) {
+        List<Object> value = new ArrayList<Object>();
+        for (int i = 0; i < o.length(); i++) {
+            try {
+                Object subvalue = o.get(i);
+                if (subvalue == JSONObject.NULL) {
+                    value.add(null);
+                } else if (subvalue instanceof JSONObject) {
+                    Map mValue = this.convertJSONObject((JSONObject) subvalue);
+                    value.add(mValue);
+                } else if (subvalue instanceof JSONArray) {
+                    List lValue = this.convertJSONArray((JSONArray) subvalue);
+                    value.add(lValue);
+                } else {
+                    value.add(subvalue);
+                }
+            } catch (JSONException e) {
+                // Unreachable
+            }
+        }
+        return value;
+    }
+    
+    public Model(String className, JSONObject model) {
+        this.className = className;
+        this.attributes = this.convertJSONObject(model);
     }
 
     public String getClassName() {
@@ -87,7 +134,10 @@ public class Model implements Serializable {
     @SuppressWarnings("unchecked")
     public void add2Many(String name, Model value) {
         if (!(this.attributes.get(name) instanceof List)) {
-            this.attributes.put(name, new ArrayList<Model>());
+            List currValue = (List) this.attributes.get(name);
+            if (!(currValue.size() > 0 && currValue.get(0) instanceof Map)) {
+                this.attributes.put(name, new ArrayList<Model>());
+            }
         }
         ((List<Model>)this.attributes.get(name)).add(value);
     }

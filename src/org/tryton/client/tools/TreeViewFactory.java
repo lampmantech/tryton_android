@@ -22,9 +22,7 @@ import android.util.Log;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.util.Map;
 
 import org.tryton.client.R;
 import org.tryton.client.models.Model;
@@ -36,12 +34,12 @@ public class TreeViewFactory {
     public static String getView(Model field, Model data,
                                  Preferences prefs,Context ctx) {
         String name = (String) field.get("name");
-        if (name == null || data.get(name) == null) {
+        if (name == null) {
             return null;
         }
         String type = (String) field.get("type");
         Object value = data.get(name);
-        if (value == null || value == JSONObject.NULL) {
+        if (value == null) {
             return "";
         }
         if (type == null) {
@@ -67,13 +65,10 @@ public class TreeViewFactory {
             System.out.println("Sha type not supported yet");
         } else if (type.equals("float") || type.equals("numeric")) {
             double dval = 0;
-            if (value instanceof JSONObject) {
-                JSONObject jsVal = (JSONObject) value;
-                try {
-                    dval = Double.parseDouble(jsVal.getString("decimal"));
-                } catch (JSONException e) {
-                    // TODO: exception
-                }
+            if (value instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> mVal = (Map<String, Object>) value;
+                dval = Double.parseDouble((String)mVal.get("decimal"));
             } else {
                 dval = (Double)value;
             }
@@ -84,7 +79,7 @@ public class TreeViewFactory {
             String format = "###,##0.###";
             // Get digits format
             String digits = (String) field.get("digits");
-            if (digits != null && digits != JSONObject.NULL) {
+            if (digits != null) {
                 digits = digits.substring(1, digits.length() - 1);
                 String[] split = digits.split(",");
                 int intNum = Integer.parseInt(split[0].trim());
@@ -98,12 +93,12 @@ public class TreeViewFactory {
             DecimalFormat formatter = new DecimalFormat(format, symbols);
             return formatter.format(dval);
         } else if (type.equals("date")) {
-            JSONObject jsDate = (JSONObject) value;
-            try {
-                int year = jsDate.getInt("year");
-                int month = jsDate.getInt("month");
-                int day = jsDate.getInt("day");
-                // TODO: use preferences for date formatting
+            if (value instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> mDate = (Map<String, Object>) value;
+                int year = (Integer) mDate.get("year");
+                int month = (Integer) mDate.get("month");
+                int day = (Integer) mDate.get("day");
                 String format = prefs.getDateFormat();
                 if (format != null) {
                     String result = format;
@@ -113,68 +108,73 @@ public class TreeViewFactory {
                     return result;
                 }
                 return String.format("%04d/%02d/%02d", year, month, day);
-            } catch (JSONException e) {
-                // TODO: invalid date
+            } else {
+                Log.w("Tryton", "Malformed date for " + name + " "
+                      + value.getClass());
             }
         } else if (type.equals("datetime")) {
-            JSONObject jsDate = (JSONObject) value;
-            try {
-                int year = jsDate.getInt("year");
-                int month = jsDate.getInt("month");
-                int day = jsDate.getInt("day");
-                int hour = jsDate.getInt("hour");
-                int minute = jsDate.getInt("minute");
-                int second = jsDate.getInt("second");
+            if (value instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> mDate = (Map<String, Object>) value;
+                int year = (Integer) mDate.get("year");
+                int month = (Integer) mDate.get("month");
+                int day = (Integer) mDate.get("day");
+                int hour = (Integer) mDate.get("hour");
+                int minute = (Integer) mDate.get("minute");
+                int second = (Integer) mDate.get("second");
                 // TODO: use preferences for date formatting
                 return String.format("%04d/%02d/%02d %02d:%02d:%02d",
                                      year, month, day, hour, minute, second);
-            } catch (JSONException e) {
-                // TODO: invalid date
+            } else {
+                Log.w("Tryton", "Malformed datetime for " + name + " "
+                      + value.getClass());
             }
         } else if (type.equals("time")) {
-            JSONObject jsDate = (JSONObject) value;
-            try {
-                int hour = jsDate.getInt("hour");
-                int minute = jsDate.getInt("minute");
-                int second = jsDate.getInt("second");
+            if (value instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> mDate = (Map<String, Object>) value;
+                int hour = (Integer) mDate.get("hour");
+                int minute = (Integer) mDate.get("minute");
+                int second = (Integer) mDate.get("second");
                 // TODO: use preferences for date formatting
-                return String.format("%02d:%02d:%02d",
-                                     hour, minute, second);
-            } catch (JSONException e) {
-                // TODO: invalid date
+                return String.format("%02d:%02d:%02d", hour, minute, second);
+            } else {
+                Log.w("Tryton", "Malformed time for " + name + " "
+                      + value.getClass());
             }
         } else if (type.equals("binary")) {
             System.out.println("Binary type not supported yet");
             return "(bin)";
         } else if (type.equals("selection")) {
-            JSONArray selection = (JSONArray) field.get("selection");
-            try {
-                for (int i = 0; i < selection.length(); i++) {
-                    JSONArray couple = selection.getJSONArray(i);
-                    if (couple.getString(0).equals(value)) {
-                        return couple.getString(1);
-                    }
+            List selection = (List) field.get("selection");
+            for (int i = 0; i < selection.size(); i++) {
+                List couple = (List) selection.get(i);
+                if (((String)couple.get(0)).equals(value)) {
+                    return (String)couple.get(1);
                 }
-                Log.w("Tryton", "Selection value for " + value.toString()
-                      + " not found");
-            } catch (JSONException e) {
-                // TODO: invalid select
             }
+            Log.w("Tryton", "Selection value for " + value.toString()
+                  + " not found");
         } else if (type.equals("reference")) {
             System.out.println("Reference type not supported yet");
         } else if (type.equals("many2one") || type.equals("one2one")) {
-            if (value instanceof Model) {
-                return ((Model) value).getString("name");
+            if (value == null) {
+                return "";
+            } else if (value instanceof Model) {
+                String strVal = ((Model)value).getString("name");
+                if (strVal == null) {
+                    return "";
+                } else {
+                    return strVal;
+                }
             } else {
-                Log.w("Tryton", "Displaying a " + type + " field as id");
+                Log.w("Tryton", "Displaying " + name
+                      + " (" + type + ") field as id");
             }
         } else if (type.equals("many2many") || type.equals("one2many")) {
             if (value instanceof List) {
-                return "( " + ((List)value).size() + " )";
-            } else if (value instanceof JSONArray) {
-                // Case of non loaded relationals
-                JSONArray jsMany = (JSONArray) value;
-                return "( " + jsMany.length() + " )";
+                List lVal = (List) value;
+                return "( " + lVal.size() + " )";
             }
             Log.w("Tryton", "Displaying a non identified field " + name + " "
                   + value.getClass());

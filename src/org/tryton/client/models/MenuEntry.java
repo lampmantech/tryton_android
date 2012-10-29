@@ -124,4 +124,9 @@ public class MenuEntry implements Serializable {
             return o1.sequence - o2.sequence;
         }
     }
+
+    @Override
+    public String toString() {
+        return this.label;
+    }
 }
