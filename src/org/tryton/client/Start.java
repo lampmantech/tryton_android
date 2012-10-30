@@ -91,17 +91,21 @@ public class Start extends Activity implements Handler.Callback {
         // On first start (when coming from dashboard) the intent is clean
         // Check if user is already logged in to skip login on launch
         if (starting && Session.current.userId != -1) {
-            System.out.println("Skipped");
+            // Starting with a logged in user: go to menu
             Intent i = new Intent(this, org.tryton.client.Menu.class);
             this.startActivity(i);
             awake = false; // zzzz
             return;
         }
         if (!isAwake()) {
-            System.out.println("Killed");
-            // zzz (quit)
-            this.finish();
-            return;
+            // Coming back without logout
+            if (Configure.getAutoLogout(this)) {
+                processLogout();
+            } else {
+                // zzz (quit)
+                this.finish();
+                return;
+            }
         }
         // When returning from configuration TrytonCall host may have changed
         TrytonCall.serverVersion(new Handler(this));
@@ -163,6 +167,8 @@ public class Start extends Activity implements Handler.Callback {
         case TrytonCall.CALL_PREFERENCES_OK:
             // Save the preferences
             Session.current.prefs = (Preferences) msg.obj;
+            // Clear password field
+            this.password.setText("");
             // Go to menu
             Intent i = new Intent(this, org.tryton.client.Menu.class);
             this.startActivity(i);
@@ -190,15 +196,20 @@ public class Start extends Activity implements Handler.Callback {
                          new Handler(this));
     }
 
-    /** Logout from an other activity. Brings back login screen. */
-    public static void logout(Activity caller) {
+    /** Do the logout stuff */
+    private static void processLogout() {
         // Clear on server then on client
         TrytonCall.logout(Session.current.userId, Session.current.cookie);
         Session.current.clear();
+        awake = true; // Reset sleeping state
+    }
+
+    /** Logout from an other activity. Brings back login screen. */
+    public static void logout(Activity caller) {
+        processLogout();
         // Call back the login screen.
         // FLAG_ACTIVITY_CLEAR_TOP will erase all activities on top of it.
         Intent i = new Intent(caller, Start.class);
-        awake = true;
         i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         caller.startActivity(i);
     }

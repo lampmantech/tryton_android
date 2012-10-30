@@ -80,4 +80,9 @@ public class Configure extends PreferenceActivity {
     public static String getDatabaseCode(Context ctx) {
         return getHost(ctx) + "/" + getDatabase(ctx);
     }
+
+    public static boolean getAutoLogout(Context ctx) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        return prefs.getBoolean("autologout", false);
+    }
 }

@@ -52,6 +52,8 @@
   <string name="config_host_desc">Your Tryton server host (including port)</string>
   <string name="config_database_title">Database</string>
   <string name="config_database_desc">The database on your host to connect to</string>
+  <string name="config_autologout_title">Auto logout</string>
+  <string name="config_autologout_desc">Automatically logout when quitting with back button</string>
 
   <!-- About labels -->
   <string name="about_author">Realized by Scil (http://scil.coop), financed by Bio Eco Forests (http://bioecoforests.com)</string>
