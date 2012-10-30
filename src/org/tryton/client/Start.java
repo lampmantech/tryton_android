@@ -151,7 +151,7 @@ public class Start extends Activity implements Handler.Callback {
                 int userId = (Integer) resp[0];
                 String cookie = (String) resp[1];
                 Session.current.user = this.login.getText().toString();
-                Session.current.password = this.login.getText().toString();
+                Session.current.password = this.password.getText().toString();
                 Session.current.userId = userId;
                 Session.current.cookie = cookie;
                 // Get user preferences
