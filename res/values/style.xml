@@ -26,6 +26,9 @@
 
   <integer name="login_text_size_em">10</integer>
 
+  <dimen name="about_separator_height">2dip</dimen>
+  <color name="about_separator_color">#999</color>
+
   <style name="TrytonTheme" parent="android:Theme.NoTitleBar">
   </style>
 </resources>

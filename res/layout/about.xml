@@ -56,6 +56,11 @@ It is loaded in org.tryton.client.About -->
               android:text="@string/about_source"
               android:autoLink="web"
               android:textColor="#fff" />
+    <View android:layout_width="fill_parent"
+          android:layout_height="@dimen/about_separator_height"
+          android:layout_marginTop="@dimen/paragraph_spacing"
+          android:layout_marginBottom="@dimen/paragraph_spacing"
+          android:background="@color/about_separator_color" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
@@ -70,6 +75,11 @@ It is loaded in org.tryton.client.About -->
         android:text="@string/svg_android_notice"
         android:autoLink="web"
         android:textColor="#fff" />
+    <View android:layout_width="fill_parent"
+          android:layout_height="@dimen/about_separator_height"
+          android:layout_marginTop="@dimen/paragraph_spacing"
+          android:layout_marginBottom="@dimen/paragraph_spacing"
+          android:background="@color/about_separator_color" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
