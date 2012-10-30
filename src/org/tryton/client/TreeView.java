@@ -28,6 +28,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import java.io.IOException;
@@ -67,6 +68,7 @@ public class TreeView extends Activity implements Handler.Callback {
     private int mode;
 
     private TextView pagination;
+    private ImageButton nextPage, previousPage;
     private ProgressDialog loadingDialog;
     private ListView tree;
     private ExpandableListView sumtree;
@@ -97,6 +99,8 @@ public class TreeView extends Activity implements Handler.Callback {
         this.tree = (ListView) this.findViewById(R.id.tree_list);
         this.sumtree = (ExpandableListView) this.findViewById(R.id.tree_sum_list);
         this.pagination = (TextView) this.findViewById(R.id.tree_pagination);
+        this.nextPage = (ImageButton) this.findViewById(R.id.tree_next_btn);
+        this.previousPage = (ImageButton) this.findViewById(R.id.tree_prev_btn);
         // Load data if there isn't anyone or setup the list
         if (this.data == null && this.viewTypes == null) {
             this.loadViewsAndData();
@@ -128,6 +132,16 @@ public class TreeView extends Activity implements Handler.Callback {
                                               this.dataOffset + 1,
                                               this.dataOffset + this.data.size(),
                                               this.totalDataCount));
+        if (this.dataOffset == 0) {
+            this.previousPage.setEnabled(false);
+        } else {
+            this.previousPage.setEnabled(true);
+        }
+        if (this.dataOffset + this.data.size() < this.totalDataCount) {
+            this.nextPage.setEnabled(true);
+        } else {
+            this.nextPage.setEnabled(false);
+        }
         // Update data
         switch (this.mode) {
         case MODE_EXTENDED:
