@@ -34,5 +34,4 @@
       android:key="autologout"
       android:title="@string/config_autologout_title"
       android:summary="@string/config_autologout_desc" />
-      />
 </PreferenceScreen>
