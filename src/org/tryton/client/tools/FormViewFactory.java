@@ -184,7 +184,7 @@ public class FormViewFactory {
                     String value = data.getString(name);
                     if (value != null) {
                         for (int i = 0; i < selectValues.size(); i++) {
-                            List couple = (List) selectValues.get(i);
+                            List couple = selectValues.get(i);
                             if (((String)couple.get(0)).equals(value)) {
                                 s.setSelection(i);
                                 break;
