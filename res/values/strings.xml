@@ -27,7 +27,7 @@
   <string name="general_true">Yes</string>
   <string name="general_false">No</string>
   <string name="general_new_record">New record</string>
-  <string name="general_graph">Graph</string>
+  <string name="general_graph">Graph view</string>
   
   <!-- Login labels -->
   <string name="login_user">User</string>
@@ -46,6 +46,7 @@
   <string name="tree_switch_mode_summary">Summary mode</string>
   <string name="tree_switch_mode_extended">Extended mode</string>
   <string name="tree_pagination">%1$d - %2$d of %3$d</string>
+  <string name="form_save">Save</string>
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string>

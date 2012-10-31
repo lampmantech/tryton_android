@@ -27,6 +27,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -45,7 +46,8 @@ import org.tryton.client.views.TreeFullAdapter;
 import org.tryton.client.views.TreeSummaryAdapter;
 import org.tryton.client.views.TreeSummaryItem;
 
-public class TreeView extends Activity implements Handler.Callback {
+public class TreeView extends Activity
+    implements Handler.Callback, ListView.OnItemClickListener {
 
     /** Use a static initializer to pass data to the activity on start.
         Set the menu that triggers the view to load the views. */
@@ -97,6 +99,7 @@ public class TreeView extends Activity implements Handler.Callback {
         // Init view
         this.setContentView(R.layout.tree);
         this.tree = (ListView) this.findViewById(R.id.tree_list);
+        this.tree.setOnItemClickListener(this);
         this.sumtree = (ExpandableListView) this.findViewById(R.id.tree_sum_list);
         this.pagination = (TextView) this.findViewById(R.id.tree_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.tree_next_btn);
@@ -187,6 +190,14 @@ public class TreeView extends Activity implements Handler.Callback {
         }
         this.dataOffset = Math.min(this.dataOffset, maxOffset);
         this.loadData();
+    }
+
+    public void onItemClick(AdapterView<?> adapt, View v,
+                            int position, long id) {
+        Model clickedData = this.data.get(position);
+        FormView.setup(this.viewTypes, clickedData);
+        Intent i = new Intent(this, FormView.class);
+        this.startActivity(i);
     }
 
     private static final int LOADING_VIEWS = 0;
@@ -385,6 +396,12 @@ public class TreeView extends Activity implements Handler.Callback {
                 this.mode = MODE_SUMMARY;
             }
             this.loadData();
+            break;
+        case MENU_NEW_ID:
+            FormView.setup(this.viewTypes, null);
+            Intent i = new Intent(this, FormView.class);
+            this.startActivity(i);
+            break;
         }
         return true;
     }

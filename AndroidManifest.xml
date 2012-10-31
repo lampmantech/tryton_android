@@ -20,6 +20,7 @@
     <activity android:name="About" />
     <activity android:name="Menu" />
     <activity android:name="TreeView" />
+    <activity android:name="FormView" />
     
   </application>
   <!-- Request permissions -->

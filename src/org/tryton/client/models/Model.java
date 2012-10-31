@@ -124,6 +124,10 @@ public class Model implements Serializable {
         return null;
     }
 
+    public void set(String name, Object value) {
+        this.attributes.put(name, value);
+    }
+
     public void set2One(String name, Model value) {
         this.attributes.put(name, value);
     }

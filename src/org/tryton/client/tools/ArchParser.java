@@ -124,6 +124,17 @@ public class ArchParser {
                         // TODO: parse error
                     }
                 }
+            } else if (localName.equals("label")) {
+                Model labelModel = new Model("label");
+                String strName = atts.getValue("name");
+                if (strName != null) {
+                    labelModel.set("name", strName);
+                }
+                String string = atts.getValue("string");
+                if (string != null) {
+                    labelModel.set("string", string);
+                }
+                this.builtFields.add(labelModel);
             } else {
                 // TODO: parse error
             }

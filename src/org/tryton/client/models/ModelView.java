@@ -83,6 +83,10 @@ public class ModelView implements Serializable {
         return this.fields;
     }
 
+    public Model getField(String name) {
+        return this.fields.get(name);
+    }
+
     public List<Model> getStructure() {
         return this.builtFields;
     }
