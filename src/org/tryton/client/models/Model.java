@@ -17,7 +17,12 @@
 */
 package org.tryton.client.models;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,10 +41,14 @@ public class Model implements Serializable {
     
     private String className;
     private Map<String, Object> attributes;
+    private Map<String, Model> toOne;
+    private Map<String, List<Model>> toMany;
 
     public Model(String className) {
         this.className = className;
         this.attributes = new HashMap<String, Object>();
+        this.toOne = new HashMap<String, Model>();
+        this.toMany = new HashMap<String, List<Model>>();
     }
     
     /** Convert JSONObject to a map of attributes. */
@@ -101,6 +110,8 @@ public class Model implements Serializable {
     public Model(String className, JSONObject model) {
         this.className = className;
         this.attributes = this.convertJSONObject(model);
+        this.toOne = new HashMap<String, Model>();
+        this.toMany = new HashMap<String, List<Model>>();
     }
 
     public String getClassName() {
@@ -132,23 +143,28 @@ public class Model implements Serializable {
     }
 
     public void set2One(String name, Model value) {
-        this.attributes.put(name, value);
+        this.toOne.put(name, value);
+    }
+
+    public String get2OneName(String name) {
+        Model rel = this.toOne.get(name);
+        if (rel != null) {
+            return rel.getString("name");
+        } else {
+            return null;
+        }
     }
 
     /** Add a model to a many2many or one2many fields.
-        If the field is not yet a many2many or one2many (for example ids)
-        it is erased and replaced. */
+     * To limit memory usage the model should be light. */
     @SuppressWarnings("unchecked")
     public void add2Many(String name, Model value) {
-        if (!(this.attributes.get(name) instanceof List)) {
-            List currValue = (List) this.attributes.get(name);
-            if (!(currValue.size() > 0 && currValue.get(0) instanceof Map)) {
-                this.attributes.put(name, new ArrayList<Model>());
-            }
+        if ((this.toMany.get(name) == null)) {
+            this.toMany.put(name, new ArrayList<Model>());
         }
-        ((List<Model>)this.attributes.get(name)).add(value);
+        this.toMany.get(name).add(value);
     }
-    
+
     /** Set human readable form for debugging */
     @Override
     public String toString() {
@@ -158,5 +174,34 @@ public class Model implements Serializable {
         } else {
             return super.toString();
         }
+    }
+
+    /** Convert this model to raw bytes to store it */
+    public byte[] toByteArray() throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(this.className);
+        oos.writeObject(this.attributes);
+        byte[] data = bos.toByteArray();
+        oos.close();
+        return data;
+    }
+
+    public static Model fromByteArray(byte[] data) throws IOException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        Model m = null;
+        try {
+            @SuppressWarnings("unchecked")
+            String className = (String) ois.readObject();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> attrs = (Map<String, Object>) ois.readObject();
+            m = new Model(className);
+            m.attributes = attrs;
+        } catch (ClassNotFoundException e) {
+            // Means that the data are wrong. Stay null.
+        }
+        ois.close();
+        return m;
     }
 }

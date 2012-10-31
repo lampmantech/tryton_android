@@ -158,18 +158,11 @@ public class TreeViewFactory {
         } else if (type.equals("reference")) {
             System.out.println("Reference type not supported yet");
         } else if (type.equals("many2one") || type.equals("one2one")) {
-            if (value == null) {
+            String relName = data.get2OneName(name);
+            if (relName == null) {
                 return "";
-            } else if (value instanceof Model) {
-                String strVal = ((Model)value).getString("name");
-                if (strVal == null) {
-                    return "";
-                } else {
-                    return strVal;
-                }
             } else {
-                Log.w("Tryton", "Displaying " + name
-                      + " (" + type + ") field as id");
+                return relName;
             }
         } else if (type.equals("many2many") || type.equals("one2many")) {
             if (value instanceof List) {
