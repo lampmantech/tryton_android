@@ -395,6 +395,7 @@ public class SVGParser {
      *
      * @param s the path string from the XML
      */
+    @SuppressWarnings("fallthrough")
     private static Path doPath(String s) {
         int n = s.length();
         Path p = new Path();

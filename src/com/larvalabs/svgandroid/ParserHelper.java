@@ -58,6 +58,7 @@ public class ParserHelper {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     public void skipNumberSeparator() {
         while (pos < n) {
             char c = s.charAt(pos);
@@ -81,6 +82,7 @@ public class ParserHelper {
     /**
      * Parses the content of the buffer and converts it to a float.
      */
+    @SuppressWarnings("fallthrough")
     public float parseFloat() {
         int     mant     = 0;
         int     mantDig  = 0;
