@@ -59,7 +59,7 @@ public class DataCache extends SQLiteOpenHelper {
                                                  // null when relationnal
                    + "PRIMARY KEY (id, className))");
         db.execSQL("CREATE TABLE " + DATABASE_TABLE
-                   + " (hostcode TEXT PRIMARY KEY)");
+                   + " (databasecode TEXT PRIMARY KEY)");
         db.execSQL("CREATE TABLE " + COUNT_TABLE
                    + " (className TEXT PRIMARY KEY, "
                    + " writeTime INTEGER, "
@@ -83,16 +83,16 @@ public class DataCache extends SQLiteOpenHelper {
 
     /** Check if the records present in database belongs to the given
      * host and database. */
-    public boolean checkDatabase(String hostCode) {
+    public boolean checkDatabase(String databaseCode) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(DATABASE_TABLE, new String[]{"hostcode"},
+        Cursor c = db.query(DATABASE_TABLE, new String[]{"databaseCode"},
                             null, null, null,
                             null, null, "1");
         if (c.moveToFirst()) {
             String dbHost = c.getString(0);
             c.close();
             db.close();
-            return dbHost.equals(hostCode);
+            return dbHost.equals(databaseCode);
         } else {
             // No entry, database is useable
             c.close();
@@ -106,6 +106,21 @@ public class DataCache extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         db.delete(MODEL_TABLE, null, null);
         db.delete(DATABASE_TABLE, null, null);
+        db.delete(REL_TABLE, null, null);
+        db.delete(COUNT_TABLE, null, null);
+        db.close();
+    }
+
+    /** Bind the database to a database and host.
+     * Should be called after a check and clear to
+     * prevent from mixing data from multiple hosts. */
+    public void setHost(String databaseCode) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put("databaseCode", databaseCode);
+        if (db.update(DATABASE_TABLE, v , null, null) == 0) {
+            db.insert(DATABASE_TABLE, null, v);
+        }
         db.close();
     }
 

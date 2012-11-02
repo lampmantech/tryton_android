@@ -31,6 +31,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.tryton.client.data.DataCache;
 import org.tryton.client.data.Session;
 import org.tryton.client.models.Preferences;
 import org.tryton.client.tools.TrytonCall;
@@ -172,6 +173,12 @@ public class Start extends Activity implements Handler.Callback {
             // Go to menu
             Intent i = new Intent(this, org.tryton.client.Menu.class);
             this.startActivity(i);
+            // Check if data cache is still valid (maybe host changed)
+            DataCache db = new DataCache(this);
+            if (!db.checkDatabase(Configure.getDatabaseCode(this))) {
+                db.clear();
+            }
+            db.setHost(Configure.getDatabaseCode(this));
             // Falling asleep...
             awake = false;
             break;
