@@ -18,8 +18,10 @@
 package org.tryton.client.tools;
 
 import android.content.Context;
+import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -109,7 +111,17 @@ public class FormViewFactory {
                     edit.setInputType(InputType.TYPE_CLASS_NUMBER
                                       | InputType.TYPE_NUMBER_FLAG_SIGNED
                                       | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                    // TODO: support digit constraints
+                    // Set digits constraint
+                    String digits = (String) field.get("digits");
+                    if (digits != null) {
+                        digits = digits.substring(1, digits.length() - 1);
+                        String[] split = digits.split(",");
+                        int intNum = Integer.parseInt(split[0].trim());
+                        int decNum = Integer.parseInt(split[1].trim());
+                        DigitsConstraint c = new DigitsConstraint(intNum,
+                                                                  decNum);
+                        edit.addTextChangedListener(c);
+                    }
                 }
                 // Set maximum size if any (usefull only for char and text)
                 String strSize = field.getString("size");
@@ -253,5 +265,57 @@ public class FormViewFactory {
                 return t;
             }
         }
+    }
+
+    public static class DigitsConstraint implements TextWatcher {
+
+        private int intNum;
+        private int decNum;
+        private String oldValue;
+
+        public DigitsConstraint(int intNum, int decNum) {
+            this.intNum = intNum;
+            this.decNum = decNum;
+        }
+
+        public void afterTextChanged(Editable s) {
+            String text = s.toString();
+            String[] split = text.split("\\."); // this is a regex
+            String[] oldSplit = this.oldValue.split("\\.");
+            switch (split.length) {
+            case 1:
+                // Only integer part
+                if (text.length() > this.intNum && !text.endsWith(".")) {
+                    // Keep old value
+                    s.replace(0, text.length(), this.oldValue);
+                }
+                break;
+            case 2:
+                // Integer and decimal parts
+                String newString;
+                if (split[0].length() > this.intNum) {
+                    newString = oldSplit[0];
+                } else {
+                    newString = split[0];
+                }
+                newString += ".";
+                if (split[1].length() > this.decNum) {
+                    newString += oldSplit[1];
+                } else {
+                    newString += split[1];
+                }
+                if (!newString.equals(text)) {
+                    s.replace(0, text.length(), newString);
+                }
+                break;
+            }
+        }
+        
+        public void beforeTextChanged(CharSequence s, int start, int count,
+                                      int after) {
+            this.oldValue = s.toString();
+        }
+        public void onTextChanged(CharSequence s, int start, int before,
+                                  int count) {}
     }
 }
