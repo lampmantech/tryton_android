@@ -37,6 +37,7 @@ import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.Preferences;
+import org.tryton.client.models.RelField;
 
 /** Tryton requester.
  * It makes asynchronous calls to the tryton server set by setHost.
@@ -58,6 +59,8 @@ public class TrytonCall {
     public static final int CALL_DATA_NOK = -6;
     public static final int CALL_DATACOUNT_OK = 6;
     public static final int CALL_DATACOUNT_NOK = -7;
+    public static final int CALL_RELFIELDS_OK = 7;
+    public static final int CALL_RELFIELDS_NOK = -8;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -254,6 +257,7 @@ public class TrytonCall {
     /** Get data from ids */
     private static JSONArray read(int userId, String cookie,
                                   Preferences prefs, String model,
+                                  String[] fields,
                                   List<Integer> ids)
         throws JSONRPCException, JSONException {
         if (c == null) {
@@ -265,8 +269,18 @@ public class TrytonCall {
             jsIds.put(id);
         }
         // Read the models
-        Object resp = c.call(model + ".read", userId, cookie,
-                             jsIds, JSONObject.NULL, prefs.json());
+        Object resp;
+        if (fields == null) {
+            resp = c.call(model + ".read", userId, cookie,
+                          jsIds, JSONObject.NULL, prefs.json());
+        } else {
+            JSONArray jsFields = new JSONArray();
+            for (String field : fields) {
+                jsFields.put(field);
+            }
+            resp = c.call(model + ".read", userId, cookie,
+                          jsIds, jsFields, prefs.json());
+        }
         if (resp instanceof JSONArray) {
             // We've got them!
             return (JSONArray) resp;
@@ -485,15 +499,63 @@ public class TrytonCall {
         return true;
     }
 
+    public static boolean getRelFields(final int userId, final String cookie,
+                                       final Preferences prefs,
+                                       final String modelName,
+                                       final Handler h) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                List<RelField> relFields = new ArrayList<RelField>();
+                // Get field types
+                try {
+                    Object oFieldsRes = c.call("model." + modelName
+                                               + ".fields_get", userId,
+                                               cookie, JSONObject.NULL,
+                                               prefs.json());
+                    if (oFieldsRes instanceof JSONObject) {
+                        JSONObject fieldsRes = (JSONObject) oFieldsRes;
+                        JSONArray fieldNames = fieldsRes.names();
+                        for (int i = 0; i < fieldNames.length(); i++) {
+                            String fieldName = fieldNames.getString(i);
+                            JSONObject jsData = fieldsRes.getJSONObject(fieldName);
+                            String type = jsData.getString("type");
+                            if (type.equals("many2many")
+                                || type.equals("one2many")
+                                || type.equals("many2one")
+                                || type.equals("one2one")) {
+                                String relModel = jsData.getString("relation");
+                                RelField rel = new RelField(fieldName, type,
+                                                            relModel);
+                                relFields.add(rel);
+                            }
+                        }
+                    }
+                    
+                    m.what = CALL_RELFIELDS_OK;
+                    m.obj = relFields;
+                } catch (Exception e) {
+                    m.what = CALL_RELFIELDS_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;
+    }
+    
     private static void getRelationnals(int userId, String cookie,
                                         Preferences prefs,
-                                        List<Model> models, Model relField) {
+                                        List<Model> models, RelField relField) {
         if (models.size() == 0) {
             return;
         }
-        String fieldName = relField.getString("name");
-        String relModelName = relField.getString("relation");
-        String type = relField.getString("type");
+        String fieldName = relField.getFieldName();
+        String relModelName = relField.getRelModel();
+        String type = relField.getType();
         Map <Integer, List<Model>> whoWants = new HashMap<Integer,
             List<Model>>();
         List<Integer> ids = new ArrayList<Integer>();
@@ -542,6 +604,7 @@ public class TrytonCall {
         try {
             JSONArray rels = read(userId, cookie, prefs,
                                   "model." + relModelName,
+                                  new String[]{"id", "name"},
                                   ids);
             for (int i = 0; i < rels.length(); i++) {
                 try {
@@ -606,6 +669,7 @@ public class TrytonCall {
                                   final Preferences prefs,
                                   final String modelName,
                                   final int offset, final int count,
+                                  final List<RelField> relFields,
                                   final Handler h) {
         if (c == null) {
             return false;
@@ -615,33 +679,9 @@ public class TrytonCall {
                 Message m = h.obtainMessage();
                 // Fields list by name
                 Map<String, Model> fields = new HashMap<String, Model>();
-                // Relational fields by name
-                Map<String, Model> relationnals = new HashMap<String, Model>();
                 // Data list
                 List<Model> allData = new ArrayList<Model>();
                 try {
-                    // Get field types
-                    Object oFieldsRes = c.call("model." + modelName
-                                               + ".fields_get", userId,
-                                               cookie, JSONObject.NULL,
-                                               prefs.json());
-                    if (oFieldsRes instanceof JSONObject) {
-                        JSONObject fieldsRes = (JSONObject) oFieldsRes;
-                        JSONArray fieldNames = fieldsRes.names();
-                        for (int i = 0; i < fieldNames.length(); i++) {
-                            String name = fieldNames.getString(i);
-                            JSONObject jsData = fieldsRes.getJSONObject(name);
-                            Model field = new Model(modelName, jsData);
-                            fields.put(name, field);
-                            String type = field.getString("type");
-                            if (type.equals("many2many")
-                                || type.equals("one2many")
-                                || type.equals("many2one")
-                                || type.equals("one2one")) {
-                                relationnals.put(name, field);
-                            }
-                        }
-                    }
                     // Search the data and add them to a list
                     JSONArray result = search(userId, cookie, prefs,
                                               "model." + modelName,
@@ -652,10 +692,9 @@ public class TrytonCall {
                         allData.add(data);
                     }
                     // Check for relational fields and load them
-                    for (String name : relationnals.keySet()) {
-                        Model relField = relationnals.get(name);
+                    for (RelField rel : relFields) {
                         getRelationnals(userId, cookie, prefs, allData,
-                                        relField);
+                                        rel);
                     }
                     // Send back the list to the handler
                     m.what = CALL_DATA_OK;

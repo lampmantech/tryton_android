@@ -36,10 +36,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tryton.client.data.DataCache;
 import org.tryton.client.data.ViewCache;
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelViewTypes;
+import org.tryton.client.models.RelField;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 import org.tryton.client.views.TreeFullAdapter;
@@ -66,6 +68,7 @@ public class TreeView extends Activity
     private ModelViewTypes viewTypes;
     private int totalDataCount = -1;
     private int dataOffset;
+    private List<RelField> relFields;
     private List<Model> data;
     private int mode;
 
@@ -228,14 +231,14 @@ public class TreeView extends Activity
         }
     }
 
-    /** Load views and data when done (by forwarding the call in handler) */
+    /** Load views and all data when done (by cascading the calls in handler) */
     private void loadViewsAndData() {
             // Check if views are available from cache
             try {
                 ModelViewTypes views = ViewCache.load(this.origin, this);
                 if (views != null) {
                     this.viewTypes = views;
-                    this.loadData();
+                    this.loadDataAndMeta();
                 }
             } catch (IOException e) {
                 Log.i("Tryton",
@@ -249,16 +252,44 @@ public class TreeView extends Activity
             }
     }
 
-    /** Load data */
+    /** Load data count and rel fields, required for data.
+     * Requires that views are loaded. */
+    private void loadDataAndMeta() {
+        String model = this.viewTypes.getModelName();
+        Session s = Session.current;
+        DataCache db = new DataCache(this);
+        // Get total from cache if present, otherwise from server
+        if (this.totalDataCount == -1) {
+
+            this.totalDataCount = db.getDataCount(model);
+            if (this.totalDataCount == -1) {
+                TrytonCall.getDataCount(s.userId, s.cookie, s.prefs, model,
+                                        new Handler(this));
+            }
+        }
+        // Get field definition
+        if (this.relFields == null) {
+            this.relFields = db.getRelFields(model);
+            if (this.relFields == null) {
+                // We don't have them. Query them, it will load data on handler
+                // callback.
+                this.showLoadingDialog(LOADING_DATA);
+                TrytonCall.getRelFields(s.userId, s.cookie, s.prefs, model,
+                                        new Handler(this));
+            } else {
+                this.loadData();
+            }
+        } else {
+            this.loadData();
+        }
+    }
+
+    /** Load data. Requires that views and meta are loaded. */
     private void loadData() {
         String model = this.viewTypes.getModelName();
         Session s = Session.current;
-        if (this.totalDataCount == -1) {
-            // Get total
-            TrytonCall.getDataCount(s.userId, s.cookie, s.prefs, model,
-                                    new Handler(this));
-        } 
-        this.showLoadingDialog(LOADING_DATA);
+        DataCache db = new DataCache(this);
+        // Get data from cache if present, otherwise from server
         int count = 10;
         switch (this.mode) {
         case MODE_EXTENDED:
@@ -268,9 +299,19 @@ public class TreeView extends Activity
             count = PAGING_SUMMARY;
             break;
         }
-        TrytonCall.getData(s.userId, s.cookie, s.prefs, model,
-                           this.dataOffset, count,
-                           new Handler(this));        
+        List<Model> cacheData = db.getData(model, this.dataOffset, count);
+        if (cacheData.size() == Math.min(this.totalDataCount - this.dataOffset,
+                                         count)) {
+            // Data is full, use it
+            this.data = cacheData;
+            this.updateList();
+        } else {
+            // Data is incomplete, or even empty, reload from server
+            this.showLoadingDialog(LOADING_DATA);
+            TrytonCall.getData(s.userId, s.cookie, s.prefs, model,
+                               this.dataOffset, count, this.relFields,
+                               new Handler(this));
+        }
     }
 
     /** Handle TrytonCall feedback. */
@@ -290,7 +331,7 @@ public class TreeView extends Activity
                       "Unable to cache view data for " + this.origin, e);
             }
             this.viewTypes = viewTypes;
-            this.loadData();
+            this.loadDataAndMeta();
             break;
         case TrytonCall.CALL_VIEWS_NOK:
         case TrytonCall.CALL_DATA_NOK:
@@ -303,6 +344,8 @@ public class TreeView extends Activity
             break;
         case TrytonCall.CALL_DATACOUNT_OK:
             int count = (Integer) msg.obj;
+            DataCache db = new DataCache(this);
+            db.setDataCount(this.viewTypes.getModelName(), count);
             this.totalDataCount = count;
             if (this.data == null) {
                 // Wait for data callback
@@ -310,8 +353,19 @@ public class TreeView extends Activity
                 this.updateList();
             }
             break;
+        case TrytonCall.CALL_RELFIELDS_OK:
+            @SuppressWarnings("unchecked")
+            List<RelField> rel = (List<RelField>)msg.obj;
+            db = new DataCache(this);
+            db.storeRelFields(this.viewTypes.getModelName(), rel);
+            this.relFields = rel;
+            System.out.println("Rels " + this.relFields.size());
+            this.loadData();
+            break;
         case TrytonCall.CALL_DATA_OK:
             List<Model> data = (List) msg.obj;
+            db = new DataCache(this);
+            db.storeData(this.viewTypes.getModelName(), data);
             this.data = data;
             if (this.totalDataCount == -1) {
                 // Wait for data count callback

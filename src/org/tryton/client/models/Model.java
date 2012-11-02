@@ -155,6 +155,18 @@ public class Model implements Serializable {
         }
     }
 
+    /** Get all relationnal models registered for this model. */
+    public List<Model> getRelModels() {
+        List<Model> ret = new ArrayList<Model>();
+        for (String field : this.toOne.keySet()) {
+            ret.add(this.toOne.get(field));
+        }
+        for (String field : this.toMany.keySet()) {
+            ret.addAll(this.toMany.get(field));
+        }
+        return ret;
+    }
+
     /** Add a model to a many2many or one2many fields.
      * To limit memory usage the model should be light. */
     @SuppressWarnings("unchecked")
