@@ -30,8 +30,11 @@ import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.tryton.client.data.DataCache;
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
@@ -40,7 +43,7 @@ import org.tryton.client.tools.FormViewFactory;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 
-public class FormView extends Activity {
+public class FormView extends Activity implements Handler.Callback {
 
     /** Use a static initializer to pass data to the activity on start.
         Set the viewtype that hold the form view and the data to edit.
@@ -53,8 +56,10 @@ public class FormView extends Activity {
     private static Model dataInitializer;
 
     private ModelViewTypes viewTypes;
+    private Set<String> relModelsToLoad;
     private Model data;
     private boolean dirty;
+    private ProgressDialog loadingDialog;
 
     private TableLayout table;
 
@@ -95,6 +100,24 @@ public class FormView extends Activity {
             x++;
             x %= 2;
         }
+        // Check if we have all the data required for relationnal fields
+        this.relModelsToLoad = new HashSet<String>();
+        for (Model view : modelView.getStructure()) {
+            if (!(view.getClassName().equals("label"))) {
+                String type = view.getString("type");
+                DataCache db = new DataCache(this);
+                if ((type.equals("one2one") || type.equals("one2many")
+                     || type.equals("many2one") || type.equals("many2many"))
+                    && !db.isFullyLoaded(view.getString("relation"))) {
+                    this.relModelsToLoad.add(view.getString("relation"));
+                }
+            }
+        }
+        if (!this.relModelsToLoad.isEmpty()) {
+            // Start loading
+            this.showLoadingDialog();
+            this.loadRel();
+        }
     }
     
     public void onSaveInstanceState(Bundle outState) {
@@ -102,6 +125,83 @@ public class FormView extends Activity {
         outState.putSerializable("viewTypes", this.viewTypes);
         outState.putSerializable("data", this.data);
         outState.putBoolean("dirty", this.dirty);
+    }
+
+    public void showLoadingDialog() {
+        if (this.loadingDialog == null) {
+            this.loadingDialog = new ProgressDialog(this);
+            this.loadingDialog.setIndeterminate(true);
+            this.loadingDialog.setMessage(this.getString(R.string.data_loading));
+            this.loadingDialog.show();
+        }        
+    }
+
+    /** Hide the loading dialog if shown. */
+    public void hideLoadingDialog() {
+        if (this.loadingDialog != null) {
+            this.loadingDialog.dismiss();
+            this.loadingDialog = null;
+        }
+    }
+
+    /** Load a pending model and remove it from queue.
+     * Return true if a load is launched, false if
+     * there is nothing to load. */
+    private boolean loadRel() {
+        if (!this.relModelsToLoad.isEmpty()) {
+            Session s = Session.current;
+            String modelLoaded = null;
+            // Run the first model and remove it. LoadRel will be recalled
+            // on handler callback.
+            for (String model : this.relModelsToLoad) {
+                // This is the easyest way to get an Iterator on the set
+                // and get the first entry.
+                TrytonCall.getRelData(s.userId, s.cookie, s.prefs, model,
+                                      new Handler(this));
+                modelLoaded = model;
+                break;
+            }
+            // Remove from pending models
+            this.relModelsToLoad.remove(modelLoaded);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** Handle TrytonCall feedback. */
+    @SuppressWarnings("unchecked")
+    public boolean handleMessage(Message msg) {
+        // Process message
+        switch (msg.what) {
+        case TrytonCall.CALL_RELDATA_OK:
+            String className = (String) ((Object[])msg.obj)[0];
+            List<Model> data = (List) ((Object[])msg.obj)[1];
+            DataCache db = new DataCache(this);
+            db.storeRelData(className, data);
+            db.setDataCount(className, data.size());
+            // Run next loading
+            if (!this.loadRel()) {
+                // This is the end
+                this.hideLoadingDialog();
+            }
+            break;
+        case TrytonCall.CALL_RELDATA_NOK:
+            this.hideLoadingDialog();
+            AlertDialog.Builder b = new AlertDialog.Builder(this);
+            b.setTitle(R.string.error);
+            b.setMessage(R.string.network_error);
+            b.show();
+            ((Exception)msg.obj).printStackTrace();
+            break;
+        case TrytonCall.NOT_LOGGED:
+            // TODO: this is brutal
+            // Logout
+            this.hideLoadingDialog();
+            Start.logout(this);
+            break;
+        }
+        return true;
     }
 
     //////////////////

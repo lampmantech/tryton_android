@@ -61,6 +61,8 @@ public class TrytonCall {
     public static final int CALL_DATACOUNT_NOK = -7;
     public static final int CALL_RELFIELDS_OK = 7;
     public static final int CALL_RELFIELDS_NOK = -8;
+    public static final int CALL_RELDATA_OK = 8;
+    public static final int CALL_RELDATA_NOK = -8;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -223,7 +225,8 @@ public class TrytonCall {
     /** Utility function to search and read models in one function call. */
     private static JSONArray search(int userId, String cookie,
                                     Preferences prefs, String model,
-                                    List args, int offset, int count)
+                                    List args, int offset, int count,
+                                    boolean fullLoad)
         throws JSONRPCException, JSONException {
         if (c == null) {
             return null;
@@ -244,6 +247,11 @@ public class TrytonCall {
                 ids[i] = jsIds.getInt(i);
             }
             // Read the models
+            if (!fullLoad) {
+                // TODO: fullLoad is intented to load only name and id for
+                // relationnal data but it makes the server throw errors.
+                System.out.println("Not fullLoad on search is not supported. Gives only full records");
+            }
             resp = c.call(model + ".read", userId, cookie, jsIds,
                           new JSONArray(), prefs.json());
             if (resp instanceof JSONArray) {
@@ -308,7 +316,7 @@ public class TrytonCall {
                     JSONArray jsMenus = search(userId, cookie, prefs,
                                                "model.ir.ui.menu",
                                                null,
-                                               0, 1000);
+                                               0, 1000, true);
                     // Get icon ids
                     Map<String, Integer> iconIds = new HashMap<String, Integer>();
                     Object oIconIds = c.call("model.ir.ui.icon.list_icons",
@@ -685,7 +693,7 @@ public class TrytonCall {
                     // Search the data and add them to a list
                     JSONArray result = search(userId, cookie, prefs,
                                               "model." + modelName,
-                                              null, offset, count);
+                                              null, offset, count, true);
                     for (int i = 0; i < result.length(); i++) {
                         JSONObject jsData = result.getJSONObject(i);
                         Model data = new Model(modelName, jsData);
@@ -708,6 +716,51 @@ public class TrytonCall {
                     }
                 } catch (Exception e) {
                     m.what = CALL_DATA_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;
+    }
+
+    /** Get data for relationnal pickup */
+    public static boolean getRelData(final int userId, final String cookie,
+                                  final Preferences prefs,
+                                  final String modelName,
+                                  final Handler h) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                // Fields list by name
+                Map<String, Model> fields = new HashMap<String, Model>();
+                // Data list
+                List<Model> allData = new ArrayList<Model>();
+                try {
+                    // Search the data and add them to a list
+                    JSONArray result = search(userId, cookie, prefs,
+                                              "model." + modelName,
+                                              null, 0, 999999, false);
+                    for (int i = 0; i < result.length(); i++) {
+                        JSONObject jsData = result.getJSONObject(i);
+                        Model data = new Model(modelName, jsData);
+                        allData.add(data);
+                    }
+                    // Send back the list to the handler
+                    m.what = CALL_RELDATA_OK;
+                    m.obj = new Object[]{modelName, allData};
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_RELDATA_NOK;
+                        m.obj = e;
+                    }
+                } catch (Exception e) {
+                    m.what = CALL_RELDATA_NOK;
                     m.obj = e;
                 }
                 m.sendToTarget();

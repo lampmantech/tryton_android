@@ -141,6 +141,27 @@ public class DataCache extends SQLiteOpenHelper {
         }
     }
 
+    public boolean isFullyLoaded(String className) {
+        int count = this.getDataCount(className);
+        if (count == -1) {
+            return false;
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(MODEL_TABLE, new String[]{"count(id)"},
+                            "className = ?", new String[]{className},
+                            null, null, null, null);
+        if (c.moveToNext()) {
+            int loadedCount = c.getInt(0);
+            c.close();
+            db.close();
+            return loadedCount == count;
+        } else {
+            c.close();
+            db.close();
+            return false;
+        }
+    }
+
     public void setDataCount(String className, int count) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
@@ -300,6 +321,13 @@ public class DataCache extends SQLiteOpenHelper {
                 db.insert(MODEL_TABLE, null, v);
             }
         }
+    }
+
+    public void storeRelData(String className, List<Model> data) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        long time = System.currentTimeMillis();
+        this.storeRelData(data, time, db);
+        db.close();
     }
 
     /** Add or update data */
