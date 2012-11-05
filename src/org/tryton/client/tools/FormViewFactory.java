@@ -17,6 +17,7 @@
 */
 package org.tryton.client.tools;
 
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.res.Resources;
 import android.text.Editable;
@@ -28,6 +29,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -149,7 +151,8 @@ public class FormViewFactory {
                 System.out.println("Sha type not supported yet");
             } else if (type.equals("date")) {
                 Object value = null;
-                DatePicker p = new DatePicker(ctx);
+                Button b = new Button(ctx);
+                b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 if (data != null) {
                     Object oval = data.get(name);
                     @SuppressWarnings("unchecked")
@@ -159,11 +162,13 @@ public class FormViewFactory {
                         year = (Integer) mDate.get("year");
                         month = (Integer) mDate.get("month");
                         day = (Integer) mDate.get("day");
-                        p.updateDate(year, month - 1, day);
                     }
+                    b.setOnClickListener(new DateClickListener(b,
+                                                               prefs.getDateFormat(),
+                                                               year, month,
+                                                               day));
                 }
-                return p;
-                // TODO: It would be better if picker was in a popup
+                return b;
             } else if (type.equals("datetime")) {
                 System.out.println(type + " not supported yet");
             } else if (type.equals("time")) {
@@ -276,6 +281,8 @@ public class FormViewFactory {
         }
     }
 
+    /** Constraint to be used on float and numeric fields to apply
+     * the digit attribute limitative behaviour. */
     public static class DigitsConstraint implements TextWatcher {
 
         private int intNum;
@@ -326,5 +333,46 @@ public class FormViewFactory {
         }
         public void onTextChanged(CharSequence s, int start, int before,
                                   int count) {}
+    }
+
+    /** Click listener for buttons of date type fields to show
+     * a date picking poppup and update the value. */
+    private static class DateClickListener
+        implements View.OnClickListener, DatePickerDialog.OnDateSetListener {
+        
+        private Button caller;
+        private String format;
+        private int year, month, day;
+
+        public DateClickListener(Button caller, String format,
+                                 int year, int month, int day) {
+            this.caller = caller;
+            this.format = format;
+            this.year = year;
+            this.month = month;
+            this.day = day;
+        }
+        
+        @Override
+        public void onClick(View v) {
+            Context ctx = v.getContext();
+            DatePickerDialog d = new DatePickerDialog(ctx, this, this.year,
+                                                      this.month - 1, this.day);
+            d.show();
+        }
+
+        @Override
+        public void onDateSet(DatePicker p, int year, int month, int day) {
+            String result;
+            if (this.format != null) {
+                result = format;
+                result = result.replace("%d", String.format("%02d", day));
+                result = result.replace("%m", String.format("%02d", month + 1));
+                result = result.replace("%Y", String.format("%04d", year));
+            } else {
+                result = String.format("%04d/%02d/%02d", year, month + 1, day);
+            }
+            this.caller.setText(result);
+        }
     }
 }
