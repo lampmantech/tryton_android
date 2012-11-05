@@ -375,7 +375,6 @@ public class TreeView extends Activity
             db = new DataCache(this);
             db.storeRelFields(this.viewTypes.getModelName(), rel);
             this.relFields = rel;
-            System.out.println("Rels " + this.relFields.size());
             this.loadData();
             break;
         case TrytonCall.CALL_DATA_OK:
