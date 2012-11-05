@@ -292,8 +292,10 @@ public class DataCache extends SQLiteOpenHelper {
             v.put("className", m.getClassName());
             v.put("writeTime", time);
             // Store it only if it does not erase a full data
-            if (db.update(MODEL_TABLE, v, "id = ? AND data IS NULL",
-                          new String[]{m.get("id").toString()}) == 0) {
+            if (db.update(MODEL_TABLE, v, "id = ? AND className = ? " +
+                          "AND data IS NULL",
+                          new String[]{m.get("id").toString(), m.getClassName()}
+                          ) == 0) {
                 // Try to insert, in case there is no data
                 db.insert(MODEL_TABLE, null, v);
             }
@@ -303,8 +305,6 @@ public class DataCache extends SQLiteOpenHelper {
     /** Add or update data */
     public void storeData(String className, List<Model> data) {
         SQLiteDatabase db = this.getWritableDatabase();
-        String sql = "INSERT INTO " + MODEL_TABLE
-            + " (id, className, writeTime, name, data) VALUES ";
         long time = System.currentTimeMillis();
         for (Model m : data) {
             try {
@@ -315,8 +315,9 @@ public class DataCache extends SQLiteOpenHelper {
                 v.put("data", m.toByteArray());
                 v.put("writeTime", time);
                 // Try to update record
-                if (db.update(MODEL_TABLE, v, "id = ?",
-                              new String[]{m.get("id").toString()}) == 0) {
+                if (db.update(MODEL_TABLE, v, "id = ? and className = ?",
+                              new String[]{m.get("id").toString(), className}
+                              ) == 0) {
                     // Record is not present, insert it
                     db.insert(MODEL_TABLE, null, v);
                 }
