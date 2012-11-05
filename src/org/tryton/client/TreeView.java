@@ -49,7 +49,8 @@ import org.tryton.client.views.TreeSummaryAdapter;
 import org.tryton.client.views.TreeSummaryItem;
 
 public class TreeView extends Activity
-    implements Handler.Callback, ListView.OnItemClickListener {
+    implements Handler.Callback, ListView.OnItemClickListener,
+               ExpandableListView.OnChildClickListener {
 
     /** Use a static initializer to pass data to the activity on start.
         Set the menu that triggers the view to load the views. */
@@ -104,6 +105,7 @@ public class TreeView extends Activity
         this.tree = (ListView) this.findViewById(R.id.tree_list);
         this.tree.setOnItemClickListener(this);
         this.sumtree = (ExpandableListView) this.findViewById(R.id.tree_sum_list);
+        this.sumtree.setOnChildClickListener(this);
         this.pagination = (TextView) this.findViewById(R.id.tree_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.tree_next_btn);
         this.previousPage = (ImageButton) this.findViewById(R.id.tree_prev_btn);
@@ -201,6 +203,14 @@ public class TreeView extends Activity
         FormView.setup(this.viewTypes, clickedData);
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
+    }
+    public boolean onChildClick(ExpandableListView parent, View v, int groupPos,
+                                int childPos, long id) {
+        Model clickedData = this.data.get(groupPos);
+        FormView.setup(this.viewTypes, clickedData);
+        Intent i = new Intent(this, FormView.class);
+        this.startActivity(i);
+        return true;
     }
 
     private static final int LOADING_VIEWS = 0;
