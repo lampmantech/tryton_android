@@ -260,7 +260,6 @@ public class TreeView extends Activity
         DataCache db = new DataCache(this);
         // Get total from cache if present, otherwise from server
         if (this.totalDataCount == -1) {
-
             this.totalDataCount = db.getDataCount(model);
             if (this.totalDataCount == -1) {
                 TrytonCall.getDataCount(s.userId, s.cookie, s.prefs, model,
@@ -290,6 +289,7 @@ public class TreeView extends Activity
         Session s = Session.current;
         DataCache db = new DataCache(this);
         // Get data from cache if present, otherwise from server
+        int fieldsCount = this.viewTypes.getView("tree").getStructure().size();
         int count = 10;
         switch (this.mode) {
         case MODE_EXTENDED:
@@ -298,6 +298,12 @@ public class TreeView extends Activity
         case MODE_SUMMARY:
             count = PAGING_SUMMARY;
             break;
+        }
+        // Force mode to extended view with summary entry count if
+        // there is not enough fields to display
+        if (fieldsCount < TreeSummaryItem.FIELDS_COUNT) {
+            count = PAGING_SUMMARY;
+            this.mode = MODE_EXTENDED;
         }
         List<Model> cacheData = db.getData(model, this.dataOffset, count);
         if (cacheData.size() == Math.min(this.totalDataCount - this.dataOffset,
