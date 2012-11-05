@@ -34,6 +34,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -171,7 +172,38 @@ public class FormViewFactory {
                                                            year, month, day));
                 return b;
             } else if (type.equals("datetime")) {
-                System.out.println(type + " not supported yet");
+                Object value = null;
+                Button bDate = new Button(ctx);
+                bDate.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+                Button bTime = new Button(ctx);
+                bTime.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+                int year = -1, month = -1, day = -1;
+                int hour = -1, minute = -1, second = -1;
+                if (data != null) {
+                    Object oval = data.get(name);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> mDate = (Map<String, Object>) oval;
+                    if (oval != null) {
+                        year = (Integer) mDate.get("year");
+                        month = (Integer) mDate.get("month");
+                        day = (Integer) mDate.get("day");
+                        hour = (Integer) mDate.get("hour");
+                        minute = (Integer) mDate.get("minute");
+                        second = (Integer) mDate.get("second");
+                    }
+                }
+                bDate.setOnClickListener(new DateClickListener(bDate,
+                                                               prefs.getDateFormat(),
+                                                               year, month,
+                                                               day));
+                bTime.setOnClickListener(new TimeClickListener(bTime, hour,
+                                                               minute));
+                bDate.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
+                bTime.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
+                LinearLayout layout = new LinearLayout(ctx);
+                layout.addView(bDate);
+                layout.addView(bTime);
+                return layout;
             } else if (type.equals("time")) {
                 Button b = new Button(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
