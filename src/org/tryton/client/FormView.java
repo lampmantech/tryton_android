@@ -100,6 +100,7 @@ public class FormView extends Activity implements Handler.Callback {
             x++;
             x %= 2;
         }
+        this.table.addView(row);
         // Check if we have all the data required for relationnal fields
         this.relModelsToLoad = new HashSet<String>();
         for (Model view : modelView.getStructure()) {
