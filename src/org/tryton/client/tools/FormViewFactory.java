@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.tryton.client.R;
+import org.tryton.client.data.DataCache;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.models.Preferences;
@@ -255,7 +256,30 @@ public class FormViewFactory {
             } else if (type.equals("reference")) {
                 System.out.println("Reference type not supported yet");
             } else if (type.equals("many2one") || type.equals("one2one")) {
-                System.out.println(type + " not supported yet");
+                // Create the widget
+                Spinner s = new Spinner(ctx);
+                ToOneAdapter adapt = new ToOneAdapter(field.getString("relation"), ctx);
+                s.setAdapter(adapt);
+                if (field.getString("string") != null) {
+                    s.setPrompt(field.getString("string"));
+                } else {
+                    s.setPrompt(field.getString("name"));
+                }
+                // Set value
+                if (data != null) {
+                    Integer value = (Integer) data.get(name);
+                    if (value != null) {
+                        int iVal = value.intValue();
+                        List<Integer> values = adapt.getValues();
+                        for (int i = 0; i < values.size(); i++) {
+                            if (iVal == values.get(i).intValue()) {
+                                s.setSelection(i + 1);
+                                break;
+                            }
+                        }
+                    }
+                }
+                return s;
             } else if (type.equals("many2many") || type.equals("one2many")) {
                 System.out.println(type + " not supported yet");
             } else if (type.equals("function")) {
@@ -321,6 +345,65 @@ public class FormViewFactory {
             }
         }
     }
+
+    /** An adapter to provide values to a x2one widget. It assumes the local
+     * database is loaded for the requested model name. */
+    public static class ToOneAdapter extends BaseAdapter {
+
+        private List<Integer> values;
+        private List<String> labels;
+
+        public ToOneAdapter(String className, Context ctx) {
+            this.values = new ArrayList<Integer>();
+            this.labels = new ArrayList<String>();
+            DataCache db = new DataCache(ctx);
+            List<Model> models = db.list(className);
+            for (Model m : models) {
+                values.add((Integer)m.get("id"));
+                labels.add(m.getString("name"));
+            }
+        }
+
+        /** Get values for selection checking */
+        public List<Integer> getValues() {
+            return this.values;
+        }
+
+        public long getItemId(int position) {
+            return position;
+        }
+
+        public Object getItem(int position) {
+            return this.values.get(position - 1);
+        }
+
+        public int getCount() {
+            return this.labels.size() + 1;
+        }
+
+        public View getView(int position, View convertView,
+                            ViewGroup parent) {
+            String label;
+            if (position == 0) {
+                // Special "no value" value
+                label = "";
+            } else {
+                label = this.labels.get(position - 1);
+            }
+            if (convertView instanceof TextView) {
+                ((TextView)convertView).setText(label);
+                return convertView;
+            } else {
+                TextView t = new TextView(parent.getContext());
+                Resources r = parent.getContext().getResources();
+                t.setMinimumHeight((int)r.getDimension(R.dimen.clickable_min_size));
+                t.setText(label);
+                t.setGravity(Gravity.CENTER_VERTICAL);
+                return t;
+            }
+        }
+    }
+
 
     /** Constraint to be used on float and numeric fields to apply
      * the digit attribute limitative behaviour. */

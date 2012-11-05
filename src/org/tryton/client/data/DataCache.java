@@ -277,6 +277,25 @@ public class DataCache extends SQLiteOpenHelper {
         db.close();
         return models;
     }
+
+    /** Get the list of id/name as Models for a className */
+    public List<Model> list(String className) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(MODEL_TABLE, new String[]{"id", "name"},
+                            "className = ?",
+                            new String[]{className},
+                            null, null, null, null);
+        List<Model> models = new ArrayList<Model>();
+        while (c.moveToNext()) {
+            Model m = new Model(className);
+            m.set("id", c.getInt(0));
+            m.set("name", c.getString(1));
+            models.add(m);
+        }
+        c.close();
+        db.close();
+        return models;        
+    }
  
     /** Get a limited model (name and id) a model
         (typically for a relationnal field) */
