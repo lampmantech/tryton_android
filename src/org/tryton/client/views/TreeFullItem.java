@@ -25,6 +25,7 @@ import org.tryton.client.tools.TreeViewFactory;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.LinearLayout;
@@ -40,6 +41,8 @@ public class TreeFullItem extends LinearLayout {
     public TreeFullItem(Context context, ModelView modelView, Model model) {
         super(context);
         this.setOrientation(LinearLayout.VERTICAL);
+        this.setMinimumHeight((int)context.getResources().getDimension(R.dimen.clickable_min_size));
+        this.setGravity(Gravity.CENTER_VERTICAL);
         this.modelView = modelView;
         this.values = new ArrayList<TextView>();
         for (int i = 0; i < this.modelView.getStructure().size(); i++) {
