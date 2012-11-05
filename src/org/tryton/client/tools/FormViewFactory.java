@@ -245,7 +245,7 @@ public class FormViewFactory {
                         for (int i = 0; i < selectValues.size(); i++) {
                             List couple = selectValues.get(i);
                             if (((String)couple.get(0)).equals(value)) {
-                                s.setSelection(i);
+                                s.setSelection(i + 1);
                                 break;
                             }
                         }
@@ -292,16 +292,22 @@ public class FormViewFactory {
         }
 
         public Object getItem(int position) {
-            return this.values.get(position);
+            return this.values.get(position - 1);
         }
 
         public int getCount() {
-            return this.labels.size();
+            return this.labels.size() + 1;
         }
 
         public View getView(int position, View convertView,
                             ViewGroup parent) {
-            String label = this.labels.get(position);
+            String label;
+            if (position == 0) {
+                // Special "no value" value
+                label = "";
+            } else {
+                label = this.labels.get(position - 1);
+            }
             if (convertView instanceof TextView) {
                 ((TextView)convertView).setText(label);
                 return convertView;
