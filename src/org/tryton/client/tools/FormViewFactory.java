@@ -18,6 +18,7 @@
 package org.tryton.client.tools;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.res.Resources;
 import android.text.Editable;
@@ -39,6 +40,7 @@ import android.widget.TimePicker;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -153,41 +155,39 @@ public class FormViewFactory {
                 Object value = null;
                 Button b = new Button(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+                int year = -1, month = -1, day = -1;
                 if (data != null) {
                     Object oval = data.get(name);
                     @SuppressWarnings("unchecked")
                     Map<String, Object> mDate = (Map<String, Object>) oval;
-                    int year = 0, month = 0, day = 0;
                     if (oval != null) {
                         year = (Integer) mDate.get("year");
                         month = (Integer) mDate.get("month");
                         day = (Integer) mDate.get("day");
                     }
-                    b.setOnClickListener(new DateClickListener(b,
-                                                               prefs.getDateFormat(),
-                                                               year, month,
-                                                               day));
                 }
+                b.setOnClickListener(new DateClickListener(b,
+                                                           prefs.getDateFormat(),
+                                                           year, month, day));
                 return b;
             } else if (type.equals("datetime")) {
                 System.out.println(type + " not supported yet");
             } else if (type.equals("time")) {
-                TimePicker t = new TimePicker(ctx);
+                Button b = new Button(ctx);
+                b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+                int hour = -1, minute = -1, second = -1;
                 if (data != null) {
                     Object oval = data.get(name);
                     @SuppressWarnings("unchecked")
                     Map<String, Object> mDate = (Map<String, Object>) oval;
-                    int hour = 0, minute = 0, second = 0;
                     if (oval != null) {
                         hour = (Integer) mDate.get("hour");
                         minute = (Integer) mDate.get("minute");
                         second = (Integer) mDate.get("second");
-                        t.setCurrentHour(hour);
-                        t.setCurrentMinute(minute);
                     }
                 }
-                return t;
-                // TODO: It would be better if picker was in a popup
+                b.setOnClickListener(new TimeClickListener(b, hour, minute));
+                return b;
                 // TODO: TimePicker doesn't support seconds
             } else if (type.equals("binary")) {
                 System.out.println(type + " not supported yet");
@@ -351,6 +351,12 @@ public class FormViewFactory {
             this.year = year;
             this.month = month;
             this.day = day;
+            if (this.year == -1 && this.month == -1 && this.day == -1) {
+                Calendar c = Calendar.getInstance();
+                this.year = c.get(Calendar.YEAR);
+                this.month = c.get(Calendar.MONTH) + 1;
+                this.day = c.get(Calendar.DAY_OF_MONTH);
+            }
         }
         
         @Override
@@ -365,6 +371,45 @@ public class FormViewFactory {
         public void onDateSet(DatePicker p, int year, int month, int day) {
             this.caller.setText(Formatter.formatDate(this.format, year,
                                                      month + 1, day));
+            this.year = year;
+            this.month = month + 1;
+            this.day = day;
+        }
+    }
+
+    /** Click listener for buttons of time type fields to show
+     * a time picking poppup and update the value. */
+    private static class TimeClickListener
+        implements View.OnClickListener, TimePickerDialog.OnTimeSetListener {
+        
+        private Button caller;
+        private String format;
+        private int hour, minute;
+
+        public TimeClickListener(Button caller, int hour, int minute) {
+            this.caller = caller;
+            this.hour = hour;
+            this.minute = minute;
+            if (this.hour == -1 && this.minute == -1) {
+                Calendar c = Calendar.getInstance();
+                this.hour = c.get(Calendar.HOUR_OF_DAY);
+                this.minute = c.get(Calendar.MINUTE);
+            }
+        }
+        
+        @Override
+        public void onClick(View v) {
+            Context ctx = v.getContext();
+            TimePickerDialog t = new TimePickerDialog(ctx, this, this.hour,
+                                                      this.minute, true);
+            t.show();
+        }
+
+        @Override
+        public void onTimeSet(TimePicker t, int hour, int minute) {
+            this.caller.setText(String.format("%02d:%02d", hour, minute));
+            this.hour = hour;
+            this.minute = minute;
         }
     }
 }
