@@ -167,6 +167,7 @@ public class FormViewFactory {
                         day = (Integer) mDate.get("day");
                     }
                 }
+                // The listener also sets initial text
                 b.setOnClickListener(new DateClickListener(b,
                                                            prefs.getDateFormat(),
                                                            year, month, day));
@@ -192,6 +193,7 @@ public class FormViewFactory {
                         second = (Integer) mDate.get("second");
                     }
                 }
+                // The listener also sets initial text
                 bDate.setOnClickListener(new DateClickListener(bDate,
                                                                prefs.getDateFormat(),
                                                                year, month,
@@ -218,6 +220,7 @@ public class FormViewFactory {
                         second = (Integer) mDate.get("second");
                     }
                 }
+                // The listener also sets initial text
                 b.setOnClickListener(new TimeClickListener(b, hour, minute));
                 return b;
                 // TODO: TimePicker doesn't support seconds
@@ -388,6 +391,9 @@ public class FormViewFactory {
                 this.year = c.get(Calendar.YEAR);
                 this.month = c.get(Calendar.MONTH) + 1;
                 this.day = c.get(Calendar.DAY_OF_MONTH);
+            } else {
+                this.caller.setText(Formatter.formatDate(this.format, year,
+                                                         month, day));
             }
         }
         
@@ -426,6 +432,8 @@ public class FormViewFactory {
                 Calendar c = Calendar.getInstance();
                 this.hour = c.get(Calendar.HOUR_OF_DAY);
                 this.minute = c.get(Calendar.MINUTE);
+            } else {
+                this.caller.setText(String.format("%02d:%02d", hour, minute));
             }
         }
         
