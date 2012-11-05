@@ -183,6 +183,7 @@ public class Menu extends Activity implements Handler.Callback,
     // Menu section //
     //////////////////
     private static final int MENU_LOGOUT_ID = 0;
+    private static final int MENU_PREFERENCES_ID = 1;
     /** Called on menu initialization */
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
@@ -190,6 +191,10 @@ public class Menu extends Activity implements Handler.Callback,
         MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 100,
                                    this.getString(R.string.general_logout));
         logout.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        MenuItem prefs = menu.add(android.view.Menu.NONE, MENU_PREFERENCES_ID,
+                                  200,
+                                  this.getString(R.string.general_preferences));
+        prefs.setIcon(android.R.drawable.ic_menu_preferences);
         return true;
     }
 
@@ -199,6 +204,10 @@ public class Menu extends Activity implements Handler.Callback,
         switch (item.getItemId()) {
         case MENU_LOGOUT_ID:
             Start.logout(this);
+            break;
+        case MENU_PREFERENCES_ID:
+            Intent i = new Intent(this, Preferences.class);
+            this.startActivity(i);
             break;
         }
         return true;

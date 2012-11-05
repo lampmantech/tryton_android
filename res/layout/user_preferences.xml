@@ -17,23 +17,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <!--
-    This is the configuration (preferences) screen layout definition.
-    It is loaded from the org.tryton.client.Configure activity.
-    Make sure the keys are the same in both files.
+    This is the configuration (preferences) screen layout definition
+    for when the user is logged in.
+    Make sure the keys are the same in configure.xml.
 -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-  <EditTextPreference
-      android:key="host"
-      android:title="@string/config_host_title"
-      android:summary="@string/config_host_desc" />
-  <EditTextPreference
-      android:key="database"
-      android:title="@string/config_database_title"
-      android:summary="@string/config_database_desc" />
-  <PreferenceScreen android:title="@string/config_user_preferences">
-    <CheckBoxPreference
-        android:key="autologout"
-        android:title="@string/config_autologout_title"
-        android:summary="@string/config_autologout_desc" />
-  </PreferenceScreen>
+  <CheckBoxPreference
+      android:key="autologout"
+      android:title="@string/config_autologout_title"
+      android:summary="@string/config_autologout_desc" />
 </PreferenceScreen>
