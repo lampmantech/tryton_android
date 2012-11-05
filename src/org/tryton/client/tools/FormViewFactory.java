@@ -363,16 +363,8 @@ public class FormViewFactory {
 
         @Override
         public void onDateSet(DatePicker p, int year, int month, int day) {
-            String result;
-            if (this.format != null) {
-                result = format;
-                result = result.replace("%d", String.format("%02d", day));
-                result = result.replace("%m", String.format("%02d", month + 1));
-                result = result.replace("%Y", String.format("%04d", year));
-            } else {
-                result = String.format("%04d/%02d/%02d", year, month + 1, day);
-            }
-            this.caller.setText(result);
+            this.caller.setText(Formatter.formatDate(this.format, year,
+                                                     month + 1, day));
         }
     }
 }

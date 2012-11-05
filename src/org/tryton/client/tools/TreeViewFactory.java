@@ -19,8 +19,6 @@ package org.tryton.client.tools;
 
 import android.content.Context;
 import android.util.Log;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Map;
 
@@ -73,25 +71,18 @@ public class TreeViewFactory {
                 dval = (Double)value;
             }
             // Set default format
-            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-            symbols.setDecimalSeparator(prefs.getDecimalPoint());
-            symbols.setGroupingSeparator(prefs.getThousandsSeparator());
-            String format = "###,##0.###";
-            // Get digits format
             String digits = (String) field.get("digits");
+            int intNum = -1;
+            int decNum = -1;
             if (digits != null) {
                 digits = digits.substring(1, digits.length() - 1);
                 String[] split = digits.split(",");
-                int intNum = Integer.parseInt(split[0].trim());
-                int decNum = Integer.parseInt(split[1].trim());
-                format = "###,##0";
-                format += ".";
-                for (int i = 0; i < decNum; i++) {
-                    format += "0";
-                }
+                intNum = Integer.parseInt(split[0].trim());
+                decNum = Integer.parseInt(split[1].trim());
             }
-            DecimalFormat formatter = new DecimalFormat(format, symbols);
-            return formatter.format(dval);
+            return Formatter.formatDecimal(prefs.getDecimalPoint(),
+                                           prefs.getThousandsSeparator(),
+                                           intNum, decNum, dval);
         } else if (type.equals("date")) {
             if (value instanceof Map) {
                 @SuppressWarnings("unchecked")
@@ -100,14 +91,7 @@ public class TreeViewFactory {
                 int month = (Integer) mDate.get("month");
                 int day = (Integer) mDate.get("day");
                 String format = prefs.getDateFormat();
-                if (format != null) {
-                    String result = format;
-                    result = result.replace("%d", String.format("%02d", day));
-                    result = result.replace("%m", String.format("%02d", month));
-                    result = result.replace("%Y", String.format("%04d", year));
-                    return result;
-                }
-                return String.format("%04d/%02d/%02d", year, month, day);
+                return Formatter.formatDate(format, year, month, day);
             } else {
                 Log.w("Tryton", "Malformed date for " + name + " "
                       + value.getClass());
