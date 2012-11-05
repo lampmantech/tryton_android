@@ -97,7 +97,7 @@ public class TreeView extends Activity
         } else if (entryInitializer != null) {
             this.origin = entryInitializer;
             entryInitializer = null;
-            this.mode = MODE_EXTENDED;
+            this.mode = MODE_SUMMARY;
         }
         // Init view
         this.setContentView(R.layout.tree);
