@@ -18,11 +18,13 @@
 package org.tryton.client.tools;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -191,6 +193,11 @@ public class FormViewFactory {
                 List<List> selectValues = (List<List>) field.get("selection");
                 SelectAdapter adapt = new SelectAdapter(selectValues);
                 s.setAdapter(adapt);
+                if (field.getString("string") != null) {
+                    s.setPrompt(field.getString("string"));
+                } else {
+                    s.setPrompt(field.getString("name"));
+                }
                 // Set value
                 if (data != null) {
                     String value = data.getString(name);
@@ -223,8 +230,7 @@ public class FormViewFactory {
         return new View(ctx);
     }
 
-    /** An adapter to provide values to a select widget
-        (either for a selection field or a X2one field) */
+    /** An adapter to provide values to a select widget */
     public static class SelectAdapter extends BaseAdapter {
 
         private List<String> values;
@@ -261,7 +267,10 @@ public class FormViewFactory {
                 return convertView;
             } else {
                 TextView t = new TextView(parent.getContext());
+                Resources r = parent.getContext().getResources();
+                t.setMinimumHeight((int)r.getDimension(R.dimen.clickable_min_size));
                 t.setText(label);
+                t.setGravity(Gravity.CENTER_VERTICAL);
                 return t;
             }
         }
