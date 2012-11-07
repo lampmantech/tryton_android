@@ -43,6 +43,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -147,7 +148,7 @@ public class FormViewFactory {
                 return edit;
             } else if (type.equals("boolean")) {
                 boolean value = false;
-                if (data != null) {
+                if (data != null && data.get(name) != null) {
                     value = (Boolean)data.get(name);
                 }
                 CheckBox cb = new CheckBox(ctx);
@@ -157,7 +158,7 @@ public class FormViewFactory {
                 System.out.println("Sha type not supported yet");
             } else if (type.equals("date")) {
                 Object value = null;
-                Button b = new Button(ctx);
+                DateTimeButton b = new DateTimeButton(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 int year = -1, month = -1, day = -1;
                 if (data != null) {
@@ -177,9 +178,9 @@ public class FormViewFactory {
                 return b;
             } else if (type.equals("datetime")) {
                 Object value = null;
-                Button bDate = new Button(ctx);
+                DateTimeButton bDate = new DateTimeButton(ctx);
                 bDate.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
-                Button bTime = new Button(ctx);
+                DateTimeButton bTime = new DateTimeButton(ctx);
                 bTime.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 int year = -1, month = -1, day = -1;
                 int hour = -1, minute = -1, second = -1;
@@ -210,7 +211,7 @@ public class FormViewFactory {
                 layout.addView(bTime);
                 return layout;
             } else if (type.equals("time")) {
-                Button b = new Button(ctx);
+                DateTimeButton b = new DateTimeButton(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 int hour = -1, minute = -1, second = -1;
                 if (data != null) {
@@ -283,7 +284,7 @@ public class FormViewFactory {
                 }
                 return s;
             } else if (type.equals("many2many") || type.equals("one2many")) {
-                Button b = new Button(ctx);
+                DateTimeButton b = new DateTimeButton(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 int size = 0;
                 if (data != null) {
@@ -306,7 +307,120 @@ public class FormViewFactory {
         }
         return new View(ctx);
     }
+    
+    /** Check if a view given by the factory is a field widget (and thus
+     * getValue can be called on it) */
+    public static boolean isFieldView(View v) {
+        return (!(v.getClass() == TextView.class));
+    }
 
+    public static final Object NO_VALUE = new Object();
+
+    /** Get the value of a widget created by the factory */
+    public static Object getValue(View v, Model field, Preferences prefs) {
+        String type = field.getString("type");
+        if (type.equals("char") || type.equals("text")) {
+            if (v instanceof EditText) {
+                EditText t = (EditText) v;
+                return t.getText().toString();
+            } else {
+                Log.e("Tryton", "Getting string value form incorrect view"
+                      + v.getClass());
+            }
+        } else if (type.equals("integer") || type.equals("biginteger")) {
+            if (v instanceof EditText) {
+                EditText t = (EditText) v;
+                return Integer.parseInt(t.getText().toString());
+            } else {
+                Log.e("Tryton", "Getting integer value form incorrect view");
+            }
+        } else if (type.equals("float") || type.equals("numeric")) {
+            if (v instanceof EditText) {
+                EditText t = (EditText) v;
+                // Reverse format
+                Number val = Formatter.unformatDecimal(prefs.getDecimalPoint(),
+                                                       prefs.getThousandsSeparator(),
+                                                       t.getText().toString());
+                return val.doubleValue();
+            } else {
+                Log.e("Tryton", "Getting decimal value form incorrect view");
+            }
+        } else if (type.equals("boolean")) {
+            if (v instanceof CheckBox) {
+                CheckBox b = (CheckBox) v;
+                return b.isChecked();
+            } else {
+                Log.e("Tryton", "Getting boolean value form incorrect view");
+            }
+        } else if (type.equals("sha")) {
+            System.out.println("Sha type not supported yet");
+        } else if (type.equals("date")) {
+            if (v instanceof DateTimeButton) {
+                DateTimeButton b = (DateTimeButton) v;
+                DateClickListener l = (DateClickListener) b.getDateTimeListener();
+                return l.getValue();
+            } else {
+                Log.e("Tryton", "Getting date value from incorrect view");
+            }
+        } else if (type.equals("time")) {
+            if (v instanceof Button) {
+                DateTimeButton b = (DateTimeButton) v;
+                TimeClickListener l = (TimeClickListener) b.getDateTimeListener();
+                return l.getValue();                
+            } else {
+                Log.e("Tryton", "Getting time value from incorrect view");
+            }
+        } else if (type.equals("datetime")) {
+            if (v instanceof LinearLayout) {
+                LinearLayout ll = (LinearLayout) v;
+                DateTimeButton date = (DateTimeButton) ll.getChildAt(0);
+                DateTimeButton time = (DateTimeButton) ll.getChildAt(1);
+                DateClickListener l = (DateClickListener) date.getDateTimeListener();
+                TimeClickListener tl = (TimeClickListener) time.getDateTimeListener();
+                Map<String, Integer> dateVal = l.getValue();
+                Map<String, Integer> timeVal = l.getValue();
+                dateVal.putAll(timeVal);
+                return dateVal;
+            } else {
+                Log.e("Tryton", "Getting datetime value from incorrect view");
+            }
+        } else if (type.equals("binary")) {
+            System.out.println(type + " not supported yet");
+        } else if (type.equals("selection")) {
+            if (v instanceof Spinner) {
+                Spinner s = (Spinner) v;
+                if (s.getSelectedItemPosition() != 0) {
+                    return s.getSelectedItem();
+                } else {
+                    return null;
+                }
+            } else {
+                Log.e("Tryton", "Getting selection value from incorrect view");
+            }
+        } else if (type.equals("many2one") || type.equals("one2one")) {
+            if (v instanceof Spinner) {
+                Spinner s = (Spinner) v;
+                if (s.getSelectedItemPosition() != 0) {
+                    return s.getSelectedItem();
+                } else {
+                    return null;
+                }
+            } else {
+                Log.e("Tryton", "Getting x2one value from incorrect view");
+            }
+        } else if (type.equals("many2many") || type.equals("one2many")) {
+            // x2many fields uses their own value picking
+            return null;
+        } else if (type.equals("function")) {
+            System.out.println("Function type not supported yet");
+        } else if (type.equals("property")) {
+            System.out.println("Property type not supported yet");
+        } else {
+            System.out.println("Unknown type " + type);
+        }
+        return NO_VALUE;
+    }
+    
     /** An adapter to provide values to a select widget */
     public static class SelectAdapter extends BaseAdapter {
 
@@ -488,6 +602,26 @@ public class FormViewFactory {
                                   int count) {}
     }
 
+    /** Override of Button class to get the click listener that holds
+     * date and time data */
+    private static class DateTimeButton extends Button {
+        
+        private View.OnClickListener dtListener;
+
+        public DateTimeButton(Context ctx) {
+            super(ctx);
+        }
+
+        public void setOnClickListener (View.OnClickListener listener) {
+            super.setOnClickListener(listener);
+            this.dtListener = listener;
+        }
+
+        public View.OnClickListener getDateTimeListener() {
+            return this.dtListener;
+        }
+    }
+
     /** Click listener for buttons of date type fields to show
      * a date picking poppup and update the value. */
     private static class DateClickListener
@@ -531,6 +665,14 @@ public class FormViewFactory {
             this.month = month + 1;
             this.day = day;
         }
+
+        public Map<String, Integer> getValue() {
+            Map<String, Integer> value = new HashMap<String, Integer>();
+            value.put("year", this.year);
+            value.put("month", this.month);
+            value.put("day", this.day);
+            return value;
+        }
     }
 
     /** Click listener for buttons of time type fields to show
@@ -568,6 +710,14 @@ public class FormViewFactory {
             this.caller.setText(String.format("%02d:%02d", hour, minute));
             this.hour = hour;
             this.minute = minute;
+        }
+
+        public Map<String, Integer> getValue() {
+            Map<String, Integer> value = new HashMap<String, Integer>();
+            value.put("hour", this.hour);
+            value.put("minute", this.minute);
+            value.put("second", 0);
+            return value;
         }
     }
 }

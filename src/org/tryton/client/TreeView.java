@@ -473,7 +473,7 @@ public class TreeView extends Activity
             this.loadData();
             break;
         case MENU_NEW_ID:
-            Session.current.editModel(null);
+            Session.current.editNewModel(this.viewTypes.getModelName());
             FormView.setup(this.viewTypes);
             Intent i = new Intent(this, FormView.class);
             this.startActivity(i);

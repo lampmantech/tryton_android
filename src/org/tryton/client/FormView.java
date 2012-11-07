@@ -27,6 +27,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import java.util.ArrayList;
@@ -69,12 +70,6 @@ public class FormView extends Activity implements Handler.Callback {
         } else {
             this.viewTypes = viewInitializer;
             viewInitializer = null;
-            // Set a new model to edit in session if required
-            if (Session.current.editedModel == null) {
-                Model newModel = new Model(this.viewTypes.getModelName());
-                newModel.set("id", -1);
-                Session.current.editedModel = newModel;
-            }
         }
         // Init view
         this.setContentView(R.layout.form);
@@ -133,7 +128,12 @@ public class FormView extends Activity implements Handler.Callback {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         // Check if dirty to request save
+        this.updateTempModel();
+        if (Session.current.editedIsDirty()) {
+            
+        }
         // Reset session
         Session.current.editModel(null);
     }
@@ -188,6 +188,31 @@ public class FormView extends Activity implements Handler.Callback {
             return true;
         } else {
             return false;
+        }
+    }
+
+    /** Update temp model to current values */
+    private void updateTempModel() {
+        Model tmp = Session.current.tempModel;
+        ModelView modelView = this.viewTypes.getView("form");
+        int structIndex = -1;
+        for (int i = 0; i < this.table.getChildCount(); i++) {
+            ViewGroup child = (ViewGroup) this.table.getChildAt(i);
+            for (int j = 0; j < child.getChildCount(); j++) {
+                structIndex++;
+                View v = child.getChildAt(j);
+                if (!FormViewFactory.isFieldView(v)) {
+                    // Ignore
+                    continue;
+                }
+                Model field = modelView.getStructure().get(structIndex);
+                Object value = FormViewFactory.getValue(v, field,
+                                                        Session.current.prefs);
+                if (value != FormViewFactory.NO_VALUE) {
+                    // If NO_VALUE (not null) the value is ignored
+                    tmp.set(field.getString("name"), value);
+                }
+            }
         }
     }
 
@@ -253,9 +278,10 @@ public class FormView extends Activity implements Handler.Callback {
 
     @Override
     public boolean onPrepareOptionsMenu(android.view.Menu menu) {
+        this.updateTempModel();
         // Enable/disable save
         MenuItem save = menu.findItem(MENU_SAVE_ID);
-        save.setEnabled(Session.current.dirtyModel);
+        save.setEnabled(Session.current.editedIsDirty());
         return true;
     }
 

@@ -19,6 +19,7 @@ package org.tryton.client.tools;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.ParsePosition;
 
 /** Tool to format some data to string */
 public class Formatter {
@@ -56,5 +57,16 @@ public class Formatter {
         }
         DecimalFormat formatter = new DecimalFormat(format, symbols);
         return formatter.format(value);
+    }
+
+    public static Number unformatDecimal(char decimalPoint,
+                                         char thousandsSeparator,
+                                         String value) {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setDecimalSeparator(decimalPoint);
+        symbols.setGroupingSeparator(thousandsSeparator);
+        String format = "###,##0.###";
+        DecimalFormat formatter = new DecimalFormat(format, symbols);
+        return formatter.parse(value, new ParsePosition(0));
     }
 }

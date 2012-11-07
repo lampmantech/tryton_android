@@ -36,13 +36,41 @@ public class Session {
     
     /** Model currently edited in form view. Use editModel to set its value */
     public Model editedModel;
-    public boolean dirtyModel;
+    public Model tempModel;
 
     private Session() {}
 
+    /** Set session to edit a record. Use null to stop editing. */
     public void editModel(Model data) {
         this.editedModel = data;
-        this.dirtyModel = false;
+        if (data != null) {
+            this.tempModel = new Model(data.getClassName());
+        } else {
+            this.tempModel = null;
+        }
+    }
+    /** Set session to create a new record. */
+    public void editNewModel(String className) {
+        this.editedModel = null;
+        this.tempModel = new Model(className);
+    }
+
+    public boolean editedIsDirty() {
+        if (this.editedModel == null) {
+            return true;
+        }
+        if (this.tempModel == null) {
+            return false;
+        }
+        for (String attr : this.tempModel.getAttributeNames()) {
+            Object value = this.editedModel.get(attr);
+            Object tmpValue = this.tempModel.get(attr);
+            if ((tmpValue == null && value == null)
+                || (tmpValue != null && !tmpValue.equals(value))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void clear() {
@@ -52,7 +80,6 @@ public class Session {
         this.cookie = null;
         this.prefs = null;
         this.editedModel = null;
-        this.dirtyModel = false;
     }
 
 }
