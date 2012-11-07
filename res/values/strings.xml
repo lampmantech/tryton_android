@@ -48,6 +48,7 @@
   <string name="tree_switch_mode_extended">Extended mode</string>
   <string name="tree_pagination">%1$d - %2$d of %3$d</string>
   <string name="form_save">Save</string>
+  <string name="tomany_add">Add elements</string>
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string>

@@ -43,6 +43,7 @@ public class ModelView implements Serializable {
     /** The arch in data shape. Accessible only once build is called.
      * It contains fields form the fields map with some extra data. */
     protected List<Model> builtFields;
+    protected Map<String, ModelViewTypes> subviews;
 
     /** Create the view from server data. It must be built to be used
      *  in the application */
@@ -51,12 +52,27 @@ public class ModelView implements Serializable {
         this.type = json.getString("type");
         this.modelName = json.getString("model");
         this.fields = new HashMap<String, Model>();
+        this.subviews = new HashMap<String, ModelViewTypes>();
         JSONObject fields = json.getJSONObject("fields");
         JSONArray fieldNames = fields.names();
         for (int i = 0; i < fieldNames.length(); i++) {
             String fieldName = fieldNames.getString(i);
             JSONObject field = fields.getJSONObject(fieldName);
             Model fieldModel = new Model("ir.model.field", field);
+            if (field.has("views")) {
+                JSONObject jsSubviews = (JSONObject) field.get("views");
+                // Get subviews
+                if (jsSubviews != null && jsSubviews.length() > 0) {
+                    JSONArray names = jsSubviews.names();
+                    ModelViewTypes mvt = new ModelViewTypes(field.getString("relation"));
+                    for (int j = 0; j < names.length(); j++) {
+                        String type = names.getString(j);
+                        ModelView subview = new ModelView(jsSubviews.getJSONObject(type));
+                        mvt.putView(type, subview);
+                    }
+                    this.subviews.put(fieldName, mvt);
+                }
+            }
             this.fields.put(fieldName, fieldModel);
         }
     }
@@ -92,6 +108,14 @@ public class ModelView implements Serializable {
 
     public List<Model> getStructure() {
         return this.builtFields;
+    }
+
+    public ModelViewTypes getSubview(String field) {
+        return this.subviews.get(field);
+    }
+    
+    public Map<String, ModelViewTypes> getSubviews() {
+        return this.subviews;
     }
 
     /** Build the structure. It represent arch and fields

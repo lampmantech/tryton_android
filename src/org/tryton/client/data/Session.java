@@ -17,6 +17,7 @@
 */
 package org.tryton.client.data;
 
+import org.tryton.client.models.Model;
 import org.tryton.client.models.Preferences;
 
 /** The user session that is stored in memory and is flushed when the
@@ -32,8 +33,17 @@ public class Session {
     public int userId = -1;
     public String cookie;
     public Preferences prefs;
+    
+    /** Model currently edited in form view. Use editModel to set its value */
+    public Model editedModel;
+    public boolean dirtyModel;
 
     private Session() {}
+
+    public void editModel(Model data) {
+        this.editedModel = data;
+        this.dirtyModel = false;
+    }
 
     public void clear() {
         this.user = null;
@@ -41,6 +51,8 @@ public class Session {
         this.userId = -1;
         this.cookie = null;
         this.prefs = null;
+        this.editedModel = null;
+        this.dirtyModel = false;
     }
 
 }

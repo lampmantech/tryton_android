@@ -46,19 +46,16 @@ import org.tryton.client.data.Session;
 public class FormView extends Activity implements Handler.Callback {
 
     /** Use a static initializer to pass data to the activity on start.
-        Set the viewtype that hold the form view and the data to edit.
-        For a new entry pass null to data. */
-    public static void setup(ModelViewTypes view, Model data) {
+     * Set the viewtype that hold the form view. The data to edit is
+     * read from current Session. If null a new Model will be created. */
+    public static void setup(ModelViewTypes view) {
         viewInitializer = view;
-        dataInitializer = data;
     }
     private static ModelViewTypes viewInitializer;
-    private static Model dataInitializer;
 
     private ModelViewTypes viewTypes;
     private Set<String> relModelsToLoad;
-    private Model data;
-    private boolean dirty;
+    private Set<String> modelsToLoad;
     private ProgressDialog loadingDialog;
 
     private TableLayout table;
@@ -69,14 +66,15 @@ public class FormView extends Activity implements Handler.Callback {
         // Init data
         if (state != null) {
             this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
-            this.data = (Model) state.getSerializable("data");
-            this.dirty = state.getBoolean("dirty");
         } else {
             this.viewTypes = viewInitializer;
-            this.data = dataInitializer;
-            this.dirty = false;
             viewInitializer = null;
-            dataInitializer = null;
+            // Set a new model to edit in session if required
+            if (Session.current.editedModel == null) {
+                Model newModel = new Model(this.viewTypes.getModelName());
+                newModel.set("id", -1);
+                Session.current.editedModel = newModel;
+            }
         }
         // Init view
         this.setContentView(R.layout.form);
@@ -85,8 +83,10 @@ public class FormView extends Activity implements Handler.Callback {
         int x = 0; // X position of the widget
         TableRow row = null;
         for (Model view : modelView.getStructure()) {
-            View v = FormViewFactory.getView(view, modelView, this.data,
-                                             Session.current.prefs,
+            Session s = Session.current;
+            View v = FormViewFactory.getView(view, modelView,
+                                             s.editedModel,
+                                             s.prefs,
                                              this);
             if (x == 0) {
                 if (row != null) {
@@ -103,18 +103,23 @@ public class FormView extends Activity implements Handler.Callback {
         this.table.addView(row);
         // Check if we have all the data required for relationnal fields
         this.relModelsToLoad = new HashSet<String>();
+        this.modelsToLoad = new HashSet<String>();
         for (Model view : modelView.getStructure()) {
             if (!(view.getClassName().equals("label"))) {
                 String type = view.getString("type");
                 DataCache db = new DataCache(this);
-                if ((type.equals("one2one") || type.equals("one2many")
-                     || type.equals("many2one") || type.equals("many2many"))
-                    && !db.isFullyLoaded(view.getString("relation"))) {
-                    this.relModelsToLoad.add(view.getString("relation"));
+                String relModel = view.getString("relation");
+                if ((type.equals("one2one") || type.equals("many2one"))
+                    && !db.isFullyLoaded(relModel, false)) {
+                    this.relModelsToLoad.add(relModel);
+                } else if ((type.equals("one2many")
+                            || type.equals("many2many"))
+                           && !db.isFullyLoaded(relModel, true)) {
+                    this.modelsToLoad.add(relModel);
                 }
             }
         }
-        if (!this.relModelsToLoad.isEmpty()) {
+        if (!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty()) {
             // Start loading
             this.showLoadingDialog();
             this.loadRel();
@@ -124,8 +129,13 @@ public class FormView extends Activity implements Handler.Callback {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable("viewTypes", this.viewTypes);
-        outState.putSerializable("data", this.data);
-        outState.putBoolean("dirty", this.dirty);
+    }
+
+    @Override
+    public void onDestroy() {
+        // Check if dirty to request save
+        // Reset session
+        Session.current.editModel(null);
     }
 
     public void showLoadingDialog() {
@@ -149,7 +159,7 @@ public class FormView extends Activity implements Handler.Callback {
      * Return true if a load is launched, false if
      * there is nothing to load. */
     private boolean loadRel() {
-        if (!this.relModelsToLoad.isEmpty()) {
+        if (!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty()) {
             Session s = Session.current;
             String modelLoaded = null;
             // Run the first model and remove it. LoadRel will be recalled
@@ -158,12 +168,23 @@ public class FormView extends Activity implements Handler.Callback {
                 // This is the easyest way to get an Iterator on the set
                 // and get the first entry.
                 TrytonCall.getRelData(s.userId, s.cookie, s.prefs, model,
-                                      new Handler(this));
+                                      false, new Handler(this));
                 modelLoaded = model;
                 break;
             }
-            // Remove from pending models
-            this.relModelsToLoad.remove(modelLoaded);
+            if (modelLoaded == null) {
+                // relModelToLoad all loaded
+                for (String model : this.modelsToLoad) {
+                    TrytonCall.getRelData(s.userId, s.cookie, s.prefs, model,
+                                          true, new Handler(this));
+                    modelLoaded = model;
+                    break;
+                }
+                this.modelsToLoad.remove(modelLoaded);
+            } else {
+                // Remove from pending models
+                this.relModelsToLoad.remove(modelLoaded);
+            }
             return true;
         } else {
             return false;
@@ -179,7 +200,11 @@ public class FormView extends Activity implements Handler.Callback {
             String className = (String) ((Object[])msg.obj)[0];
             List<Model> data = (List) ((Object[])msg.obj)[1];
             DataCache db = new DataCache(this);
-            db.storeRelData(className, data);
+            if (msg.arg1 == 0) {
+                db.storeRelData(className, data);
+            } else {
+                db.storeClassData(className, data);
+            }
             db.setDataCount(className, data.size());
             // Run next loading
             if (!this.loadRel()) {
@@ -230,7 +255,7 @@ public class FormView extends Activity implements Handler.Callback {
     public boolean onPrepareOptionsMenu(android.view.Menu menu) {
         // Enable/disable save
         MenuItem save = menu.findItem(MENU_SAVE_ID);
-        save.setEnabled(this.dirty);
+        save.setEnabled(Session.current.dirtyModel);
         return true;
     }
 

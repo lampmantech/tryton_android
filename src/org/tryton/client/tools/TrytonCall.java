@@ -483,6 +483,13 @@ public class TrytonCall {
                                 JSONObject jsFields = (JSONObject) oView;
                                 ModelView mView = new ModelView(jsFields);
                                 ArchParser.buildTree(mView);
+                                for (String extView : mView.getSubviews().keySet()) {
+                                    ModelViewTypes t = mView.getSubviews().get(extView);
+                                    for (String vt : t.getTypes()) {
+                                        ModelView sub = t.getView(vt);
+                                        ArchParser.buildTree(sub);
+                                    }
+                                }
                                 modelViews.putView(type, mView);
                             }
                         }
@@ -726,9 +733,10 @@ public class TrytonCall {
 
     /** Get data for relationnal pickup */
     public static boolean getRelData(final int userId, final String cookie,
-                                  final Preferences prefs,
-                                  final String modelName,
-                                  final Handler h) {
+                                     final Preferences prefs,
+                                     final String modelName,
+                                     final boolean fullLoad,
+                                     final Handler h) {
         if (c == null) {
             return false;
         }
@@ -743,7 +751,7 @@ public class TrytonCall {
                     // Search the data and add them to a list
                     JSONArray result = search(userId, cookie, prefs,
                                               "model." + modelName,
-                                              null, 0, 999999, false);
+                                              null, 0, 999999, fullLoad);
                     for (int i = 0; i < result.length(); i++) {
                         JSONObject jsData = result.getJSONObject(i);
                         Model data = new Model(modelName, jsData);
@@ -752,6 +760,11 @@ public class TrytonCall {
                     // Send back the list to the handler
                     m.what = CALL_RELDATA_OK;
                     m.obj = new Object[]{modelName, allData};
+                    if (fullLoad) {
+                        m.arg1 = 1;
+                    } else {
+                        m.arg1 = 0;
+                    }
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;

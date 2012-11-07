@@ -141,15 +141,23 @@ public class DataCache extends SQLiteOpenHelper {
         }
     }
 
-    public boolean isFullyLoaded(String className) {
+    /** Check if all data are present */
+    public boolean isFullyLoaded(String className, boolean full) {
         int count = this.getDataCount(className);
         if (count == -1) {
             return false;
         }
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(MODEL_TABLE, new String[]{"count(id)"},
-                            "className = ?", new String[]{className},
-                            null, null, null, null);
+        Cursor c;
+        if (!full) {
+            c = db.query(MODEL_TABLE, new String[]{"count(id)"},
+                         "className = ?", new String[]{className},
+                         null, null, null, null);
+        } else {
+            c = db.query(MODEL_TABLE, new String[]{"count(id)"},
+                         "className = ? AND data NOT NULL",
+                         new String[]{className}, null, null, null, null);
+        }
         if (c.moveToNext()) {
             int loadedCount = c.getInt(0);
             c.close();
@@ -240,13 +248,9 @@ public class DataCache extends SQLiteOpenHelper {
             return null;
         }
     }
-   
-    public List<Model> getData(String className, int offset, int count) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(MODEL_TABLE, new String[]{"data"},
-                            "className = ? AND data NOT NULL",
-                            new String[]{className},
-                            null, null, null, offset + "," + count);
+
+    private List<Model> readModels(Cursor c, SQLiteDatabase db,
+                                   String className) {
         List<Model> models = new ArrayList<Model>();
         while (c.moveToNext()) {
             byte[] data = c.getBlob(0);
@@ -273,6 +277,36 @@ public class DataCache extends SQLiteOpenHelper {
                 Log.e("Tryton", "Unable to read stored data", e);
             }
         }
+        return models;
+    }
+   
+    public List<Model> getData(String className, int offset, int count) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(MODEL_TABLE, new String[]{"data"},
+                            "className = ? AND data NOT NULL",
+                            new String[]{className},
+                            null, null, null, offset + "," + count);
+        List<Model> models = this.readModels(c, db, className);
+        c.close();
+        db.close();
+        return models;
+    }
+
+    public List<Model> getData(String className, List<Integer> ids) {
+        if (ids == null) {
+            return new ArrayList<Model>();
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        String in = "";
+        for (int id : ids) {
+            in += id + ",";
+        }
+        in = in.substring(0, in.length() - 1);
+        Cursor c = db.query(MODEL_TABLE, new String[]{"data"},
+                            "className = ? AND id IN (" + in + ")",
+                            new String[]{className},
+                            null, null, null, null);
+        List<Model> models = this.readModels(c, db, className);
         c.close();
         db.close();
         return models;
@@ -294,7 +328,33 @@ public class DataCache extends SQLiteOpenHelper {
         }
         c.close();
         db.close();
-        return models;        
+        return models;
+    }
+
+    public List<Model> list(String className, List<Integer> ids) {
+        if (ids == null) {
+            return new ArrayList<Model>();
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        String in = "";
+        for (int id : ids) {
+            in += id + ",";
+        }
+        in = in.substring(0, in.length() - 1);
+        Cursor c = db.query(MODEL_TABLE, new String[]{"id", "name"},
+                            "className = ? AND id IN (" + in + ")",
+                            new String[]{className},
+                            null, null, null, null);
+        List<Model> models = new ArrayList<Model>();
+        while (c.moveToNext()) {
+            Model m = new Model(className);
+            m.set("id", c.getInt(0));
+            m.set("name", c.getString(1));
+            models.add(m);
+        }
+        c.close();
+        db.close();
+        return models;
     }
  
     /** Get a limited model (name and id) a model

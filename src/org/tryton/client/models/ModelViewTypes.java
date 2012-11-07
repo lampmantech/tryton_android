@@ -20,6 +20,7 @@ package org.tryton.client.models;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /** This is just an aggregation of views per type for a model name. */
 public class ModelViewTypes implements Serializable {
@@ -41,6 +42,10 @@ public class ModelViewTypes implements Serializable {
 
     public ModelView getView(String type) {
         return this.views.get(type);
+    }
+
+    public Set<String> getTypes() {
+        return this.views.keySet();
     }
 
     public String getModelName() {

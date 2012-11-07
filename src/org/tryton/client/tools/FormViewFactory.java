@@ -20,6 +20,7 @@ package org.tryton.client.tools;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.tryton.client.R;
+import org.tryton.client.ToManyEditor;
 import org.tryton.client.data.DataCache;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
@@ -281,7 +283,18 @@ public class FormViewFactory {
                 }
                 return s;
             } else if (type.equals("many2many") || type.equals("one2many")) {
-                System.out.println(type + " not supported yet");
+                Button b = new Button(ctx);
+                b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+                int size = 0;
+                if (data != null) {
+                    Object oval = data.get(name);
+                    @SuppressWarnings("unchecked")
+                    List<Integer> lIds = (List<Integer>) oval;
+                    size = lIds.size();
+                }
+                b.setText("( " + size + " )");
+                b.setOnClickListener(new ToManyClickListener(view, field.getString("name")));
+                return b;
             } else if (type.equals("function")) {
                 System.out.println("Function type not supported yet");
             } else if (type.equals("property")) {
@@ -404,6 +417,22 @@ public class FormViewFactory {
         }
     }
 
+    public static class ToManyClickListener implements View.OnClickListener {
+
+        ModelView parentView;
+        private String fieldName;
+
+        public ToManyClickListener(ModelView parentView, String fieldName) {
+            this.parentView = parentView;
+            this.fieldName = fieldName;
+        }
+
+        public void onClick(View v) {
+            Intent i = new Intent (v.getContext(), ToManyEditor.class);
+            ToManyEditor.setup(this.parentView, this.fieldName);
+            v.getContext().startActivity(i);
+        }
+    }
 
     /** Constraint to be used on float and numeric fields to apply
      * the digit attribute limitative behaviour. */

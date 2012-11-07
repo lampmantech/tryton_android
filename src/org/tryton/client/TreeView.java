@@ -200,14 +200,16 @@ public class TreeView extends Activity
     public void onItemClick(AdapterView<?> adapt, View v,
                             int position, long id) {
         Model clickedData = this.data.get(position);
-        FormView.setup(this.viewTypes, clickedData);
+        FormView.setup(this.viewTypes);
+        Session.current.editModel(clickedData);
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
     }
     public boolean onChildClick(ExpandableListView parent, View v, int groupPos,
                                 int childPos, long id) {
         Model clickedData = this.data.get(groupPos);
-        FormView.setup(this.viewTypes, clickedData);
+        FormView.setup(this.viewTypes);
+        Session.current.editModel(clickedData);
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
         return true;
@@ -467,7 +469,8 @@ public class TreeView extends Activity
             this.loadData();
             break;
         case MENU_NEW_ID:
-            FormView.setup(this.viewTypes, null);
+            Session.current.editModel(null);
+            FormView.setup(this.viewTypes);
             Intent i = new Intent(this, FormView.class);
             this.startActivity(i);
             break;
