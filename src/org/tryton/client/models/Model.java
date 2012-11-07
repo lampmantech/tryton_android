@@ -26,7 +26,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Set;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -46,9 +46,9 @@ public class Model implements Serializable {
 
     public Model(String className) {
         this.className = className;
-        this.attributes = new HashMap<String, Object>();
-        this.toOne = new HashMap<String, Model>();
-        this.toMany = new HashMap<String, List<Model>>();
+        this.attributes = new TreeMap<String, Object>();
+        this.toOne = new TreeMap<String, Model>();
+        this.toMany = new TreeMap<String, List<Model>>();
     }
     
     /** Convert JSONObject to a map of attributes. */
@@ -56,7 +56,7 @@ public class Model implements Serializable {
         if (o == JSONObject.NULL) {
             return null;
         }
-        Map<String, Object> value = new HashMap<String, Object>();
+        Map<String, Object> value = new TreeMap<String, Object>();
         JSONArray keys = o.names();
         if (keys == null) {
             return value;
@@ -110,8 +110,8 @@ public class Model implements Serializable {
     public Model(String className, JSONObject model) {
         this.className = className;
         this.attributes = this.convertJSONObject(model);
-        this.toOne = new HashMap<String, Model>();
-        this.toMany = new HashMap<String, List<Model>>();
+        this.toOne = new TreeMap<String, Model>();
+        this.toMany = new TreeMap<String, List<Model>>();
     }
 
     public String getClassName() {

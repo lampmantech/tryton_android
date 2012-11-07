@@ -17,7 +17,7 @@
 */
 package org.tryton.client.models;
 
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.Map;
 import java.io.Serializable;
@@ -51,8 +51,8 @@ public class ModelView implements Serializable {
         this.arch = json.getString("arch");
         this.type = json.getString("type");
         this.modelName = json.getString("model");
-        this.fields = new HashMap<String, Model>();
-        this.subviews = new HashMap<String, ModelViewTypes>();
+        this.fields = new TreeMap<String, Model>();
+        this.subviews = new TreeMap<String, ModelViewTypes>();
         JSONObject fields = json.getJSONObject("fields");
         JSONArray fieldNames = fields.names();
         for (int i = 0; i < fieldNames.length(); i++) {

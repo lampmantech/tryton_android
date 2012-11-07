@@ -18,7 +18,7 @@
 package org.tryton.client.models;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,7 +33,7 @@ public class ModelViewTypes implements Serializable {
 
     public ModelViewTypes(String modelName) {
         this.modelName = modelName;
-        this.views = new HashMap<String, ModelView>();
+        this.views = new TreeMap<String, ModelView>();
     }
 
     public void putView(String type, ModelView view) {
