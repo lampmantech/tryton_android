@@ -30,6 +30,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,7 +77,10 @@ public class Menu extends Activity implements Handler.Callback,
             try {
                 cachedMenus = MenuCache.load(this);
             } catch (IOException e) {
-                Log.w("Tryton", "Unable to load menu cache", e);
+                if (!(e instanceof FileNotFoundException)) {
+                    // Ignore no cache exception
+                    Log.w("Tryton", "Unable to load menu cache", e);
+                }
             }
             if (cachedMenus != null) {
                 // Got it
@@ -140,7 +144,7 @@ public class Menu extends Activity implements Handler.Callback,
             try {
                 MenuCache.save(menus, this);
             } catch (IOException e) {
-                Log.w("Tryton", "Unable to cache menus", e);
+                    Log.w("Tryton", "Unable to cache menus", e);
             }
             // Update the view
             this.entries = menus;

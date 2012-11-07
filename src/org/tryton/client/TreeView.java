@@ -33,6 +33,7 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -253,8 +254,11 @@ public class TreeView extends Activity
                     this.loadDataAndMeta();
                 }
             } catch (IOException e) {
-                Log.i("Tryton",
-                      "Unable to load view cache for " + this.origin, e);
+                if (!(e instanceof FileNotFoundException)) {
+                    // Ignore no cache exception   
+                    Log.i("Tryton",
+                          "Unable to load view cache for " + this.origin, e);
+                }
             }
             if (this.viewTypes == null) {
                 this.showLoadingDialog(LOADING_VIEWS);
