@@ -49,6 +49,8 @@
   <string name="tree_pagination">%1$d - %2$d of %3$d</string>
   <string name="form_save">Save</string>
   <string name="tomany_add">Add elements</string>
+  <string name="data_send">Sending data</string>
+  <string name="data_send_done">Record saved</string>
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string>

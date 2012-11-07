@@ -183,6 +183,25 @@ public class DataCache extends SQLiteOpenHelper {
         db.close();
     }
 
+    private void addOne(String className, SQLiteDatabase db) {
+        Cursor c = db.query(COUNT_TABLE, new String[]{"count"},
+                            "className = ?", new String[]{className},
+                            null, null, null, "1");
+        if (c.moveToNext()) {
+            int count = c.getInt(0);
+            ContentValues v = new ContentValues();
+            v.put("count", count + 1);
+            db.update(COUNT_TABLE, v, "className = ?",
+                      new String[]{className});
+            c.close();
+        } else {
+            ContentValues v = new ContentValues();
+            v.put("count", 1);
+            db.insert(COUNT_TABLE, null, v);
+            c.close();
+        }
+    }
+
     /** Store relationnal fields. Use null if there is no rel field on the
         model. */
     public void storeRelFields(String className, List<RelField> relations) {
@@ -382,6 +401,7 @@ public class DataCache extends SQLiteOpenHelper {
         db.delete(MODEL_TABLE, "className = ?", new String[]{className});
         this.storeData(className, data);
         db.close();
+        this.setDataCount(className, data.size());
     }
 
     private void storeRelData(List<Model> rel, long time, SQLiteDatabase db) {
@@ -397,7 +417,19 @@ public class DataCache extends SQLiteOpenHelper {
                           new String[]{m.get("id").toString(), m.getClassName()}
                           ) == 0) {
                 // Try to insert, in case there is no data
-                db.insert(MODEL_TABLE, null, v);
+                Cursor c = db.query(MODEL_TABLE,
+                                    new String[]{"id"},
+                                    "id = ? AND className = ?",
+                                    new String[]{m.get("id").toString(),
+                                                 m.getClassName()}, null,
+                                    null, null, null);
+                if (c.moveToNext()) {
+                    // Already there, full data. Keep as is
+                } else {            
+                    db.insert(MODEL_TABLE, null, v);
+                    this.addOne(m.getClassName(), db);
+                }
+                c.close();
             }
         }
     }
@@ -427,6 +459,7 @@ public class DataCache extends SQLiteOpenHelper {
                               ) == 0) {
                     // Record is not present, insert it
                     db.insert(MODEL_TABLE, null, v);
+                    this.addOne(className, db);
                 }
                 // Store relationnal fields
                 this.storeRelData(m.getRelModels(), time, db);
@@ -435,5 +468,11 @@ public class DataCache extends SQLiteOpenHelper {
             }
         }
         db.close();
+    }
+
+    public void storeData(String className, Model data) {
+        List<Model> dummy = new ArrayList<Model>();
+        dummy.add(data);
+        storeData(className, dummy);
     }
 }

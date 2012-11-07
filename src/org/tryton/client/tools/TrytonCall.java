@@ -62,7 +62,9 @@ public class TrytonCall {
     public static final int CALL_RELFIELDS_OK = 7;
     public static final int CALL_RELFIELDS_NOK = -8;
     public static final int CALL_RELDATA_OK = 8;
-    public static final int CALL_RELDATA_NOK = -8;
+    public static final int CALL_RELDATA_NOK = -9;
+    public static final int CALL_SAVE_OK = 9;
+    public static final int CALL_SAVE_NOK = -10;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -280,7 +282,7 @@ public class TrytonCall {
         Object resp;
         if (fields == null) {
             resp = c.call(model + ".read", userId, cookie,
-                          jsIds, JSONObject.NULL, prefs.json());
+                          jsIds, new JSONArray(), prefs.json());
         } else {
             JSONArray jsFields = new JSONArray();
             for (String field : fields) {
@@ -781,4 +783,109 @@ public class TrytonCall {
         }.start();
         return true;
     }
+
+    /** Create or update a record. If record has no id it's a creation.
+     * Handler gives back the updated/created record. */
+    public static boolean saveData(final int userId, final String cookie,
+                                     final Preferences prefs,
+                                     final Model model, final Handler h) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                // Set attribute
+                String modelName = model.getClassName();
+                JSONObject attrs = new JSONObject();
+                for (String attr : model.getAttributeNames()) {
+                    try {
+                        attrs.put(attr, model.get(attr));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                // Set action (create or write)
+                boolean create = (model.get("id") == null);
+                String action = "model." + modelName + ".";
+                if (create) {
+                    action += "create";
+                } else {
+                    action += "write";
+                }
+                // Go!
+                try {
+                    Object oResult;
+                    if (create) {
+                        oResult = c.call(action, userId, cookie, attrs,
+                                         prefs.json());
+                    } else {
+                        JSONArray id = new JSONArray();
+                        id.put(model.get("id"));
+                        oResult = c.call(action, userId, cookie,
+                                         id, attrs, prefs.json());
+                    }
+                    if (create && oResult instanceof Integer) {
+                        // Create done, get new record
+                        int id = (Integer) oResult;
+                        List<Integer> lid = new ArrayList<Integer>();
+                        lid.add(id);
+                        Object oModel = read(userId, cookie, prefs,
+                                             "model." + modelName,
+                                             null, lid);
+                        if (oModel instanceof JSONArray) {
+                            JSONArray jsModels = (JSONArray) oModel;
+                            JSONObject jsModel = jsModels.getJSONObject(0);
+                            Model updmodel = new Model(modelName, jsModel);
+                            m.what = CALL_SAVE_OK;
+                            m.obj = updmodel;
+                        } else {
+                            m.what = CALL_SAVE_OK;
+                            m.obj = null;
+                        }
+                    } else if (!create && oResult instanceof Boolean) {
+                        // Update done, get updated record
+                        Boolean ok = (Boolean) oResult;
+                        if (ok == true) {
+                            List<Integer> lid = new ArrayList<Integer>();
+                            lid.add((Integer)model.get("id"));
+                            Object oModel = read(userId, cookie, prefs,
+                                                 "model." + modelName,
+                                                 null, lid);
+                            if (oModel instanceof JSONArray) {
+                                JSONArray jsModels = (JSONArray) oModel;
+                                JSONObject jsModel = jsModels.getJSONObject(0);
+                                Model updmodel = new Model(modelName, jsModel);
+                                m.what = CALL_SAVE_OK;
+                                m.obj = updmodel;
+                            } else {
+                                m.what = CALL_SAVE_OK;
+                                m.obj = null;
+                            }
+                        } else {
+                            m.what = CALL_SAVE_NOK;
+                            m.obj = new Exception("Unable to save data");
+                        }
+                    } else {
+                        m.what = CALL_SAVE_NOK;
+                        m.obj = new Exception("Unknown response type "
+                                              + oResult);
+                    }
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_SAVE_NOK;
+                        m.obj = e;
+                    }
+                } catch (Exception e) {
+                    m.what = CALL_SAVE_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;
+    }
+
 }

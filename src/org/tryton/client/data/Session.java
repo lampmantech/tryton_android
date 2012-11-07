@@ -45,6 +45,7 @@ public class Session {
         this.editedModel = data;
         if (data != null) {
             this.tempModel = new Model(data.getClassName());
+            this.tempModel.set("id", data.get("id"));
         } else {
             this.tempModel = null;
         }

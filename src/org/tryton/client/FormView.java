@@ -30,6 +30,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TableLayout;
 import android.widget.TableRow;
+import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +46,9 @@ import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 
 public class FormView extends Activity implements Handler.Callback {
+
+    private static final int LOADING_DATA = 0;
+    private static final int LOADING_SEND = 1;
 
     /** Use a static initializer to pass data to the activity on start.
      * Set the viewtype that hold the form view. The data to edit is
@@ -116,7 +120,7 @@ public class FormView extends Activity implements Handler.Callback {
         }
         if (!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty()) {
             // Start loading
-            this.showLoadingDialog();
+            this.showLoadingDialog(LOADING_DATA);
             this.loadRel();
         }
     }
@@ -138,11 +142,20 @@ public class FormView extends Activity implements Handler.Callback {
         Session.current.editModel(null);
     }
 
-    public void showLoadingDialog() {
+    public void showLoadingDialog(int message) {
         if (this.loadingDialog == null) {
             this.loadingDialog = new ProgressDialog(this);
             this.loadingDialog.setIndeterminate(true);
-            this.loadingDialog.setMessage(this.getString(R.string.data_loading));
+            String msg = "";
+            switch (message) {
+            case LOADING_DATA:
+                msg = this.getString(R.string.data_loading);
+                break;
+            case LOADING_SEND:
+                msg = this.getString(R.string.data_send);
+                break;
+            }
+            this.loadingDialog.setMessage(msg);
             this.loadingDialog.show();
         }        
     }
@@ -237,7 +250,28 @@ public class FormView extends Activity implements Handler.Callback {
                 this.hideLoadingDialog();
             }
             break;
+        case TrytonCall.CALL_SAVE_OK:
+            this.hideLoadingDialog();
+            Toast t = Toast.makeText(this, R.string.data_send_done,
+                                     Toast.LENGTH_SHORT);
+            t.show();
+            // Update data with fresh one
+            Model m = (Model) msg.obj;
+            db = new DataCache(this);
+            if (m != null) {
+                db.storeData(m.getClassName(), m);
+            } else {
+                // It is saved but not given back, use local data
+                Model base = Session.current.editedModel;
+                Model edit = Session.current.tempModel;
+                for (String attr : edit.getAttributeNames()) {
+                    base.set(attr, edit.get(attr));
+                }
+                db.storeData(base.getClassName(), base);
+            }
+            break;
         case TrytonCall.CALL_RELDATA_NOK:
+        case TrytonCall.CALL_SAVE_NOK:
             this.hideLoadingDialog();
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
@@ -291,6 +325,13 @@ public class FormView extends Activity implements Handler.Callback {
         switch (item.getItemId()) {
         case MENU_LOGOUT_ID:
             Start.logout(this);
+            break;
+        case MENU_SAVE_ID:
+            // Send save call
+            this.showLoadingDialog(LOADING_SEND);
+            Session s = Session.current;
+            TrytonCall.saveData(s.userId, s.cookie, s.prefs,
+                                s.tempModel, new Handler(this));
             break;
         }
         return true;

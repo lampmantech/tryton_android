@@ -110,13 +110,16 @@ public class TreeView extends Activity
         this.pagination = (TextView) this.findViewById(R.id.tree_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.tree_next_btn);
         this.previousPage = (ImageButton) this.findViewById(R.id.tree_prev_btn);
+    }
+
+    public void onResume() {
+        super.onResume();
         // Load data if there isn't anyone or setup the list
+        // or update existing data
         if (this.data == null && this.viewTypes == null) {
             this.loadViewsAndData();
-        } else if (this.data != null) {
-            this.updateList();
         } else {
-            this.loadData();
+            this.loadDataAndMeta();
         }
     }
     
@@ -275,12 +278,10 @@ public class TreeView extends Activity
         Session s = Session.current;
         DataCache db = new DataCache(this);
         // Get total from cache if present, otherwise from server
+        this.totalDataCount = db.getDataCount(model);
         if (this.totalDataCount == -1) {
-            this.totalDataCount = db.getDataCount(model);
-            if (this.totalDataCount == -1) {
-                TrytonCall.getDataCount(s.userId, s.cookie, s.prefs, model,
-                                        new Handler(this));
-            }
+            TrytonCall.getDataCount(s.userId, s.cookie, s.prefs, model,
+                                    new Handler(this));
         }
         // Get field definition
         if (this.relFields == null) {
