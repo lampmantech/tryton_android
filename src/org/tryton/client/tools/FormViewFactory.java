@@ -337,11 +337,7 @@ public class FormViewFactory {
         } else if (type.equals("float") || type.equals("numeric")) {
             if (v instanceof EditText) {
                 EditText t = (EditText) v;
-                // Reverse format
-                Number val = Formatter.unformatDecimal(prefs.getDecimalPoint(),
-                                                       prefs.getThousandsSeparator(),
-                                                       t.getText().toString());
-                return val.doubleValue();
+                return Double.parseDouble(t.getText().toString());
             } else {
                 Log.e("Tryton", "Getting decimal value form incorrect view");
             }
@@ -378,8 +374,9 @@ public class FormViewFactory {
                 DateClickListener l = (DateClickListener) date.getDateTimeListener();
                 TimeClickListener tl = (TimeClickListener) time.getDateTimeListener();
                 Map<String, Integer> dateVal = l.getValue();
-                Map<String, Integer> timeVal = l.getValue();
+                Map<String, Integer> timeVal = tl.getValue();
                 dateVal.putAll(timeVal);
+                System.out.println(dateVal);
                 return dateVal;
             } else {
                 Log.e("Tryton", "Getting datetime value from incorrect view");
@@ -410,7 +407,7 @@ public class FormViewFactory {
             }
         } else if (type.equals("many2many") || type.equals("one2many")) {
             // x2many fields uses their own value picking
-            return null;
+            return NO_VALUE;
         } else if (type.equals("function")) {
             System.out.println("Function type not supported yet");
         } else if (type.equals("property")) {

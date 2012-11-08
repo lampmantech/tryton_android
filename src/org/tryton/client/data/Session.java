@@ -17,6 +17,8 @@
 */
 package org.tryton.client.data;
 
+import java.util.Map;
+
 import org.tryton.client.models.Model;
 import org.tryton.client.models.Preferences;
 
@@ -66,8 +68,48 @@ public class Session {
         for (String attr : this.tempModel.getAttributeNames()) {
             Object value = this.editedModel.get(attr);
             Object tmpValue = this.tempModel.get(attr);
-            if ((tmpValue == null && value == null)
+            if ((tmpValue == null && value != null)
                 || (tmpValue != null && !tmpValue.equals(value))) {
+                // Check for tree field values
+                if (value instanceof Map) {
+                    Map mVal = (Map) value;
+                    if (mVal.containsKey("decimal")) {
+                        // Its a float/numeric
+                        Object oVal = mVal.get("decimal");
+                        if (Double.valueOf((String)oVal).equals(tmpValue)) {
+                            // Not dirty
+                            continue;
+                        }
+                    } else if (mVal.containsKey("year")) {
+                        Map tmp = (Map) tmpValue;
+                        if (mVal.containsKey("hour")) {
+                            // It's a datetime
+                            if (mVal.get("year").equals(tmp.get("year"))
+                                && mVal.get("month").equals(tmp.get("month"))
+                                && mVal.get("day").equals(tmp.get("day"))
+                                && mVal.get("hour").equals(tmp.get("hour"))
+                                && mVal.get("minute").equals(tmp.get("minute"))) {
+                                // Not dirty
+                                continue;
+                            }
+                        } else {
+                            // It's a date
+                            if (mVal.get("year").equals(tmp.get("year"))
+                                && mVal.get("month").equals(tmp.get("month"))
+                                && mVal.get("day").equals(tmp.get("day"))) {
+                                continue;
+                            }
+                        }
+                    } else if (mVal.containsKey("hour")) {
+                        Map tmp = (Map) tmpValue;
+                        // It's a time
+                        if (mVal.get("hour").equals(tmp.get("hour"))
+                            && mVal.get("minute").equals(tmp.get("minute"))) {
+                            continue;
+                        }
+                    }
+                }
+                System.out.println("dirty by " + attr + " " + value + " " + tmpValue);
                 return true;
             }
         }
