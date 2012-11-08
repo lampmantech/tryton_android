@@ -71,7 +71,11 @@ public class ToManyEditor extends Activity {
         @SuppressWarnings("unchecked")
         List<Model> data = db.getData(this.className, (List<Integer>) s.editedModel.get(this.fieldName));
         // Load model subview
+        System.out.println(this.parentView.getSubview(this.fieldName).getView("form").getArch());
         this.view = this.parentView.getSubview(this.fieldName).getView("tree");
+        if (this.view == null) {
+                    this.view = this.parentView.getSubview(this.fieldName).getView("form");
+        }
         TreeFullAdapter adapt = new TreeFullAdapter(view, data);
         this.selected.setAdapter(adapt);
     }

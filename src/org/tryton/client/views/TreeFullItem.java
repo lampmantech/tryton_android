@@ -46,9 +46,12 @@ public class TreeFullItem extends LinearLayout {
         this.modelView = modelView;
         this.values = new ArrayList<TextView>();
         for (int i = 0; i < this.modelView.getStructure().size(); i++) {
-            TextView t = new TextView(context);
-            this.values.add(t);
-            this.addView(t);
+            Model field = this.modelView.getStructure().get(i);
+            if (TreeViewFactory.isFieldView(field)) {
+                TextView t = new TextView(context);
+                this.values.add(t);
+                this.addView(t);
+            }
         }
         this.reuse(model, context);
     }
@@ -56,18 +59,22 @@ public class TreeFullItem extends LinearLayout {
     public void reuse(Model model, Context ctx) {
         this.model = model;
         List<Model> structure = this.modelView.getStructure();
+        int innerIndex = 0;
         for (int i = 0; i < structure.size(); i++) {
-            TextView t = this.values.get(i);
             Model field = structure.get(i);
-            String fieldName = (String) field.get("name");
-            String name = (String) field.get("string");
-            if (name == null) {
-                name = (String) field.get("name");
+            if (TreeViewFactory.isFieldView(field)) {
+                TextView t = this.values.get(innerIndex);
+                String fieldName = (String) field.get("name");
+                String name = (String) field.get("string");
+                if (name == null) {
+                    name = (String) field.get("name");
+                }
+                String value = TreeViewFactory.getView(field, this.model,
+                                                       Session.current.prefs,
+                                                       ctx);
+                t.setText(name + " " + value);
+                innerIndex++;
             }
-            String value = TreeViewFactory.getView(field, this.model,
-                                                   Session.current.prefs,
-                                                   ctx);
-            t.setText(name + " " + value);
         } 
     }
 

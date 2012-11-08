@@ -29,6 +29,11 @@ import org.tryton.client.models.Preferences;
 /** Factory to convert various data types to string for tree views. */
 public class TreeViewFactory {
 
+    public static boolean isFieldView(Model field) {
+        String className = field.getClassName();
+        return !className.equals("label");
+    }
+
     public static String getView(Model field, Model data,
                                  Preferences prefs,Context ctx) {
         String name = (String) field.get("name");
