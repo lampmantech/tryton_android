@@ -284,7 +284,7 @@ public class FormViewFactory {
                 }
                 return s;
             } else if (type.equals("many2many") || type.equals("one2many")) {
-                DateTimeButton b = new DateTimeButton(ctx);
+                Button b = new Button(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 int size = 0;
                 if (data != null) {

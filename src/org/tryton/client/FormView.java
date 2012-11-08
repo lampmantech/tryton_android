@@ -30,6 +30,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TableLayout;
 import android.widget.TableRow;
+import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -87,17 +88,37 @@ public class FormView extends Activity implements Handler.Callback {
                                              s.editedModel,
                                              s.prefs,
                                              this);
-            if (x == 0) {
+            if (view.hasAttribute("type")
+                && (view.getString("type").equals("many2many")
+                    || view.getString("type").equals("one2many"))) {
+                // Special case of x2many: they embed their own title
+                // Thus occupies a full line
+                TextView label = new TextView(this);
+                if (view.hasAttribute("string")) {
+                    label.setText(view.getString("string"));
+                } else {
+                    label.setText(view.getString("name"));
+                }
                 if (row != null) {
                     this.table.addView(row);
                 }
                 row = new TableRow(this);
+                row.addView(label);
                 row.addView(v);
+                x = 0;
             } else {
-                row.addView(v);
+                if (x == 0) {
+                    if (row != null) {
+                        this.table.addView(row);
+                    }
+                    row = new TableRow(this);
+                    row.addView(v);
+                } else {
+                    row.addView(v);
+                }
+                x++;
+                x %= 2;
             }
-            x++;
-            x %= 2;
         }
         this.table.addView(row);
         // Check if we have all the data required for relationnal fields
@@ -215,6 +236,20 @@ public class FormView extends Activity implements Handler.Callback {
                 structIndex++;
                 View v = child.getChildAt(j);
                 if (!FormViewFactory.isFieldView(v)) {
+                    // Check if it is a x2many label
+                    Model field = modelView.getStructure().get(structIndex);
+                    if (field.hasAttribute("type")) {
+                        String type = field.getString("type");
+                        if (type.equals("many2many")
+                            || type.equals("one2many")) {
+                            // This is the label of a x2many field
+                            // It is not present in structure and next
+                            // will be the true widget.
+                            // Get back in structure for next pass
+                            // to point on the x2many field (and not next one)
+                            structIndex--;
+                        }
+                    }
                     // Ignore
                     continue;
                 }

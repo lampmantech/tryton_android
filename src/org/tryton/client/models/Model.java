@@ -123,6 +123,10 @@ public class Model implements Serializable {
         return this.attributes.keySet();
     }
 
+    public boolean hasAttribute(String attributeName) {
+        return this.attributes.containsKey(attributeName);
+    }
+
     /** Get the value of an attribute */
     public Object get(String attributeName) {
         return this.attributes.get(attributeName);
