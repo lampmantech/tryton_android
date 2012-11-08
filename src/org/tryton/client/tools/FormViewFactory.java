@@ -43,9 +43,9 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.tryton.client.R;
 import org.tryton.client.ToManyEditor;
@@ -97,10 +97,12 @@ public class FormViewFactory {
                         Object oval = data.get(name);
                         double dval = 0;
                         if (oval instanceof Map) {
+                            // decimal
                             @SuppressWarnings("unchecked")
                             Map<String, Object> mVal = (Map<String, Object>) oval;
                             dval = Double.parseDouble((String)mVal.get("decimal"));
                         } else {
+                            // float
                             dval = (Double)oval;
                         }
                         value = String.valueOf(dval);
@@ -334,12 +336,23 @@ public class FormViewFactory {
             } else {
                 Log.e("Tryton", "Getting integer value form incorrect view");
             }
-        } else if (type.equals("float") || type.equals("numeric")) {
+        } else if (type.equals("float")) {
             if (v instanceof EditText) {
                 EditText t = (EditText) v;
                 return Double.parseDouble(t.getText().toString());
             } else {
-                Log.e("Tryton", "Getting decimal value form incorrect view");
+                Log.e("Tryton", "Getting float value form incorrect view");
+            }
+        } else if (type.equals("numeric")) {
+            if (v instanceof EditText) {
+                EditText t = (EditText) v;
+                Map<String, Object> value = new TreeMap<String, Object>();
+                value.put("__class__", "Decimal");
+                // Leave value as string like from server
+                value.put("decimal", t.getText().toString());
+                return value;
+            } else {
+                Log.e("Tryton", "Getting numeric value form incorrect view");
             }
         } else if (type.equals("boolean")) {
             if (v instanceof CheckBox) {
@@ -373,10 +386,10 @@ public class FormViewFactory {
                 DateTimeButton time = (DateTimeButton) ll.getChildAt(1);
                 DateClickListener l = (DateClickListener) date.getDateTimeListener();
                 TimeClickListener tl = (TimeClickListener) time.getDateTimeListener();
-                Map<String, Integer> dateVal = l.getValue();
-                Map<String, Integer> timeVal = tl.getValue();
+                Map<String, Object> dateVal = l.getValue();
+                Map<String, Object> timeVal = tl.getValue();
                 dateVal.putAll(timeVal);
-                System.out.println(dateVal);
+                dateVal.put("__class__", "datetime");
                 return dateVal;
             } else {
                 Log.e("Tryton", "Getting datetime value from incorrect view");
@@ -663,8 +676,9 @@ public class FormViewFactory {
             this.day = day;
         }
 
-        public Map<String, Integer> getValue() {
-            Map<String, Integer> value = new HashMap<String, Integer>();
+        public Map<String, Object> getValue() {
+            Map<String, Object> value = new TreeMap<String, Object>();
+            value.put("__class__", "date");
             value.put("year", this.year);
             value.put("month", this.month);
             value.put("day", this.day);
@@ -709,8 +723,9 @@ public class FormViewFactory {
             this.minute = minute;
         }
 
-        public Map<String, Integer> getValue() {
-            Map<String, Integer> value = new HashMap<String, Integer>();
+        public Map<String, Object> getValue() {
+            Map<String, Object> value = new TreeMap<String, Object>();
+            value.put("__class__", "time");
             value.put("hour", this.hour);
             value.put("minute", this.minute);
             value.put("second", 0);

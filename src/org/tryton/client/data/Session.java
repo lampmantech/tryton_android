@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.tryton.client.models.Model;
 import org.tryton.client.models.Preferences;
+import org.tryton.client.tools.FieldsConvertion;
 
 /** The user session that is stored in memory and is flushed when the
  * application is killed.
@@ -74,42 +75,45 @@ public class Session {
                 if (value instanceof Map) {
                     Map mVal = (Map) value;
                     if (mVal.containsKey("decimal")) {
-                        // Its a float/numeric
-                        Object oVal = mVal.get("decimal");
-                        if (Double.valueOf((String)oVal).equals(tmpValue)) {
+                        Map tmpVal = (Map) tmpValue;
+                        // Its a numeric
+                        double val = FieldsConvertion.numericToDouble(mVal);
+                        double tmp = FieldsConvertion.numericToDouble(tmpVal);
+                        if (val == tmp) {
                             // Not dirty
                             continue;
                         }
                     } else if (mVal.containsKey("year")) {
-                        Map tmp = (Map) tmpValue;
+                        Map tmpVal = (Map) tmpValue;
                         if (mVal.containsKey("hour")) {
                             // It's a datetime
-                            if (mVal.get("year").equals(tmp.get("year"))
-                                && mVal.get("month").equals(tmp.get("month"))
-                                && mVal.get("day").equals(tmp.get("day"))
-                                && mVal.get("hour").equals(tmp.get("hour"))
-                                && mVal.get("minute").equals(tmp.get("minute"))) {
+                            int[] val = FieldsConvertion.dateTimeToIntA(mVal);
+                            int[] tmp = FieldsConvertion.dateTimeToIntA(tmpVal);
+                            if (val[0] == tmp[0] && val[1] == tmp[1]
+                                && val[2] == tmp[2] && val[3] == tmp[3]
+                                && val[4] == tmp[4]) {
                                 // Not dirty
                                 continue;
                             }
                         } else {
                             // It's a date
-                            if (mVal.get("year").equals(tmp.get("year"))
-                                && mVal.get("month").equals(tmp.get("month"))
-                                && mVal.get("day").equals(tmp.get("day"))) {
+                            int[] val = FieldsConvertion.dateToIntA(mVal);
+                            int[] tmp = FieldsConvertion.dateToIntA(tmpVal);
+                            if (val[0] == tmp[0] && val[1] == tmp[1]
+                                && val[2] == tmp[2]) {
                                 continue;
                             }
                         }
                     } else if (mVal.containsKey("hour")) {
-                        Map tmp = (Map) tmpValue;
+                        Map tmpVal = (Map) tmpValue;
                         // It's a time
-                        if (mVal.get("hour").equals(tmp.get("hour"))
-                            && mVal.get("minute").equals(tmp.get("minute"))) {
+                        int[] val = FieldsConvertion.timeToIntA(mVal);
+                        int[] tmp = FieldsConvertion.timeToIntA(tmpVal);
+                        if (val[0] == tmp[0] && val[1] == tmp[1]) {
                             continue;
                         }
                     }
                 }
-                System.out.println("dirty by " + attr + " " + value + " " + tmpValue);
                 return true;
             }
         }

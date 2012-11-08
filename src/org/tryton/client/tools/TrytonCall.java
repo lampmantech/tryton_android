@@ -795,18 +795,23 @@ public class TrytonCall {
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
+                Model sendModel = FieldsConvertion.modelToSend(model);
                 // Set attribute
-                String modelName = model.getClassName();
+                String modelName = sendModel.getClassName();
                 JSONObject attrs = new JSONObject();
-                for (String attr : model.getAttributeNames()) {
+                for (String attr : sendModel.getAttributeNames()) {
                     try {
-                        attrs.put(attr, model.get(attr));
+                        if (sendModel.get(attr) == null) {
+                            attrs.put(attr, JSONObject.NULL);
+                        } else {
+                            attrs.put(attr, sendModel.get(attr));
+                        }
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
                 // Set action (create or write)
-                boolean create = (model.get("id") == null);
+                boolean create = (sendModel.get("id") == null);
                 String action = "model." + modelName + ".";
                 if (create) {
                     action += "create";
@@ -848,7 +853,7 @@ public class TrytonCall {
                         Boolean ok = (Boolean) oResult;
                         if (ok == true) {
                             List<Integer> lid = new ArrayList<Integer>();
-                            lid.add((Integer)model.get("id"));
+                            lid.add((Integer)sendModel.get("id"));
                             Object oModel = read(userId, cookie, prefs,
                                                  "model." + modelName,
                                                  null, lid);
