@@ -145,14 +145,14 @@ public class TreeView extends Activity
                                               this.dataOffset + this.data.size(),
                                               this.totalDataCount));
         if (this.dataOffset == 0) {
-            this.previousPage.setEnabled(false);
+            this.previousPage.setVisibility(View.INVISIBLE);
         } else {
-            this.previousPage.setEnabled(true);
+            this.previousPage.setVisibility(View.VISIBLE);
         }
         if (this.dataOffset + this.data.size() < this.totalDataCount) {
-            this.nextPage.setEnabled(true);
+            this.nextPage.setVisibility(View.VISIBLE);
         } else {
-            this.nextPage.setEnabled(false);
+            this.nextPage.setVisibility(View.INVISIBLE);
         }
         // Update data
         switch (this.mode) {

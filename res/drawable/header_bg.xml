@@ -16,24 +16,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<resources>
-  
-  <dimen name="content_margin">5dip</dimen>
-  <dimen name="paragraph_spacing">15dip</dimen>
-  <dimen name="expandable_list_margin">44dip</dimen>
-  <dimen name="clickable_min_size">32dip</dimen>
-
-  <dimen name="icon_size">36dip</dimen>
-
-  <color name="header_gradient_start">#aaa</color>
-  <color name="header_gradient_end">#888</color>
-  <color name="header_text_color">#000</color>
-
-  <integer name="login_text_size_em">10</integer>
-
-  <dimen name="about_separator_height">2dip</dimen>
-  <color name="about_separator_color">#999</color>
-
-  <style name="TrytonTheme" parent="android:Theme.NoTitleBar">
-  </style>
-</resources>
+<shape
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+  <gradient android:type="linear"
+            android:angle="270"
+            android:startColor="@color/header_gradient_start"
+            android:endColor="@color/header_gradient_end" />  
+</shape>

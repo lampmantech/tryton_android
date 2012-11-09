@@ -28,22 +28,27 @@
   <!-- Pagination header -->
   <LinearLayout android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:padding="@dimen/content_margin"
+                android:orientation="horizontal"
+                android:background="@drawable/header_bg" >
     <ImageButton android:id="@+id/tree_prev_btn"
                  android:layout_width="wrap_content"
                  android:layout_height="wrap_content"
                  android:onClick="prevPage"
-                 android:src="@drawable/tryton_go_previous" />
+                 android:src="@drawable/tryton_go_previous" 
+                 android:visibility="invisible" />
     <TextView android:id="@+id/tree_pagination"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:layout_weight="1"
-              android:gravity="center" />
+              android:gravity="center"
+              android:textColor="@color/header_text_color" />
     <ImageButton android:id="@+id/tree_next_btn"
                  android:layout_width="wrap_content"
                  android:layout_height="wrap_content"
                  android:onClick="nextPage"
-                 android:src="@drawable/tryton_go_next" />
+                 android:src="@drawable/tryton_go_next"
+                 android:visibility="invisible" />
   </LinearLayout>
   <!-- List. Only one is displayed at once by setting the other invisible -->
   <ListView android:id="@+id/tree_list"
