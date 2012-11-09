@@ -277,17 +277,19 @@ public class FormViewFactory {
                         } else if (fallbackData != null) {
                             oval = fallbackData.get(name);
                         }
-                        double dval = 0;
-                        if (oval instanceof Map) {
-                            // decimal
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> mVal = (Map<String, Object>) oval;
-                            dval = Double.parseDouble((String)mVal.get("decimal"));
-                        } else {
-                            // float
-                            dval = (Double)oval;
+                        if (oval != null) {
+                            double dval = 0;
+                            if (oval instanceof Map) {
+                                // decimal
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> mVal = (Map<String, Object>) oval;
+                                dval = Double.parseDouble((String)mVal.get("decimal"));
+                            } else {
+                                // float
+                                dval = (Double)oval;
+                            }
+                            value = String.valueOf(dval);
                         }
-                        value = String.valueOf(dval);
                     }
                 }
                 ((EditText)v).setText(value);
@@ -424,9 +426,11 @@ public class FormViewFactory {
                     } else if (fallbackData != null) {
                         oval = fallbackData.get(name);
                     }
-                    @SuppressWarnings("unchecked")
-                    List<Integer> lIds = (List<Integer>) oval;
-                    size = lIds.size();
+                    if (oval != null) {
+                        @SuppressWarnings("unchecked")
+                        List<Integer> lIds = (List<Integer>) oval;
+                        size = lIds.size();
+                    }
                 }
                 ((Button)v).setText("( " + size + " )");
             } else if (type.equals("function")) {
