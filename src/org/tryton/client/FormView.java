@@ -152,6 +152,42 @@ public class FormView extends Activity implements Handler.Callback {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        Session s = Session.current;
+        Model tmp = s.tempModel;
+        ModelView modelView = this.viewTypes.getView("form");
+        int structIndex = -1;
+        for (int i = 0; i < this.table.getChildCount(); i++) {
+            ViewGroup child = (ViewGroup) this.table.getChildAt(i);
+            for (int j = 0; j < child.getChildCount(); j++) {
+                structIndex++;
+                View v = child.getChildAt(j);
+                if (!FormViewFactory.isFieldView(v)) {
+                    // Check if it is a x2many label
+                    Model field = modelView.getStructure().get(structIndex);
+                    if (field.hasAttribute("type")) {
+                        String type = field.getString("type");
+                        if (type.equals("many2many")
+                            || type.equals("one2many")) {
+                            // This is the label of a x2many field
+                            // It is not present in structure and next
+                            // will be the true widget.
+                            // Get back in structure for next pass
+                            // to point on the x2many field (and not next one)
+                            structIndex--;
+                        }
+                    }
+                    continue;
+                }
+                Model field = modelView.getStructure().get(structIndex);
+                FormViewFactory.setValue(v, field, modelView, tmp,
+                                         s.editedModel, s.prefs, this);
+            }
+        }
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         // Check if dirty to request save

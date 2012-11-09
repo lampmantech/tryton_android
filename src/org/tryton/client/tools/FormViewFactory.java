@@ -62,23 +62,9 @@ public class FormViewFactory {
         String className = field.getClassName();
         if (className.equals("label")) {
             // Label widget
-            if (field.getString("string") != null) {
-                // Use the string attribute as label
-                TextView label = new TextView(ctx);
-                label.setText(field.getString("string"));
-                return label;
-            } else if (field.getString("name") != null) {
-                Model ref = view.getField(field.getString("name"));
-                String name = ref.getString("string");
-                if (name == null) {
-                    name = ref.getString("name");
-                }
-                TextView label = new TextView(ctx);
-                label.setText(name);
-                return label;
-            } else {
-                Log.w("Tryton", "Label with neither string nor label");
-            }
+            TextView label = new TextView(ctx);
+            setValue(label, field, view, data, null, prefs, ctx);
+            return label;
         } else {
             // Value widget, must check field type to get the appropriate one
             String name = field.getString("name");
@@ -86,28 +72,6 @@ public class FormViewFactory {
             if (type.equals("char") || type.equals("text")
                 || type.equals("integer") || type.equals("biginteger")
                 || type.equals("float") || type.equals("numeric")) {
-                String value = "";
-                if (data != null) {
-                    if (type.equals("char") || type.equals("text")) {
-                        value = data.getString(name);
-                    } else if (type.equals("integer")
-                               || type.equals("biginteger")) {
-                        value = String.valueOf(((Integer)data.get(name)));
-                    } else if (type.equals("float") || type.equals("numeric")) {
-                        Object oval = data.get(name);
-                        double dval = 0;
-                        if (oval instanceof Map) {
-                            // decimal
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> mVal = (Map<String, Object>) oval;
-                            dval = Double.parseDouble((String)mVal.get("decimal"));
-                        } else {
-                            // float
-                            dval = (Double)oval;
-                        }
-                        value = String.valueOf(dval);
-                    }
-                }
                 EditText edit = new EditText(ctx);
                 // Set lines and input type according to type
                 if (type.equals("char")) {
@@ -146,15 +110,10 @@ public class FormViewFactory {
                     InputFilter f = new InputFilter.LengthFilter(maxSize);
                     edit.setFilters(new InputFilter[]{f});
                 }
-                edit.setText(value);
                 return edit;
             } else if (type.equals("boolean")) {
                 boolean value = false;
-                if (data != null && data.get(name) != null) {
-                    value = (Boolean)data.get(name);
-                }
                 CheckBox cb = new CheckBox(ctx);
-                cb.setChecked(value);
                 return cb;
             } else if (type.equals("sha")) {
                 System.out.println("Sha type not supported yet");
@@ -244,24 +203,10 @@ public class FormViewFactory {
                 } else {
                     s.setPrompt(field.getString("name"));
                 }
-                // Set value
-                if (data != null) {
-                    String value = data.getString(name);
-                    if (value != null) {
-                        for (int i = 0; i < selectValues.size(); i++) {
-                            List couple = selectValues.get(i);
-                            if (((String)couple.get(0)).equals(value)) {
-                                s.setSelection(i + 1);
-                                break;
-                            }
-                        }
-                    }
-                }
                 return s;
             } else if (type.equals("reference")) {
                 System.out.println("Reference type not supported yet");
             } else if (type.equals("many2one") || type.equals("one2one")) {
-                // Create the widget
                 Spinner s = new Spinner(ctx);
                 ToOneAdapter adapt = new ToOneAdapter(field.getString("relation"), ctx);
                 s.setAdapter(adapt);
@@ -270,32 +215,10 @@ public class FormViewFactory {
                 } else {
                     s.setPrompt(field.getString("name"));
                 }
-                // Set value
-                if (data != null) {
-                    Integer value = (Integer) data.get(name);
-                    if (value != null) {
-                        int iVal = value.intValue();
-                        List<Integer> values = adapt.getValues();
-                        for (int i = 0; i < values.size(); i++) {
-                            if (iVal == values.get(i).intValue()) {
-                                s.setSelection(i + 1);
-                                break;
-                            }
-                        }
-                    }
-                }
                 return s;
             } else if (type.equals("many2many") || type.equals("one2many")) {
                 Button b = new Button(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
-                int size = 0;
-                if (data != null) {
-                    Object oval = data.get(name);
-                    @SuppressWarnings("unchecked")
-                    List<Integer> lIds = (List<Integer>) oval;
-                    size = lIds.size();
-                }
-                b.setText("( " + size + " )");
                 b.setOnClickListener(new ToManyClickListener(view, field.getString("name")));
                 return b;
             } else if (type.equals("function")) {
@@ -305,9 +228,216 @@ public class FormViewFactory {
             } else {
                 System.out.println("Unknown type " + type);
             }
-
+            
         }
         return new View(ctx);
+    }
+    
+    public static void setValue(View v, Model field, ModelView view,
+                                Model data, Model fallbackData,
+                                Preferences prefs, Context ctx) {
+        String className = field.getClassName();
+        if (className.equals("label")) {
+            // Label widget
+            if (field.getString("string") != null) {
+                // Use the string attribute as label
+                ((TextView)v).setText(field.getString("string"));
+            } else if (field.getString("name") != null) {
+                Model ref = view.getField(field.getString("name"));
+                String name = ref.getString("string");
+                if (name == null) {
+                    name = ref.getString("name");
+                }
+                ((TextView)v).setText(name);
+            } else {
+                Log.w("Tryton", "Label with neither string nor label");
+            }
+        } else {
+            // Value widget, must check field type to get the appropriate one
+            String name = field.getString("name");
+            String type = field.getString("type");
+            if (type.equals("char") || type.equals("text")
+                || type.equals("integer") || type.equals("biginteger")
+                || type.equals("float") || type.equals("numeric")) {
+                String value = "";
+                if (data != null) {
+                    if (type.equals("char") || type.equals("text")) {
+                        if (data.hasAttribute(name)) {
+                            value = data.getString(name);
+                        } else if (fallbackData != null) {
+                            value = fallbackData.getString(name);
+                        }
+                    } else if (type.equals("integer")
+                               || type.equals("biginteger")) {
+                        value = String.valueOf(((Integer)data.get(name)));
+                    } else if (type.equals("float") || type.equals("numeric")) {
+                        Object oval = null;
+                        if (data.hasAttribute(name)) {
+                            oval = data.get(name);
+                        } else if (fallbackData != null) {
+                            oval = fallbackData.get(name);
+                        }
+                        double dval = 0;
+                        if (oval instanceof Map) {
+                            // decimal
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> mVal = (Map<String, Object>) oval;
+                            dval = Double.parseDouble((String)mVal.get("decimal"));
+                        } else {
+                            // float
+                            dval = (Double)oval;
+                        }
+                        value = String.valueOf(dval);
+                    }
+                }
+                ((EditText)v).setText(value);
+            } else if (type.equals("boolean")) {
+                Boolean value = Boolean.FALSE;
+                if (data != null) {
+                    if (data.hasAttribute(name)) {
+                        value = (Boolean)data.get(name);
+                    } else if (fallbackData != null) {
+                        value = (Boolean)fallbackData.get(name);
+                    }
+                }
+                if (value == null) {
+                    value = Boolean.FALSE;
+                }
+                ((CheckBox)v).setChecked(value.booleanValue());
+            } else if (type.equals("sha")) {
+            } else if (type.equals("date")) {
+                Object value = null;
+                int year = -1, month = -1, day = -1;
+                if (data != null) {
+                    Object oval = null;
+                    if (data.hasAttribute(name)) {
+                        oval = data.get(name);
+                    } else if (fallbackData != null) {
+                        oval = fallbackData.get(name);
+                    }
+                    if (oval != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> mDate = (Map<String, Object>) oval;
+                        year = (Integer) mDate.get("year");
+                        month = (Integer) mDate.get("month");
+                        day = (Integer) mDate.get("day");
+                    }
+                }
+                ((DateTimeButton)v).update(year, month, day);
+            } else if (type.equals("datetime")) {
+                Object value = null;
+                int year = -1, month = -1, day = -1;
+                int hour = -1, minute = -1, second = -1;
+                if (data != null) {
+                    Object oval = null;
+                    if (data.hasAttribute(name)) {
+                        oval = data.get(name);
+                    } else if (fallbackData != null) {
+                        oval = fallbackData.get(name);
+                    }
+                    if (oval != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> mDate = (Map<String, Object>) oval;
+                        year = (Integer) mDate.get("year");
+                        month = (Integer) mDate.get("month");
+                        day = (Integer) mDate.get("day");
+                        hour = (Integer) mDate.get("hour");
+                        minute = (Integer) mDate.get("minute");
+                        second = (Integer) mDate.get("second");
+                    }
+                }
+                DateTimeButton bDate = (DateTimeButton)((LinearLayout)v).getChildAt(0);
+                DateTimeButton bTime = (DateTimeButton)((LinearLayout)v).getChildAt(1);
+                bDate.update(year, month, day);
+                bTime.update(hour, minute, second);
+            } else if (type.equals("time")) {
+                int hour = -1, minute = -1, second = -1;
+                if (data != null) {
+                    Object oval = null;
+                    if (data.hasAttribute(name)) {
+                        oval = data.get(name);
+                    } else if (fallbackData != null) {
+                        oval = fallbackData.get(name);
+                    }
+                    if (oval != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> mDate = (Map<String, Object>) oval;
+                        hour = (Integer) mDate.get("hour");
+                        minute = (Integer) mDate.get("minute");
+                        second = (Integer) mDate.get("second");
+                    }
+                }
+                ((DateTimeButton)v).update(hour, minute, second);
+            } else if (type.equals("binary")) {
+                System.out.println(type + " not supported yet");
+            } else if (type.equals("selection")) {
+                if (data != null) {
+                    String value = null;
+                    if (data.hasAttribute(name)) {
+                        value = data.getString(name);
+                    } else if (fallbackData != null) {
+                        value = fallbackData.getString(name);
+                    }
+                    if (value != null) {
+                        SelectAdapter adapt = (SelectAdapter)((Spinner)v).getAdapter();
+                        List<String> values = adapt.getValues();
+                        for (int i = 0; i < values.size(); i++) {
+                            if ((values.get(0)).equals(value)) {
+                                ((Spinner)v).setSelection(i + 1);
+                                break;
+                            }
+                        }
+                    } else {
+                        ((Spinner)v).setSelection(0);
+                    }
+                }
+            } else if (type.equals("reference")) {
+                System.out.println("Reference type not supported yet");
+            } else if (type.equals("many2one") || type.equals("one2one")) {
+                if (data != null) {
+                    Integer value = null;
+                    if (data.hasAttribute(name)) {
+                        value = (Integer) data.get(name);
+                    } else if (fallbackData != null) {
+                        value = (Integer) fallbackData.get(name);
+                    }
+                    if (value != null) {
+                        int iVal = value.intValue();
+                        ToOneAdapter adapt = (ToOneAdapter)((Spinner)v).getAdapter();
+                        List<Integer> values = adapt.getValues();
+                        for (int i = 0; i < values.size(); i++) {
+                            if (iVal == values.get(i).intValue()) {
+                                ((Spinner)v).setSelection(i + 1);
+                                break;
+                            }
+                        }
+                    } else {
+                        ((Spinner)v).setSelection(0);
+                    }
+                }
+            } else if (type.equals("many2many") || type.equals("one2many")) {
+                int size = 0;
+                if (data != null) {
+                    Object oval = null;
+                    if (data.hasAttribute(name)) {
+                        oval = data.get(name);
+                    } else if (fallbackData != null) {
+                        oval = fallbackData.get(name);
+                    }
+                    @SuppressWarnings("unchecked")
+                    List<Integer> lIds = (List<Integer>) oval;
+                    size = lIds.size();
+                }
+                ((Button)v).setText("( " + size + " )");
+            } else if (type.equals("function")) {
+                System.out.println("Function type not supported yet");
+            } else if (type.equals("property")) {
+                System.out.println("Property type not supported yet");
+            } else {
+                System.out.println("Unknown type " + type);
+            }
+            
+        }
     }
     
     /** Check if a view given by the factory is a field widget (and thus
@@ -366,16 +496,14 @@ public class FormViewFactory {
         } else if (type.equals("date")) {
             if (v instanceof DateTimeButton) {
                 DateTimeButton b = (DateTimeButton) v;
-                DateClickListener l = (DateClickListener) b.getDateTimeListener();
-                return l.getValue();
+                return b.getValue();
             } else {
                 Log.e("Tryton", "Getting date value from incorrect view");
             }
         } else if (type.equals("time")) {
             if (v instanceof Button) {
                 DateTimeButton b = (DateTimeButton) v;
-                TimeClickListener l = (TimeClickListener) b.getDateTimeListener();
-                return l.getValue();                
+                return b.getValue();                
             } else {
                 Log.e("Tryton", "Getting time value from incorrect view");
             }
@@ -384,10 +512,8 @@ public class FormViewFactory {
                 LinearLayout ll = (LinearLayout) v;
                 DateTimeButton date = (DateTimeButton) ll.getChildAt(0);
                 DateTimeButton time = (DateTimeButton) ll.getChildAt(1);
-                DateClickListener l = (DateClickListener) date.getDateTimeListener();
-                TimeClickListener tl = (TimeClickListener) time.getDateTimeListener();
-                Map<String, Object> dateVal = l.getValue();
-                Map<String, Object> timeVal = tl.getValue();
+                Map<String, Object> dateVal = date.getValue();
+                Map<String, Object> timeVal = time.getValue();
                 dateVal.putAll(timeVal);
                 dateVal.put("__class__", "datetime");
                 return dateVal;
@@ -446,6 +572,10 @@ public class FormViewFactory {
                 values.add(value);
                 labels.add(label);
             }
+        }
+
+        public List<String> getValues() {
+            return this.values;
         }
 
         public long getItemId(int position) {
@@ -616,26 +746,35 @@ public class FormViewFactory {
      * date and time data */
     private static class DateTimeButton extends Button {
         
-        private View.OnClickListener dtListener;
+        private DateTimeHandler dtListener;
 
         public DateTimeButton(Context ctx) {
             super(ctx);
         }
 
-        public void setOnClickListener (View.OnClickListener listener) {
+        public void setOnClickListener (DateTimeHandler listener) {
             super.setOnClickListener(listener);
             this.dtListener = listener;
         }
 
-        public View.OnClickListener getDateTimeListener() {
-            return this.dtListener;
+        public void update(int val1, int val2, int val3) {
+            this.dtListener.update(val1, val2, val3);
         }
+
+        public Map<String, Object> getValue() {
+            return this.dtListener.getValue();
+        }
+    }
+
+    private static interface DateTimeHandler extends View.OnClickListener {
+        public void update(int val1, int val2, int val3);
+        public Map<String, Object> getValue();
     }
 
     /** Click listener for buttons of date type fields to show
      * a date picking poppup and update the value. */
     private static class DateClickListener
-        implements View.OnClickListener, DatePickerDialog.OnDateSetListener {
+        implements DateTimeHandler, DatePickerDialog.OnDateSetListener {
         
         private Button caller;
         private String format;
@@ -653,10 +792,19 @@ public class FormViewFactory {
                 this.year = c.get(Calendar.YEAR);
                 this.month = c.get(Calendar.MONTH) + 1;
                 this.day = c.get(Calendar.DAY_OF_MONTH);
-            } else {
-                this.caller.setText(Formatter.formatDate(this.format, year,
-                                                         month, day));
             }
+            this.update(this.year, this.month, this.day);
+        }
+
+        public void update(int year, int month, int day) {
+            if (year != -1 && month != -1 && day != -1) {
+                this.year = year;
+                this.month = month;
+                this.day = day;
+            }
+            this.caller.setText(Formatter.formatDate(this.format, this.year,
+                                                     this.month + 1,
+                                                     this.day));
         }
         
         @Override
@@ -669,11 +817,7 @@ public class FormViewFactory {
 
         @Override
         public void onDateSet(DatePicker p, int year, int month, int day) {
-            this.caller.setText(Formatter.formatDate(this.format, year,
-                                                     month + 1, day));
-            this.year = year;
-            this.month = month + 1;
-            this.day = day;
+            this.update(year, month + 1, day);
         }
 
         public Map<String, Object> getValue() {
@@ -689,7 +833,7 @@ public class FormViewFactory {
     /** Click listener for buttons of time type fields to show
      * a time picking poppup and update the value. */
     private static class TimeClickListener
-        implements View.OnClickListener, TimePickerDialog.OnTimeSetListener {
+        implements DateTimeHandler, TimePickerDialog.OnTimeSetListener {
         
         private Button caller;
         private String format;
@@ -704,8 +848,17 @@ public class FormViewFactory {
                 this.hour = c.get(Calendar.HOUR_OF_DAY);
                 this.minute = c.get(Calendar.MINUTE);
             } else {
-                this.caller.setText(String.format("%02d:%02d", hour, minute));
+            
             }
+        }
+
+        public void update(int hour, int minute, int second) {
+            if (hour != -1 && minute != -1) {
+                this.hour = hour;
+                this.minute = minute;
+            }
+            this.caller.setText(String.format("%02d:%02d",
+                                              this.hour, this.minute));
         }
         
         @Override
@@ -718,9 +871,7 @@ public class FormViewFactory {
 
         @Override
         public void onTimeSet(TimePicker t, int hour, int minute) {
-            this.caller.setText(String.format("%02d:%02d", hour, minute));
-            this.hour = hour;
-            this.minute = minute;
+            this.update(hour, minute, 0);
         }
 
         public Map<String, Object> getValue() {

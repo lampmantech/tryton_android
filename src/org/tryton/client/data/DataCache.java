@@ -312,7 +312,7 @@ public class DataCache extends SQLiteOpenHelper {
     }
 
     public List<Model> getData(String className, List<Integer> ids) {
-        if (ids == null) {
+        if (ids == null || ids.size() == 0) {
             return new ArrayList<Model>();
         }
         SQLiteDatabase db = this.getReadableDatabase();
@@ -351,7 +351,7 @@ public class DataCache extends SQLiteOpenHelper {
     }
 
     public List<Model> list(String className, List<Integer> ids) {
-        if (ids == null) {
+        if (ids == null || ids.size() == 0) {
             return new ArrayList<Model>();
         }
         SQLiteDatabase db = this.getReadableDatabase();

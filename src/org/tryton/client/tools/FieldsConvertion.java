@@ -18,7 +18,9 @@
 package org.tryton.client.tools;
 
 import android.util.Log;
+import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 
 import org.tryton.client.models.Model;
 
@@ -152,6 +154,20 @@ public class FieldsConvertion {
                     // Neither date, time nor datetime
                     send.set(attr, oVal);    
                 }
+            } else if (oVal instanceof List) {
+                // x2many, add action
+                @SuppressWarnings("unchecked")
+                List<Integer> ids = (List<Integer>) oVal;
+                JSONArray cmds = new JSONArray();
+                JSONArray cmd = new JSONArray();
+                cmd.put("set");
+                JSONArray args = new JSONArray();
+                for (int id : ids) {
+                    args.put(id);
+                }
+                cmd.put(args);
+                cmds.put(cmd);
+                send.set(attr, cmds);
             } else {
                 send.set(attr, oVal);
             }

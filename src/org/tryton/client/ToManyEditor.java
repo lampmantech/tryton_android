@@ -19,9 +19,13 @@ package org.tryton.client;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.tryton.client.data.DataCache;
@@ -30,7 +34,7 @@ import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.views.TreeFullAdapter;
 
-public class ToManyEditor extends Activity {
+public class ToManyEditor extends Activity implements OnItemLongClickListener {
 
     /** Use a static initializer to pass data to the activity on start.
      * Set the className to edit and the field that is currently edited.
@@ -46,6 +50,11 @@ public class ToManyEditor extends Activity {
     private ModelView view;
     private String fieldName;
     private String className;
+    private List<Model> data;
+    /** Holder for long click listener */
+    private int longClickedIndex;
+    /** Holder for add click listener */
+    private List<Model> rels;
 
     private ListView selected;
 
@@ -66,18 +75,12 @@ public class ToManyEditor extends Activity {
         // Load views
         this.setContentView(R.layout.tomany);
         this.selected = (ListView) this.findViewById(R.id.tomany_list);
-        DataCache db = new DataCache(this);
-        Session s = Session.current;
-        @SuppressWarnings("unchecked")
-        List<Model> data = db.getData(this.className, (List<Integer>) s.editedModel.get(this.fieldName));
         // Load model subview
-        System.out.println(this.parentView.getSubview(this.fieldName).getView("form").getArch());
         this.view = this.parentView.getSubview(this.fieldName).getView("tree");
         if (this.view == null) {
                     this.view = this.parentView.getSubview(this.fieldName).getView("form");
         }
-        TreeFullAdapter adapt = new TreeFullAdapter(view, data);
-        this.selected.setAdapter(adapt);
+        this.refresh();
     }
     
     public void onSaveInstanceState(Bundle outState) {
@@ -86,17 +89,127 @@ public class ToManyEditor extends Activity {
         outState.putSerializable("fieldName", this.fieldName);
     }
 
+    private void refresh() {
+        DataCache db = new DataCache(this);
+        List<Integer> dataId = this.getIds(false);
+        this.data = db.getData(this.className, dataId);
+
+        TreeFullAdapter adapt = new TreeFullAdapter(view, data);
+        this.selected.setAdapter(adapt);
+        this.selected.setOnItemLongClickListener(this);
+    }
+    
+    /** Get ids of the registered items from the edited model.
+     * Set forUpdate to force getting from session tempModel. */
+    @SuppressWarnings("unchecked")
+    private List<Integer> getIds(boolean forUpdate) {
+        Session s = Session.current;
+        List<Integer> ids = (List<Integer>) s.tempModel.get(this.fieldName);
+        if (ids == null) {
+            if (forUpdate) {
+                // Make a copy of the original to edit
+                ids = new ArrayList<Integer>();
+                ids.addAll((List<Integer>)s.editedModel.get(this.fieldName));
+                s.tempModel.set(this.fieldName, ids);
+            } else {
+                ids = (List<Integer>) s.editedModel.get(this.fieldName);
+            }
+        }
+        return ids;
+    }
+
     public void add(View button) {
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setTitle(R.string.tomany_add);
         DataCache db = new DataCache(this);
         List<Model> rels = db.list(this.className);
+        // Remove already selected values
+        for (Integer id : this.getIds(false)) {
+            for (int i = 0; i < rels.size(); i++) {
+                if (rels.get(i).get("id").equals(id)) {
+                    rels.remove(i);
+                    break;
+                }
+            }
+        }
+        this.rels = rels;
         String[] values = new String[rels.size()];
         for (int i = 0; i < values.length; i++) {
             // TODO: get _rec_name for fields that has no name field
-            values[i] = rels.get(i).getString("name");
+            if (rels.get(i).hasAttribute("name")
+                && rels.get(i).get("name") != null) {
+                values[i] = rels.get(i).getString("name");
+            } else {
+                // Quick'n dirty fix: get one field
+                String value = "";
+                String betterValue = null;
+                for (String attr : rels.get(i).getAttributeNames()) {
+                    if (rels.get(i).get(attr) != null) {
+                        Object val = rels.get(i).get(attr);
+                        System.out.println(val);
+                        if (val instanceof String) {
+                            betterValue = (String) val;
+                            System.out.println(betterValue);
+                        }
+                        value = rels.get(i).get(attr).toString();
+                    }
+                }
+                if (betterValue != null) {
+                    values[i] = betterValue;
+                } else {
+                    values[i] = value;
+                }
+            }
         }
-        b.setItems(values, null);
+        b.setItems(values, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    onAddDialog(dialog, which);
+                }
+            });
         b.show();
+    }
+
+    public boolean onItemLongClick(AdapterView parent, View v, int position,
+                                   long id) {
+        this.longClickedIndex = position;
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
+        String items[];
+        Model field = this.parentView.getField(this.fieldName);
+        if (this.parentView.getField(this.fieldName).getString("type").equals("one2many")) {
+            items = new String[]{this.getString(R.string.tomany_delete)};
+        } else {
+            // many2many
+            items = new String[]{this.getString(R.string.tomany_remove)};
+        }
+        String title;
+        if (this.data.get(position).hasAttribute("name")) {
+            title = this.data.get(position).getString("name");
+            b.setTitle(title);
+        }
+        b.setItems(items, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    onLongClickDialog(dialog, which);
+                }
+            });
+        b.setNegativeButton(android.R.string.cancel, null);
+        b.show();
+        return true;
+    }
+    
+    /** Handler for item long click actions */
+    public void onLongClickDialog(DialogInterface dialog, int which) {
+        // Delete selected item
+        Session s = Session.current;
+        List<Integer> ids = this.getIds(true);
+        ids.remove(this.longClickedIndex);
+        this.refresh();
+    }
+
+    public void onAddDialog(DialogInterface dialog, int which) {
+        Model clickedModel = this.rels.get(which);
+        Integer id = (Integer) clickedModel.get("id");
+        List<Integer> ids = this.getIds(true);
+        ids.add(id);
+        this.refresh();
     }
 }
