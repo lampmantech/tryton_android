@@ -57,6 +57,14 @@ import org.tryton.client.models.Preferences;
 /** Factory to convert various data types to widgets for tree views. */
 public class FormViewFactory {
 
+    /** Disable a widget if the field is readonly */
+    private static void setReadonly(View v, Model field) {
+        if (field.hasAttribute("readonly")
+            && field.get("readonly").equals(Boolean.TRUE)) {
+            v.setEnabled(false);
+        }
+    }
+
     public static View getView(Model field, ModelView view, Model data,
                                Preferences prefs, Context ctx) {
         String className = field.getClassName();
@@ -110,10 +118,12 @@ public class FormViewFactory {
                     InputFilter f = new InputFilter.LengthFilter(maxSize);
                     edit.setFilters(new InputFilter[]{f});
                 }
+                setReadonly(edit, field);
                 return edit;
             } else if (type.equals("boolean")) {
                 boolean value = false;
                 CheckBox cb = new CheckBox(ctx);
+                setReadonly(cb, field);
                 return cb;
             } else if (type.equals("sha")) {
                 System.out.println("Sha type not supported yet");
@@ -136,6 +146,7 @@ public class FormViewFactory {
                 b.setOnClickListener(new DateClickListener(b,
                                                            prefs.getDateFormat(),
                                                            year, month, day));
+                setReadonly(b, field);
                 return b;
             } else if (type.equals("datetime")) {
                 Object value = null;
@@ -170,6 +181,9 @@ public class FormViewFactory {
                 LinearLayout layout = new LinearLayout(ctx);
                 layout.addView(bDate);
                 layout.addView(bTime);
+                // Set read-only
+                setReadonly(bDate, field);
+                setReadonly(bTime, field);
                 return layout;
             } else if (type.equals("time")) {
                 DateTimeButton b = new DateTimeButton(ctx);
@@ -187,6 +201,7 @@ public class FormViewFactory {
                 }
                 // The listener also sets initial text
                 b.setOnClickListener(new TimeClickListener(b, hour, minute));
+                setReadonly(b, field);
                 return b;
                 // TODO: TimePicker doesn't support seconds
             } else if (type.equals("binary")) {
@@ -203,6 +218,7 @@ public class FormViewFactory {
                 } else {
                     s.setPrompt(field.getString("name"));
                 }
+                setReadonly(s, field);
                 return s;
             } else if (type.equals("reference")) {
                 System.out.println("Reference type not supported yet");
@@ -215,11 +231,13 @@ public class FormViewFactory {
                 } else {
                     s.setPrompt(field.getString("name"));
                 }
+                setReadonly(s, field);
                 return s;
             } else if (type.equals("many2many") || type.equals("one2many")) {
                 Button b = new Button(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 b.setOnClickListener(new ToManyClickListener(view, field.getString("name")));
+                setReadonly(b, field);
                 return b;
             } else if (type.equals("function")) {
                 System.out.println("Function type not supported yet");
