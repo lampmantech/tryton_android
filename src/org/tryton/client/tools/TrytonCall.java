@@ -250,12 +250,15 @@ public class TrytonCall {
             }
             // Read the models
             if (!fullLoad) {
-                // TODO: fullLoad is intented to load only name and id for
-                // relationnal data but it makes the server throw errors.
-                System.out.println("Not fullLoad on search is not supported. Gives only full records");
+                JSONArray fields = new JSONArray();
+                fields.put("id");
+                fields.put("rec_name");
+                resp = c.call(model + ".read", userId, cookie, jsIds,
+                              fields, prefs.json());
+            } else {
+                resp = c.call(model + ".read", userId, cookie, jsIds,
+                              new JSONArray(), prefs.json());
             }
-            resp = c.call(model + ".read", userId, cookie, jsIds,
-                          new JSONArray(), prefs.json());
             if (resp instanceof JSONArray) {
                 // We've got them!
                 return (JSONArray) resp;
