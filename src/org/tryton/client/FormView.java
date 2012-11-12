@@ -411,7 +411,8 @@ public class FormView extends Activity implements Handler.Callback {
             this.showLoadingDialog(LOADING_SEND);
             Session s = Session.current;
             TrytonCall.saveData(s.userId, s.cookie, s.prefs,
-                                s.tempModel, new Handler(this));
+                                s.tempModel, s.editedModel, this,
+                                new Handler(this));
             break;
         }
         return true;

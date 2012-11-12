@@ -268,6 +268,24 @@ public class DataCache extends SQLiteOpenHelper {
         }
     }
 
+    public RelField getRelField(String className, String fieldName) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        RelField ret = null;
+        Cursor c = db.query(REL_TABLE, new String[]{"type", "relModel"},
+                            "className = ? AND field = ?",
+                            new String[]{className, fieldName},
+                            null, null, null, null);
+        boolean noFields = false;
+        if (c.moveToNext()) {
+            String type = c.getString(0);
+            String relModel = c.getString(1);
+            ret = new RelField(className, type, relModel);
+        }
+        c.close();
+        db.close();
+        return ret;
+    }
+
     private List<Model> readModels(Cursor c, SQLiteDatabase db,
                                    String className) {
         List<Model> models = new ArrayList<Model>();

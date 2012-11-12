@@ -17,6 +17,7 @@
 */
 package org.tryton.client.tools;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
 import java.util.ArrayList;
@@ -790,15 +791,18 @@ public class TrytonCall {
     /** Create or update a record. If record has no id it's a creation.
      * Handler gives back the updated/created record. */
     public static boolean saveData(final int userId, final String cookie,
-                                     final Preferences prefs,
-                                     final Model model, final Handler h) {
+                                   final Preferences prefs,
+                                   final Model model, final Model oldModel,
+                                   final Context ctx,
+                                   final Handler h) {
         if (c == null) {
             return false;
         }
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
-                Model sendModel = FieldsConvertion.modelToSend(model);
+                Model sendModel = FieldsConvertion.modelToSend(model, oldModel,
+                                                               ctx);
                 // Set attribute
                 String modelName = sendModel.getClassName();
                 JSONObject attrs = new JSONObject();
@@ -851,28 +855,24 @@ public class TrytonCall {
                             m.what = CALL_SAVE_OK;
                             m.obj = null;
                         }
-                    } else if (!create && oResult instanceof Boolean) {
+                    } else if (!create &&
+                               (oResult == JSONObject.NULL
+                                || oResult instanceof Boolean)) {
                         // Update done, get updated record
-                        Boolean ok = (Boolean) oResult;
-                        if (ok == true) {
-                            List<Integer> lid = new ArrayList<Integer>();
-                            lid.add((Integer)sendModel.get("id"));
-                            Object oModel = read(userId, cookie, prefs,
-                                                 "model." + modelName,
-                                                 null, lid);
-                            if (oModel instanceof JSONArray) {
-                                JSONArray jsModels = (JSONArray) oModel;
-                                JSONObject jsModel = jsModels.getJSONObject(0);
-                                Model updmodel = new Model(modelName, jsModel);
-                                m.what = CALL_SAVE_OK;
-                                m.obj = updmodel;
-                            } else {
-                                m.what = CALL_SAVE_OK;
-                                m.obj = null;
-                            }
+                        List<Integer> lid = new ArrayList<Integer>();
+                        lid.add((Integer)sendModel.get("id"));
+                        Object oModel = read(userId, cookie, prefs,
+                                             "model." + modelName,
+                                             null, lid);
+                        if (oModel instanceof JSONArray) {
+                            JSONArray jsModels = (JSONArray) oModel;
+                            JSONObject jsModel = jsModels.getJSONObject(0);
+                            Model updmodel = new Model(modelName, jsModel);
+                            m.what = CALL_SAVE_OK;
+                            m.obj = updmodel;
                         } else {
-                            m.what = CALL_SAVE_NOK;
-                            m.obj = new Exception("Unable to save data");
+                            m.what = CALL_SAVE_OK;
+                            m.obj = null;
                         }
                     } else {
                         m.what = CALL_SAVE_NOK;
