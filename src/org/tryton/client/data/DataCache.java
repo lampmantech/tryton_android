@@ -54,7 +54,7 @@ public class DataCache extends SQLiteOpenHelper {
                    + "id INTEGER NOT NULL, "     // ID
                    + "className TEXT NOT NULL, " // Class name
                    + "writeTime INTEGER, "       // Date for cache age
-                   + "name TEXT, "               // Shortcut for name getting
+                   + "name TEXT, "               // Shortcut for rec_name
                    + "data BLOB, "               // Binary data,
                                                  // null when relationnal
                    + "PRIMARY KEY (id, className))");
@@ -342,7 +342,7 @@ public class DataCache extends SQLiteOpenHelper {
         while (c.moveToNext()) {
             Model m = new Model(className);
             m.set("id", c.getInt(0));
-            m.set("name", c.getString(1));
+            m.set("rec_name", c.getString(1));
             models.add(m);
         }
         c.close();
@@ -368,7 +368,7 @@ public class DataCache extends SQLiteOpenHelper {
         while (c.moveToNext()) {
             Model m = new Model(className);
             m.set("id", c.getInt(0));
-            m.set("name", c.getString(1));
+            m.set("rec_name", c.getString(1));
             models.add(m);
         }
         c.close();
@@ -386,7 +386,7 @@ public class DataCache extends SQLiteOpenHelper {
         if (c.moveToNext()) {
             Model m = new Model(className);
             m.set("id", c.getInt(0));
-            m.set("name", c.getString(1));
+            m.set("rec_name", c.getString(1));
             c.close();
             return m;
         }
@@ -407,7 +407,7 @@ public class DataCache extends SQLiteOpenHelper {
     private void storeRelData(List<Model> rel, long time, SQLiteDatabase db) {
         for (Model m : rel) {
             ContentValues v = new ContentValues();
-            v.put("name", m.getString("name"));
+            v.put("name", m.getString("rec_name"));
             v.put("id", (Integer) m.get("id"));
             v.put("className", m.getClassName());
             v.put("writeTime", time);
@@ -448,7 +448,7 @@ public class DataCache extends SQLiteOpenHelper {
         for (Model m : data) {
             try {
                 ContentValues v = new ContentValues();
-                v.put("name", m.getString("name"));
+                v.put("name", m.getString("rec_name"));
                 v.put("id", (Integer) m.get("id"));
                 v.put("className", className);
                 v.put("data", m.toByteArray());

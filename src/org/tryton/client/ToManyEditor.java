@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
@@ -135,30 +136,11 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
         this.rels = rels;
         String[] values = new String[rels.size()];
         for (int i = 0; i < values.length; i++) {
-            // TODO: get _rec_name for fields that has no name field
-            if (rels.get(i).hasAttribute("name")
-                && rels.get(i).get("name") != null) {
-                values[i] = rels.get(i).getString("name");
+            if (rels.get(i).hasAttribute("rec_name")
+                && rels.get(i).get("rec_name") != null) {
+                values[i] = rels.get(i).getString("rec_name");
             } else {
-                // Quick'n dirty fix: get one field
-                String value = "";
-                String betterValue = null;
-                for (String attr : rels.get(i).getAttributeNames()) {
-                    if (rels.get(i).get(attr) != null) {
-                        Object val = rels.get(i).get(attr);
-                        System.out.println(val);
-                        if (val instanceof String) {
-                            betterValue = (String) val;
-                            System.out.println(betterValue);
-                        }
-                        value = rels.get(i).get(attr).toString();
-                    }
-                }
-                if (betterValue != null) {
-                    values[i] = betterValue;
-                } else {
-                    values[i] = value;
-                }
+                Log.e("Tryton", "No rec_name found on " + rels.get(i));
             }
         }
         b.setItems(values, new DialogInterface.OnClickListener() {
@@ -182,8 +164,8 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
             items = new String[]{this.getString(R.string.tomany_remove)};
         }
         String title;
-        if (this.data.get(position).hasAttribute("name")) {
-            title = this.data.get(position).getString("name");
+        if (this.data.get(position).hasAttribute("rec_name")) {
+            title = this.data.get(position).getString("rec_name");
             b.setTitle(title);
         }
         b.setItems(items, new DialogInterface.OnClickListener() {

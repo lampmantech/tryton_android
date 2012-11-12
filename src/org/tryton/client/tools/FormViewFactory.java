@@ -631,7 +631,7 @@ public class FormViewFactory {
             List<Model> models = db.list(className);
             for (Model m : models) {
                 values.add((Integer)m.get("id"));
-                labels.add(m.getString("name"));
+                labels.add(m.getString("rec_name"));
             }
         }
 
