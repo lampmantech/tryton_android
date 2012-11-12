@@ -113,8 +113,17 @@ public class FormView extends Activity implements Handler.Callback {
                     }
                     row = new TableRow(this);
                     row.addView(v);
+                    // Trick, make the first columnt 1/3 of table width
+                    if (v instanceof TextView) {
+                        TableRow.LayoutParams lp = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT, 0.3f);
+                        v.setLayoutParams(lp);
+                        ((TextView)v).setWidth(100);
+                    }
                 } else {
                     row.addView(v);
+                    TableRow.LayoutParams lp = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT, 0.7f);
+                    v.setLayoutParams(lp);
+
                 }
                 x++;
                 x %= 2;
