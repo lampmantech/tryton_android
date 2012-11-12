@@ -107,8 +107,7 @@ public class TreeSummaryAdapter extends BaseExpandableListAdapter {
     public View getGroupView(int groupPosition, boolean isExpanded,
                              View convertView, ViewGroup parent) {
         Model m = this.data.get(groupPosition);
-        if (convertView != null && convertView instanceof TreeSummaryItem
-            && ((TreeSummaryItem)convertView).getModelView().equals(this.modelView) ) {
+        if (convertView != null && convertView instanceof TreeSummaryItem) {
             // Reusing allows to update a view that goes off-screen to reduce
             // scrolling cpu usage (thus smoothing it).
             TreeSummaryItem item = (TreeSummaryItem) convertView;
@@ -117,8 +116,7 @@ public class TreeSummaryAdapter extends BaseExpandableListAdapter {
         } else {
             // Not reusing. Create the view from scratch.
             Context ctx = parent.getContext();
-            TreeSummaryItem item = new TreeSummaryItem(parent.getContext(),
-                                                       this.modelView, m);
+            TreeSummaryItem item = new TreeSummaryItem(parent.getContext(), m);
             return item;
         }
     }

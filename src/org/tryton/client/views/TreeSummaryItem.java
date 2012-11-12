@@ -25,57 +25,36 @@ import org.tryton.client.tools.TreeViewFactory;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.LinearLayout;
-import java.util.ArrayList;
-import java.util.List;
 
 public class TreeSummaryItem extends LinearLayout {
 
-    public static final int FIELDS_COUNT = 2;
-
-    private ModelView modelView;
     private Model model;
-    private List<TextView> values;
+    private TextView value;
 
-    public TreeSummaryItem(Context context, ModelView modelView, Model model) {
+    public TreeSummaryItem(Context context, Model model) {
         super(context);
         this.setOrientation(LinearLayout.VERTICAL);
-        this.modelView = modelView;
-        this.values = new ArrayList<TextView>();
-        for (int i = 0; i < Math.min(this.modelView.getStructure().size(),
-                                     FIELDS_COUNT);
-             i++) {
-            TextView t = new TextView(context);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            params.leftMargin = (int) context.getResources().getDimension(R.dimen.expandable_list_margin);
-            t.setLayoutParams(params);
-            this.values.add(t);
-            this.addView(t);
-        }
+        this.value = new TextView(context);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.leftMargin = (int) context.getResources().getDimension(R.dimen.expandable_list_margin);
+        this.value.setLayoutParams(params);
+        this.value.setMinHeight((int) context.getResources().getDimension(R.dimen.clickable_min_size));
+        this.value.setGravity(Gravity.CENTER_VERTICAL);
+        this.addView(value);
         this.reuse(model, context);
     }
 
     public void reuse(Model model, Context ctx) {
         this.model = model;
-        List<Model> structure = this.modelView.getStructure();
-        for (int i = 0; i < Math.min(structure.size(),
-                                     FIELDS_COUNT); i++) {
-            TextView t = this.values.get(i);
-            Model field = structure.get(i);
-            String value = TreeViewFactory.getView(field, this.model,
-                                                   Session.current.prefs,
-                                                   ctx);
-            t.setText(value);
-        } 
+        this.value.setText(this.model.getString("rec_name"));
     }
 
     public Model getModel() {
         return this.model;
     }
 
-    public ModelView getModelView() {
-        return this.modelView;
-    }
 }
