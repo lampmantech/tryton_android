@@ -269,7 +269,11 @@ public class FormViewFactory {
                         }
                     } else if (type.equals("integer")
                                || type.equals("biginteger")) {
-                        value = String.valueOf(((Integer)data.get(name)));
+                        if (data.hasAttribute(name)) {
+                            value = String.valueOf(((Integer)data.get(name)));
+                        } else {
+                            value = String.valueOf((Integer)fallbackData.get(name));
+                        }
                     } else if (type.equals("float") || type.equals("numeric")) {
                         Object oval = null;
                         if (data.hasAttribute(name)) {
