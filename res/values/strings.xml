@@ -17,6 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <!-- This is the default locale (english) translation file -->
+<!-- Labels are picked to match the python desktop client, labels marked with a NEW
+are not used in the desktop client and should be translated directly.
+Those with a AND are present but differs because of size or other reason. In this case
+the original label is set after the tag -->
 <resources>
   <string name="app_name">Tryton</string>
 
@@ -24,54 +28,54 @@
   <string name="general_yes">Yes</string>
   <string name="general_no">No</string>
   <string name="general_cancel">Cancel</string>
-  <string name="general_config">Configure</string>
-  <string name="general_preferences">Preferences</string>
-  <string name="general_logout">Logout</string>
-  <string name="general_about">About</string>
-  <string name="general_true">Yes</string>
-  <string name="general_false">No</string>
-  <string name="general_new_record">New record</string>
-  <string name="general_graph">Graph view</string>
+  <string name="general_config">Configure</string> <!-- NEW -->
+  <string name="general_preferences">Preferences...</string>
+  <string name="general_logout">Disconnect</string>
+  <string name="general_about">About...</string>
+  <string name="general_true">Yes</string> <!-- NEW -->
+  <string name="general_false">No</string> <!-- NEW -->
+  <string name="general_new_record">Create a new record</string>
+  <string name="general_graph">Graph view</string> <!-- NEW -->
   
   <!-- Login labels -->
-  <string name="login_user">User</string>
+  <string name="login_user">User name</string>
   <string name="login_password">Password</string>
-  <string name="login_send">Login</string>
-  <string name="login_server_unavailable">Server unavailable</string>
-  <string name="login_bad_login">Bad login or password</string>
-  <string name="login_logging_in">Logging in</string>
+  <string name="login_send">Connect</string>
+  <string name="login_server_unavailable">Could not connect to the server</string>
+  <string name="login_bad_login">Connection error!\nBad login or password!</string>
+  <string name="login_logging_in">Connecting</string> <!-- NEW -->
 
   <!-- Menu labels -->
-  <string name="menu_loading">Loading menu</string>
+  <string name="menu_loading">Loading menu</string> <!-- NEW -->
 
   <!-- View labels -->
-  <string name="view_loading">Loading views</string>
-  <string name="data_loading">Loading data</string>
-  <string name="tree_switch_mode_summary">Summary mode</string>
-  <string name="tree_switch_mode_extended">Extended mode</string>
-  <string name="tree_pagination">%1$d - %2$d of %3$d</string>
-  <string name="form_save">Save</string>
+  <string name="view_loading">Loading views</string> <!-- NEW -->
+  <string name="data_loading">Loading data</string> <!-- NEW -->
+  <string name="tree_switch_mode_summary">Summary mode</string> <!-- NEW -->
+  <string name="tree_switch_mode_extended">Extended mode</string> <!-- NEW -->
+  <string name="tree_pagination">%1$d - %2$d of %3$d</string> <!-- NEW -->
+  <string name="form_save">Save this record</string>
   <string name="form_dirty_title">Confirmation</string>
   <string name="form_dirty_message">This record has been modified. Do you want to save it?</string>
-  <string name="tomany_add">Add elements</string>
-  <string name="tomany_remove">Remove element</string>
-  <string name="tomany_delete">Delete element</string>
-  <string name="data_send">Sending data</string>
-  <string name="data_send_done">Record saved</string>
+  <string name="tomany_add">Add</string>
+  <string name="tomany_remove">Remove</string>
+  <string name="tomany_delete">Delete</string> <!-- AND: Delete selected record -->
+  <string name="data_send">Sending data</string> <!-- NEW -->
+  <string name="data_send_done">Record saved!</string>
   
   <!-- Configuration labels -->
-  <string name="config_host_title">Host</string>
-  <string name="config_host_desc">Your Tryton server host (including port)</string>
-  <string name="config_database_title">Database</string>
-  <string name="config_database_desc">The database on your host to connect to</string>
-  <string name="config_user_preferences">User preferences</string>
-  <string name="config_autologout_title">Auto logout</string>
-  <string name="config_autologout_desc">Automatically logout when quitting with back button</string>
+  <string name="config_host_title">Host</string> <!-- AND: Host: -->
+  <string name="config_host_desc">Your Tryton server host (including port)</string> <!-- NEW -->
+  <string name="config_database_title">Database</string> <!-- AND: Database: -->
+  <string name="config_database_desc">The database on your host to connect to</string> <!-- NEW -->
+  <string name="config_user_preferences">User preferences</string> <!-- NEW -->
+  <string name="config_autologout_title">Auto logout</string> <!-- NEW -->
+  <string name="config_autologout_desc">Automatically logout when quitting with back button</string> <!-- NEW -->
 
   <!-- About labels -->
-  <string name="about_author">Realized by Scil (http://scil.coop), financed by Bio Eco Forests (http://bioecoforests.com)</string>
-  <string name="about_licence">This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See http://www.gnu.org/licenses/.</string>
-  <string name="about_source">Get the source code of the application at http://trac.scil.coop/tryton_android</string>
-  <string name="about_svg_android">This application uses svg-android, licenced under the Apache License version 2.0. See http://www.apache.org/licenses/LICENSE-2.0.</string>
-  <string name="about_jsonrpc">This application uses android-json-rpc, licenced under the MIT Licence.</string>
+  <string name="about_author">Realized by Scil (http://scil.coop), financed by Bio Eco Forests (http://bioecoforests.com)</string> <!-- NEW -->
+  <string name="about_licence">This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See http://www.gnu.org/licenses/.</string> <!-- NEW -->
+  <string name="about_source">Get the source code of the application at http://trac.scil.coop/tryton_android</string> <!-- NEW -->
+  <string name="about_svg_android">This application uses svg-android, licenced under the Apache License version 2.0. See http://www.apache.org/licenses/LICENSE-2.0.</string> <!-- NEW -->
+  <string name="about_jsonrpc">This application uses android-json-rpc, licenced under the MIT Licence.</string> <!-- NEW -->
 </resources>
