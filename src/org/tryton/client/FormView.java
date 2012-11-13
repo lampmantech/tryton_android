@@ -163,6 +163,18 @@ public class FormView extends Activity implements Handler.Callback {
     @Override
     public void onStart() {
         super.onStart();
+        this.refreshDisplay();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Reset session
+        Session.current.editModel(null);
+    }
+
+    /** Refresh fields with values from tempModel or editedModel. */
+    private void refreshDisplay() {
         Session s = Session.current;
         Model tmp = s.tempModel;
         ModelView modelView = this.viewTypes.getView("form");
@@ -194,18 +206,6 @@ public class FormView extends Activity implements Handler.Callback {
                                          s.editedModel, s.prefs, this);
             }
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        // Check if dirty to request save
-        this.updateTempModel();
-        if (Session.current.editedIsDirty()) {
-            
-        }
-        // Reset session
-        Session.current.editModel(null);
     }
 
     public void showLoadingDialog(int message) {
@@ -337,6 +337,7 @@ public class FormView extends Activity implements Handler.Callback {
             t.show();
             // Update data with fresh one
             Model m = (Model) msg.obj;
+            className = Session.current.tempModel.getClassName();
             db = new DataCache(this);
             if (m != null) {
                 db.storeData(m.getClassName(), m);
@@ -347,11 +348,18 @@ public class FormView extends Activity implements Handler.Callback {
                 for (String attr : edit.getAttributeNames()) {
                     base.set(attr, edit.get(attr));
                 }
-                db.storeData(base.getClassName(), base);
+                db.storeData(className, base);
             }
-            // Add one to the data count if it is a creation
+            // Update session and local data count if required
             if (Session.current.editedModel == null) {
-                db.addOne(Session.current.tempModel.getClassName());
+                // Creation: add one to data count and
+                // reset session for a new record
+                db.addOne(className);
+                Session.current.tempModel = new Model(className);
+                this.refreshDisplay();
+            } else {
+                // Edition: clear edition and return back to tree
+                this.finish(); // destroys edition in session
             }
             break;
         case TrytonCall.CALL_RELDATA_NOK:
