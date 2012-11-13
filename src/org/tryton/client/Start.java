@@ -34,6 +34,7 @@ import android.widget.TextView;
 import org.tryton.client.data.DataCache;
 import org.tryton.client.data.Session;
 import org.tryton.client.models.Preferences;
+import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.tools.TrytonCall;
 
 /** Start activity. Shows login form. */
@@ -184,11 +185,15 @@ public class Start extends Activity implements Handler.Callback {
             break;
         case TrytonCall.CALL_LOGIN_NOK:
         case TrytonCall.CALL_PREFERENCES_NOK:
-            AlertDialog.Builder b = new AlertDialog.Builder(this);
-            b.setTitle(R.string.error);
-            b.setMessage(R.string.network_error);
-            b.show();
-            break;
+            Exception e = (Exception) msg.obj;
+            if (!AlertBuilder.showUserError(e, this)
+                && !AlertBuilder.showUserError(e, this)) {
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setTitle(R.string.error);
+                b.setMessage(R.string.network_error);
+                b.show();
+                ((Exception)msg.obj).printStackTrace();
+            }
         }
         return true;
     }

@@ -44,6 +44,7 @@ import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
+import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.tools.FormViewFactory;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
@@ -439,11 +440,15 @@ public class FormView extends Activity
         case TrytonCall.CALL_SAVE_NOK:
         case TrytonCall.CALL_DELETE_NOK:
             this.hideLoadingDialog();
-            AlertDialog.Builder b = new AlertDialog.Builder(this);
-            b.setTitle(R.string.error);
-            b.setMessage(R.string.network_error);
-            b.show();
-            ((Exception)msg.obj).printStackTrace();
+            Exception e = (Exception) msg.obj;
+            if (!AlertBuilder.showUserError(e, this)
+                && !AlertBuilder.showUserError(e, this)) {
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setTitle(R.string.error);
+                b.setMessage(R.string.network_error);
+                b.show();
+                ((Exception)msg.obj).printStackTrace();
+            }
             break;
         case TrytonCall.NOT_LOGGED:
             // TODO: this is brutal

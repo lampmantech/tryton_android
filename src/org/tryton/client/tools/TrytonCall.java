@@ -93,6 +93,51 @@ public class TrytonCall {
         return true;
     }
 
+    /** Check if the exception is an user error and return the message.
+     * First string is the message, second is the optionnal description,
+     * which is "" when nothing.
+     * Returns null if the exception is not an user error. */
+    public static String[] getUserError(Exception error) {
+        if (!(error instanceof JSONRPCException)) {
+            return null;
+        }
+        try {
+            JSONArray jsError = new JSONArray(error.getMessage());
+            String type = jsError.getString(0);
+            if (type.equals("UserError")) {
+                JSONArray jsMsg = jsError.getJSONArray(1);
+                String[] ret = new String[]{jsMsg.getString(0),
+                                            jsMsg.getString(1)};
+                return ret;
+            }
+        } catch (JSONException e) {
+            // This is not the structure we expect
+        }
+        return null;
+    }
+    /** Check if the exception is an user warning and return the message.
+     * First string is the message, second is the optionnal description,
+     * which is "" when nothing.
+     * Returns null if the exception is not an user error. */
+    public static String[] getUserWarning(Exception error) {
+        if (!(error instanceof JSONRPCException)) {
+            return null;
+        }
+        try {
+            JSONArray jsError = new JSONArray(error.getMessage());
+            String type = jsError.getString(0);
+            if (type.equals("UserWarning")) {
+                JSONArray jsMsg = jsError.getJSONArray(1);
+                String[] ret = new String[]{jsMsg.getString(0),
+                                            jsMsg.getString(1)};
+                return ret;
+            }
+        } catch (JSONException e) {
+            // This is not the structure we expect
+        }
+        return null;
+    }
+
     public static boolean serverVersion(final Handler h) {
         if (c == null) {
             return false;

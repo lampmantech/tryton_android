@@ -43,6 +43,7 @@ import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
+import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 import org.tryton.client.views.TreeFullAdapter;
@@ -378,11 +379,15 @@ public class TreeView extends Activity
             // Close the loading dialog if present
             this.hideLoadingDialog();
             // Show error popup
-            AlertDialog.Builder b = new AlertDialog.Builder(this);
-            b.setTitle(R.string.error);
-            b.setMessage(R.string.network_error);
-            b.show();
-            ((Exception)msg.obj).printStackTrace();
+            Exception e = (Exception) msg.obj;
+            if (!AlertBuilder.showUserError(e, this)
+                && !AlertBuilder.showUserError(e, this)) {
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setTitle(R.string.error);
+                b.setMessage(R.string.network_error);
+                b.show();
+                ((Exception)msg.obj).printStackTrace();
+            }
             break;
         case TrytonCall.CALL_DATACOUNT_OK:
             int count = (Integer) msg.obj;
