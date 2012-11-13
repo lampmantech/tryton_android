@@ -137,6 +137,9 @@ public class TreeView extends Activity
         outState.putInt("mode", this.mode);
     }
 
+    /** Update the display list and header with loaded data.
+     * A call to hideLoadingDialog should be done around it as it means
+     * the data are all there. */
     private void updateList() {
         // Update paging display
         String format = this.getString(R.string.tree_pagination);
@@ -236,7 +239,7 @@ public class TreeView extends Activity
             }
             this.loadingDialog.setMessage(message);
             this.loadingDialog.show();
-        }        
+        }
     }
 
     /** Hide the loading dialog if shown. */
@@ -280,6 +283,7 @@ public class TreeView extends Activity
         // Get total from cache if present, otherwise from server
         this.totalDataCount = db.getDataCount(model);
         if (this.totalDataCount == -1) {
+            this.showLoadingDialog(LOADING_DATA);
             TrytonCall.getDataCount(s.userId, s.cookie, s.prefs, model,
                                     new Handler(this));
         }
@@ -322,6 +326,8 @@ public class TreeView extends Activity
             // Data is full, use it
             this.data = cacheData;
             this.updateList();
+            // Close the loading dialog if present
+            this.hideLoadingDialog();
         } else {
             // Data is incomplete, or even empty, reload from server
             this.showLoadingDialog(LOADING_DATA);
@@ -334,11 +340,11 @@ public class TreeView extends Activity
     /** Handle TrytonCall feedback. */
     @SuppressWarnings("unchecked")
     public boolean handleMessage(Message msg) {
-        // Close the loading dialog if present
-        this.hideLoadingDialog();
         // Process message
         switch (msg.what) {
         case TrytonCall.CALL_VIEWS_OK:
+            // Close the loading dialog if present
+            this.hideLoadingDialog();
             // Save view and load data
             ModelViewTypes viewTypes = (ModelViewTypes) msg.obj;
             try {
@@ -353,6 +359,9 @@ public class TreeView extends Activity
         case TrytonCall.CALL_VIEWS_NOK:
         case TrytonCall.CALL_DATA_NOK:
         case TrytonCall.CALL_DATACOUNT_NOK:
+            // Close the loading dialog if present
+            this.hideLoadingDialog();
+            // Show error popup
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
             b.setMessage(R.string.network_error);
@@ -367,6 +376,9 @@ public class TreeView extends Activity
             if (this.data == null) {
                 // Wait for data callback
             } else {
+                // Close the loading dialog if present
+                // and update list (loading finished)
+                this.hideLoadingDialog();
                 this.updateList();
             }
             break;
@@ -386,6 +398,9 @@ public class TreeView extends Activity
             if (this.totalDataCount == -1) {
                 // Wait for data count callback
             } else {
+                // Close the loading dialog if present
+                // and update list (loading finished)
+                this.hideLoadingDialog();
                 this.updateList();
             }
             break;
