@@ -55,7 +55,10 @@ the original label is set after the tag -->
   <string name="tree_switch_mode_summary">Summary mode</string> <!-- NEW -->
   <string name="tree_switch_mode_extended">Extended mode</string> <!-- NEW -->
   <string name="tree_pagination">%1$d - %2$d of %3$d</string> <!-- NEW -->
-  <string name="form_save">Save this record</string>
+  <string name="form_save">Save</string>
+  <string name="form_delete">Delete...</string>
+  <string name="form_delete_title">Confirmation</string>
+  <string name="form_delete_message">Are you sure to remove this record?</string>
   <string name="form_dirty_title">Confirmation</string>
   <string name="form_dirty_message">This record has been modified. Do you want to save it?</string>
   <string name="tomany_add">Add</string>

@@ -66,6 +66,8 @@ public class TrytonCall {
     public static final int CALL_RELDATA_NOK = -9;
     public static final int CALL_SAVE_OK = 9;
     public static final int CALL_SAVE_NOK = -10;
+    public static final int CALL_DELETE_OK = 10;
+    public static final int CALL_DELETE_NOK = -11;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -896,4 +898,56 @@ public class TrytonCall {
         return true;
     }
 
+    public static boolean deleteData(final int userId, final String cookie,
+                                     final Preferences prefs,
+                                     final int id, final String className,
+                                     final Handler h) {
+        List<Integer> ids = new ArrayList<Integer>();
+        ids.add(id);
+        return deleteData(userId, cookie, prefs, ids, className, h);
+    }
+
+    public static boolean deleteData(final int userId, final String cookie,
+                                     final Preferences prefs,
+                                     final List<Integer> ids,
+                                     final String className,
+                                     final Handler h) {
+        if (c == null) {
+            return false;
+        }
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                try {
+                    JSONArray jsIds = new JSONArray();
+                    for (Integer id : ids) {
+                        jsIds.put(id);
+                    }
+                    Object oResult = c.call("model." + className + ".delete",
+                                            userId, cookie, jsIds, prefs.json());
+                    if (oResult == JSONObject.NULL
+                        || oResult instanceof Boolean) {
+                        // Delete done
+                        m.what = CALL_DELETE_OK;
+                    } else {
+                        m.what = CALL_DELETE_NOK;
+                        m.obj = new Exception("Unknown response type "
+                                              + oResult);
+                    }
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_DELETE_NOK;
+                        m.obj = e;
+                    }
+                } catch (Exception e) {
+                    m.what = CALL_DELETE_NOK;
+                    m.obj = e;
+                }
+                m.sendToTarget();
+            }
+        }.start();
+        return true;        
+    }
 }

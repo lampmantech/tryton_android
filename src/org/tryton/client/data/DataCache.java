@@ -494,4 +494,26 @@ public class DataCache extends SQLiteOpenHelper {
         dummy.add(data);
         storeData(className, dummy);
     }
+
+    public void deleteData(Model data) {
+        // Delete main record
+        String className = data.getClassName();
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(MODEL_TABLE, "id = ? AND className = ?",
+                  new String[]{data.get("id").toString(), className});
+        // Update count
+        Cursor c = db.query(COUNT_TABLE, new String[]{"count"},
+                            "className = ?", new String[]{className},
+                            null, null, null, "1");
+        if (c.moveToNext()) {
+            int count = c.getInt(0);
+            ContentValues v = new ContentValues();
+            v.put("count", count - 1);
+            db.update(COUNT_TABLE, v, "className = ?",
+                      new String[]{className});
+            c.close();
+        }
+        db.close();
+        // TODO: mark relational model to be refreshed
+    }
 }

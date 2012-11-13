@@ -54,6 +54,9 @@ public class FormView extends Activity
     private static final int LOADING_DATA = 0;
     private static final int LOADING_SEND = 1;
 
+    private static final int DIALOG_DIRTY = 0;
+    private static final int DIALOG_DELETE = 1;
+
     /** Use a static initializer to pass data to the activity on start.
      * Set the viewtype that hold the form view. The data to edit is
      * read from current Session. If null a new Model will be created. */
@@ -66,6 +69,7 @@ public class FormView extends Activity
     private Set<String> relModelsToLoad;
     private Set<String> modelsToLoad;
     private ProgressDialog loadingDialog;
+    private int currentDialog;
 
     private TableLayout table;
 
@@ -183,6 +187,7 @@ public class FormView extends Activity
             this.updateTempModel();
             if (Session.current.editedIsDirty()) {
                 // Ask for save
+                this.currentDialog = DIALOG_DIRTY;
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
                 b.setTitle(R.string.form_dirty_title);
                 b.setMessage(R.string.form_dirty_message);
@@ -198,18 +203,38 @@ public class FormView extends Activity
         return super.onKeyDown(keyCode, event);
     }
 
+    /** Handle buttons click on dirty or delete confirmation popup. */
     public void onClick(DialogInterface dialog, int which) {
-        switch (which) {
-        case DialogInterface.BUTTON_POSITIVE:
-            dialog.dismiss();
-            this.sendSave();
+        switch (currentDialog) {
+        case DIALOG_DIRTY:
+            switch (which) {
+            case DialogInterface.BUTTON_POSITIVE:
+                dialog.dismiss();
+                this.sendSave();
+                break;
+            case DialogInterface.BUTTON_NEGATIVE:
+                dialog.dismiss();
+                this.finish();
+                break;
+            case DialogInterface.BUTTON_NEUTRAL:
+                dialog.dismiss();
+                break;
+            }
             break;
-        case DialogInterface.BUTTON_NEGATIVE:
-            dialog.dismiss();
-            this.finish();
-            break;
-        case DialogInterface.BUTTON_NEUTRAL:
-            dialog.dismiss();
+        case DIALOG_DELETE:
+            switch (which) {
+            case DialogInterface.BUTTON_POSITIVE:
+                dialog.dismiss();
+                // Show loading dialog and send delete call
+                this.showLoadingDialog(LOADING_SEND);
+                Session s = Session.current;
+                TrytonCall.deleteData(s.userId, s.cookie, s.prefs,
+                                      (Integer) s.editedModel.get("id"),
+                                      s.editedModel.getClassName(),
+                                      new Handler(this));
+                break;
+                // There is no listener bound to negative: default is dismiss.
+            }
             break;
         }
     }
@@ -403,8 +428,16 @@ public class FormView extends Activity
                 this.finish(); // destroys edition in session
             }
             break;
+        case TrytonCall.CALL_DELETE_OK:
+            this.hideLoadingDialog();
+            // Update local db
+            db = new DataCache(this);
+            db.deleteData(Session.current.editedModel);
+            this.finish(); // kills session edit
+            break;
         case TrytonCall.CALL_RELDATA_NOK:
         case TrytonCall.CALL_SAVE_NOK:
+        case TrytonCall.CALL_DELETE_NOK:
             this.hideLoadingDialog();
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
@@ -438,6 +471,7 @@ public class FormView extends Activity
     private static final int MENU_TREE_ID = 1;
     private static final int MENU_GRAPH_ID = 2;
     private static final int MENU_SAVE_ID = 3;
+    private static final int MENU_DEL_ID = 4;
     /** Called on menu initialization */
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
@@ -449,6 +483,10 @@ public class FormView extends Activity
         MenuItem save = menu.add(android.view.Menu.NONE, MENU_SAVE_ID, 1,
                                  this.getString(R.string.form_save));
         save.setIcon(android.R.drawable.ic_menu_crop);
+        // Set delete
+        MenuItem delete = menu.add(android.view.Menu.NONE, MENU_DEL_ID, 5,
+                                   this.getString(R.string.form_delete));
+        delete.setIcon(android.R.drawable.ic_menu_delete);
         return true;
     }
 
@@ -458,6 +496,10 @@ public class FormView extends Activity
         // Enable/disable save
         MenuItem save = menu.findItem(MENU_SAVE_ID);
         save.setEnabled(Session.current.editedIsDirty());
+        // Remove delete for creation
+        if (Session.current.editedModel == null) {
+            menu.removeItem(MENU_DEL_ID);
+        }
         return true;
     }
 
@@ -471,6 +513,16 @@ public class FormView extends Activity
         case MENU_SAVE_ID:
             // Send save call
             this.sendSave();
+            break;
+        case MENU_DEL_ID:
+            // Ask for confirmation
+            this.currentDialog = DIALOG_DELETE;
+            AlertDialog.Builder b = new AlertDialog.Builder(this);
+            b.setTitle(R.string.form_delete_title);
+            b.setMessage(R.string.form_delete_message);
+            b.setPositiveButton(R.string.general_yes, this);
+            b.setNegativeButton(R.string.general_no, null);
+            b.show();
             break;
         }
         return true;
