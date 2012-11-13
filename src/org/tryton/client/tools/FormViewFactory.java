@@ -65,6 +65,19 @@ public class FormViewFactory {
         }
     }
 
+    private static void setRequired(View v, Model field, Context ctx) {
+        if (field.hasAttribute("required")
+            && field.get("required").equals(Boolean.TRUE)) {
+            System.out.println("color " + v.getClass());
+            if (v.getClass() == TextView.class) {
+                TextView t = (TextView) v;
+                int color = ctx.getResources().getColor(R.color.required_color);
+                t.setTextColor(color);
+                System.out.println("color");
+            }
+        }
+    }
+
     public static View getView(Model field, ModelView view, Model data,
                                Preferences prefs, Context ctx) {
         String className = field.getClassName();
@@ -72,6 +85,7 @@ public class FormViewFactory {
             // Label widget
             TextView label = new TextView(ctx);
             setValue(label, field, view, data, null, prefs, ctx);
+            // setValue also sets required for labels
             return label;
         } else {
             // Value widget, must check field type to get the appropriate one
@@ -119,11 +133,13 @@ public class FormViewFactory {
                     edit.setFilters(new InputFilter[]{f});
                 }
                 setReadonly(edit, field);
+                setRequired(edit, field, ctx);
                 return edit;
             } else if (type.equals("boolean")) {
                 boolean value = false;
                 CheckBox cb = new CheckBox(ctx);
                 setReadonly(cb, field);
+                setRequired(cb, field, ctx);
                 return cb;
             } else if (type.equals("sha")) {
                 System.out.println("Sha type not supported yet");
@@ -147,6 +163,7 @@ public class FormViewFactory {
                                                            prefs.getDateFormat(),
                                                            year, month, day));
                 setReadonly(b, field);
+                setRequired(b, field, ctx);
                 return b;
             } else if (type.equals("datetime")) {
                 Object value = null;
@@ -183,7 +200,9 @@ public class FormViewFactory {
                 layout.addView(bTime);
                 // Set read-only
                 setReadonly(bDate, field);
+                setRequired(bDate, field, ctx);
                 setReadonly(bTime, field);
+                setRequired(bTime, field, ctx);
                 return layout;
             } else if (type.equals("time")) {
                 DateTimeButton b = new DateTimeButton(ctx);
@@ -202,6 +221,7 @@ public class FormViewFactory {
                 // The listener also sets initial text
                 b.setOnClickListener(new TimeClickListener(b, hour, minute));
                 setReadonly(b, field);
+                setRequired(b, field, ctx);
                 return b;
                 // TODO: TimePicker doesn't support seconds
             } else if (type.equals("binary")) {
@@ -219,6 +239,7 @@ public class FormViewFactory {
                     s.setPrompt(field.getString("name"));
                 }
                 setReadonly(s, field);
+                setRequired(s, field, ctx);
                 return s;
             } else if (type.equals("reference")) {
                 System.out.println("Reference type not supported yet");
@@ -232,12 +253,14 @@ public class FormViewFactory {
                     s.setPrompt(field.getString("name"));
                 }
                 setReadonly(s, field);
+                setRequired(s, field, ctx);
                 return s;
             } else if (type.equals("many2many") || type.equals("one2many")) {
                 Button b = new Button(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 b.setOnClickListener(new ToManyClickListener(view, field.getString("name")));
                 setReadonly(b, field);
+                setRequired(b, field, ctx);
                 return b;
             } else if (type.equals("function")) {
                 System.out.println("Function type not supported yet");
@@ -255,13 +278,17 @@ public class FormViewFactory {
                                 Model data, Model fallbackData,
                                 Preferences prefs, Context ctx) {
         String className = field.getClassName();
+        Model ref = null;
+        if (field.getString("name") != null) {
+            ref = view.getField(field.getString("name"));
+            setRequired(v, ref, ctx);
+        }
         if (className.equals("label")) {
             // Label widget
             if (field.getString("string") != null) {
                 // Use the string attribute as label
                 ((TextView)v).setText(field.getString("string"));
-            } else if (field.getString("name") != null) {
-                Model ref = view.getField(field.getString("name"));
+            } else if (ref != null) {
                 String name = ref.getString("string");
                 if (name == null) {
                     name = ref.getString("name");
