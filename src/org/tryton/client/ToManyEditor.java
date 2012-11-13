@@ -173,7 +173,7 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
                     onLongClickDialog(dialog, which);
                 }
             });
-        b.setNegativeButton(android.R.string.cancel, null);
+        b.setNegativeButton(R.string.general_cancel, null);
         b.show();
         return true;
     }

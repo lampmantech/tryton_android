@@ -161,7 +161,7 @@ public class Start extends Activity implements Handler.Callback {
                 // Show login error
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
                 b.setMessage(R.string.login_bad_login);
-                b.setPositiveButton(android.R.string.ok, null);
+                b.setPositiveButton(R.string.general_ok, null);
                 b.show();
             }
             break;

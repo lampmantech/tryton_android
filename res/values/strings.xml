@@ -27,6 +27,7 @@ the original label is set after the tag -->
   <!-- General strings -->
   <string name="general_yes">Yes</string>
   <string name="general_no">No</string>
+  <string name="general_ok">OK</string>
   <string name="general_cancel">Cancel</string>
   <string name="general_config">Configure</string> <!-- NEW -->
   <string name="general_preferences">Preferences...</string>
