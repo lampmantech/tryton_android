@@ -658,6 +658,7 @@ public class FormViewFactory {
                 Resources r = parent.getContext().getResources();
                 t.setMinimumHeight((int)r.getDimension(R.dimen.clickable_min_size));
                 t.setText(label);
+                t.setTextColor(parent.getContext().getResources().getColor(android.R.color.primary_text_light));
                 t.setGravity(Gravity.CENTER_VERTICAL);
                 return t;
             }
@@ -717,6 +718,7 @@ public class FormViewFactory {
                 t.setMinimumHeight((int)r.getDimension(R.dimen.clickable_min_size));
                 t.setText(label);
                 t.setGravity(Gravity.CENTER_VERTICAL);
+                t.setTextColor(parent.getContext().getResources().getColor(android.R.color.primary_text_light));
                 return t;
             }
         }
