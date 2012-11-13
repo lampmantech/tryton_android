@@ -95,6 +95,13 @@ public class TreeView extends Activity
                     this.data.add((Model)state.getSerializable("data_" + i));
                 }
             }
+            if (state.containsKey("rel_count")) {
+                int count = state.getInt("rel_count");
+                this.relFields = new ArrayList<RelField>();
+                for (int i = 0; i < count; i++) {
+                    this.relFields.add((RelField)state.getSerializable("rel_" + i));
+                }
+            }
             this.mode = state.getInt("mode");
         } else if (entryInitializer != null) {
             this.origin = entryInitializer;
@@ -132,6 +139,12 @@ public class TreeView extends Activity
             outState.putSerializable("data_count", this.data.size());
             for (int i = 0; i < this.data.size(); i++) {
                 outState.putSerializable("data_" + i, this.data.get(i));
+            }
+        }
+        if (this.relFields != null) {
+            outState.putSerializable("rel_count", this.relFields.size());
+            for (int i = 0; i < this.relFields.size(); i++) {
+                outState.putSerializable("rel_" + i, this.relFields.get(i));
             }
         }
         outState.putInt("mode", this.mode);
@@ -314,7 +327,6 @@ public class TreeView extends Activity
         Session s = Session.current;
         DataCache db = new DataCache(this);
         // Get data from cache if present, otherwise from server
-        int fieldsCount = this.viewTypes.getView("tree").getStructure().size();
         int count = 10;
         switch (this.mode) {
         case MODE_EXTENDED:

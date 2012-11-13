@@ -17,8 +17,13 @@
 */
 package org.tryton.client.models;
 
+import java.io.Serializable;
+
 /** Structure to store relationnal field data. */
-public class RelField {
+public class RelField implements Serializable {
+
+    /** Auto generated serial UID */
+    static final long serialVersionUID = -1116721211685486650L;
 
     private String fieldName;
     private String type;

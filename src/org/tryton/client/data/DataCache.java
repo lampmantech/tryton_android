@@ -183,7 +183,9 @@ public class DataCache extends SQLiteOpenHelper {
         db.close();
     }
 
-    private void addOne(String className, SQLiteDatabase db) {
+    /** Add one to the count of data (when creating a new record) */
+    public void addOne(String className) {
+        SQLiteDatabase db = this.getWritableDatabase();
         Cursor c = db.query(COUNT_TABLE, new String[]{"count"},
                             "className = ?", new String[]{className},
                             null, null, null, "1");
@@ -200,6 +202,7 @@ public class DataCache extends SQLiteOpenHelper {
             db.insert(COUNT_TABLE, null, v);
             c.close();
         }
+        db.close();
     }
 
     /** Store relationnal fields. Use null if there is no rel field on the
@@ -445,7 +448,6 @@ public class DataCache extends SQLiteOpenHelper {
                     // Already there, full data. Keep as is
                 } else {            
                     db.insert(MODEL_TABLE, null, v);
-                    this.addOne(m.getClassName(), db);
                 }
                 c.close();
             }
@@ -477,7 +479,6 @@ public class DataCache extends SQLiteOpenHelper {
                               ) == 0) {
                     // Record is not present, insert it
                     db.insert(MODEL_TABLE, null, v);
-                    this.addOne(className, db);
                 }
                 // Store relationnal fields
                 this.storeRelData(m.getRelModels(), time, db);

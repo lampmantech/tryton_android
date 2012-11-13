@@ -349,6 +349,10 @@ public class FormView extends Activity implements Handler.Callback {
                 }
                 db.storeData(base.getClassName(), base);
             }
+            // Add one to the data count if it is a creation
+            if (Session.current.editedModel == null) {
+                db.addOne(Session.current.tempModel.getClassName());
+            }
             break;
         case TrytonCall.CALL_RELDATA_NOK:
         case TrytonCall.CALL_SAVE_NOK:
