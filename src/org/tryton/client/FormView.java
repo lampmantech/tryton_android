@@ -20,11 +20,13 @@ package org.tryton.client;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,7 +48,8 @@ import org.tryton.client.tools.FormViewFactory;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 
-public class FormView extends Activity implements Handler.Callback {
+public class FormView extends Activity
+    implements Handler.Callback, DialogInterface.OnClickListener {
 
     private static final int LOADING_DATA = 0;
     private static final int LOADING_SEND = 1;
@@ -171,6 +174,44 @@ public class FormView extends Activity implements Handler.Callback {
         super.onDestroy();
         // Reset session
         Session.current.editModel(null);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+            // Check if dirty and alert
+            this.updateTempModel();
+            if (Session.current.editedIsDirty()) {
+                // Ask for save
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setTitle(R.string.form_dirty_title);
+                b.setMessage(R.string.form_dirty_message);
+                b.setPositiveButton(R.string.general_yes, this);
+                b.setNegativeButton(R.string.general_no, this);
+                b.setNeutralButton(R.string.general_cancel, this);
+                b.show();
+                // Skip standard behaviour
+                return true;
+            }
+        }
+        // Use default behaviour
+        return super.onKeyDown(keyCode, event);
+    }
+
+    public void onClick(DialogInterface dialog, int which) {
+        switch (which) {
+        case DialogInterface.BUTTON_POSITIVE:
+            dialog.dismiss();
+            this.sendSave();
+            break;
+        case DialogInterface.BUTTON_NEGATIVE:
+            dialog.dismiss();
+            this.finish();
+            break;
+        case DialogInterface.BUTTON_NEUTRAL:
+            dialog.dismiss();
+            break;
+        }
     }
 
     /** Refresh fields with values from tempModel or editedModel. */
@@ -381,6 +422,15 @@ public class FormView extends Activity implements Handler.Callback {
         return true;
     }
 
+    /** Show dialog and send save call to the server. Callback is in handler. */
+    private void sendSave() {
+        this.showLoadingDialog(LOADING_SEND);
+        Session s = Session.current;
+        TrytonCall.saveData(s.userId, s.cookie, s.prefs,
+                            s.tempModel, s.editedModel, this,
+                            new Handler(this));
+    }
+
     //////////////////
     // Menu section //
     //////////////////
@@ -420,11 +470,7 @@ public class FormView extends Activity implements Handler.Callback {
             break;
         case MENU_SAVE_ID:
             // Send save call
-            this.showLoadingDialog(LOADING_SEND);
-            Session s = Session.current;
-            TrytonCall.saveData(s.userId, s.cookie, s.prefs,
-                                s.tempModel, s.editedModel, this,
-                                new Handler(this));
+            this.sendSave();
             break;
         }
         return true;

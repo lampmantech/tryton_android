@@ -21,6 +21,9 @@
   <string name="app_name">Tryton</string>
 
   <!-- General strings -->
+  <string name="general_yes">Yes</string>
+  <string name="general_no">No</string>
+  <string name="general_cancel">Cancel</string>
   <string name="general_config">Configure</string>
   <string name="general_preferences">Preferences</string>
   <string name="general_logout">Logout</string>
@@ -48,6 +51,8 @@
   <string name="tree_switch_mode_extended">Extended mode</string>
   <string name="tree_pagination">%1$d - %2$d of %3$d</string>
   <string name="form_save">Save</string>
+  <string name="form_dirty_title">Confirmation</string>
+  <string name="form_dirty_message">This record has been modified. Do you want to save it?</string>
   <string name="tomany_add">Add elements</string>
   <string name="tomany_remove">Remove element</string>
   <string name="tomany_delete">Delete element</string>
