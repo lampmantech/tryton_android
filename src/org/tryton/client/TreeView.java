@@ -143,8 +143,12 @@ public class TreeView extends Activity
     private void updateList() {
         // Update paging display
         String format = this.getString(R.string.tree_pagination);
+        int start = 0;
+        if (this.data.size() > 0) {
+            start = this.dataOffset + 1;
+        }
         this.pagination.setText(String.format(format,
-                                              this.dataOffset + 1,
+                                              start,
                                               this.dataOffset + this.data.size(),
                                               this.totalDataCount));
         if (this.dataOffset == 0) {
