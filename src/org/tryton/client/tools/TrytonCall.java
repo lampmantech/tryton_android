@@ -496,6 +496,35 @@ public class TrytonCall {
         return true;
     }
 
+    /** Get a single given view. The view isn't build. Id may be null to
+     * get default view for the type. */
+    private static ModelView getView(final int userId, final String cookie,
+                                     final Preferences prefs,
+                                     final String model,
+                                     final Integer id, final String type)
+        throws JSONRPCException {
+        Object oView;
+        if (id == null) {
+            oView = c.call("model." + model + ".fields_view_get",
+                           userId, cookie, false, type, prefs.json());
+        } else {
+            oView = c.call("model." + model + ".fields_view_get",
+                                  userId, cookie, id, type, prefs.json());
+        }
+        if (oView instanceof JSONObject) {
+            try {
+                JSONObject jsFields = (JSONObject) oView;
+                ModelView mView = new ModelView(jsFields);
+                return mView;
+            } catch (JSONException e) {}
+        }
+        return null;
+    }
+
+    /** Get the views and subviews for a meny entry.
+     * It loads the top views and default subviews directly, build the
+     * views with ArchParser which loads the missing subviews with
+     * getView. */
     public static boolean getViews(final int userId, final String cookie,
                                    final Preferences prefs,
                                    final MenuEntry entry,
@@ -527,22 +556,40 @@ public class TrytonCall {
                             int viewId = jsTypeId.getInt(0);
                             String type = jsTypeId.getString(1);
                             // Get the view itself
-                            Object oView = c.call("model." + model
-                                                  + ".fields_view_get",
-                                                  userId, cookie, viewId,
-                                                  type, prefs.json());
-                            if (oView instanceof JSONObject) {
-                                // Register the view for its type
-                                JSONObject jsFields = (JSONObject) oView;
-                                ModelView mView = new ModelView(jsFields);
-                                ArchParser.buildTree(mView);
+                            ModelView mView = getView(userId, cookie, prefs,
+                                                      model, viewId, type);
+                            if (mView != null) {
+                                // Build the view
+                                ArchParser parser = new ArchParser(mView);
+                                parser.buildTree();
+                                // Get the views that where found during parsing
+                                for (ArchParser.MissingView v : parser.getDiscovered()) {
+                                    ModelView sub = getView(userId, cookie,
+                                                            prefs,
+                                                            v.getClassName(),
+                                                            v.getId(),
+                                                            v.getType());
+                                    if (sub != null) {
+                                        ModelViewTypes t = mView.getSubview(v.getFieldName());
+                                        if (t == null) {
+                                            t = new ModelViewTypes(v.getClassName());
+                                            mView.getSubviews().put(v.getFieldName(), t);
+                                        }
+                                        t.putView(v.getType(), sub);
+                                    } else {
+                                        // TODO: wtf?
+                                    }
+                                }
+                                // Build all subviews
                                 for (String extView : mView.getSubviews().keySet()) {
                                     ModelViewTypes t = mView.getSubviews().get(extView);
                                     for (String vt : t.getTypes()) {
                                         ModelView sub = t.getView(vt);
-                                        ArchParser.buildTree(sub);
+                                        ArchParser p = new ArchParser(sub);
+                                        p.buildTree();
                                     }
                                 }
+                                // Register the views
                                 modelViews.putView(type, mView);
                             }
                         }
@@ -672,7 +719,7 @@ public class TrytonCall {
         try {
             JSONArray rels = read(userId, cookie, prefs,
                                   "model." + relModelName,
-                                  new String[]{"id", "name"},
+                                  new String[]{"id", "rec_name"},
                                   ids);
             for (int i = 0; i < rels.length(); i++) {
                 try {

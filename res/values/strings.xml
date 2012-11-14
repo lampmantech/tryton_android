@@ -63,6 +63,7 @@ the original label is set after the tag -->
   <string name="form_dirty_message">This record has been modified. Do you want to save it?</string>
   <string name="tomany_add">Add</string>
   <string name="tomany_remove">Remove</string>
+  <string name="tomany_add_new">Create a new record</string>
   <string name="tomany_delete">Delete</string> <!-- AND: Delete selected record -->
   <string name="data_send">Sending data</string> <!-- NEW -->
   <string name="data_send_done">Record saved!</string>

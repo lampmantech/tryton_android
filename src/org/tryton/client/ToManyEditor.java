@@ -20,11 +20,13 @@ package org.tryton.client;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.Button;
 import android.widget.ListView;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,10 +78,19 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
         // Load views
         this.setContentView(R.layout.tomany);
         this.selected = (ListView) this.findViewById(R.id.tomany_list);
+        Button add = (Button) this.findViewById(R.id.tomany_add);
+        if (this.parentView.getField(this.fieldName).getString("type").equals("one2many")) {
+            add.setText(R.string.tomany_add_new);
+            add.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        create();
+                    }
+                });
+        }
         // Load model subview
         this.view = this.parentView.getSubview(this.fieldName).getView("tree");
         if (this.view == null) {
-                    this.view = this.parentView.getSubview(this.fieldName).getView("form");
+            this.view = this.parentView.getSubview(this.fieldName).getView("form");
         }
         this.refresh();
     }
@@ -110,15 +121,22 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
             if (forUpdate) {
                 // Make a copy of the original to edit
                 ids = new ArrayList<Integer>();
-                ids.addAll((List<Integer>)s.editedModel.get(this.fieldName));
+                if (s.editedModel != null) {
+                    ids.addAll((List<Integer>)s.editedModel.get(this.fieldName));
+                }
                 s.tempModel.set(this.fieldName, ids);
             } else {
-                ids = (List<Integer>) s.editedModel.get(this.fieldName);
+                if (s.editedModel != null) {
+                    ids = (List<Integer>) s.editedModel.get(this.fieldName);
+                } else {
+                    ids = new ArrayList<Integer>();
+                }
             }
         }
         return ids;
     }
 
+    /** Action called on add button for many2many field (linked in xml) */
     public void add(View button) {
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setTitle(R.string.tomany_add);
@@ -143,12 +161,23 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
                 Log.e("Tryton", "No rec_name found on " + rels.get(i));
             }
         }
-        b.setItems(values, new DialogInterface.OnClickListener() {
+        DialogInterface.OnClickListener l = new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     onAddDialog(dialog, which);
                 }
-            });
+            };
+        b.setItems(values, l);
+        b.setNeutralButton(R.string.tomany_add_new, l);
         b.show();
+    }
+
+    /** Action called on create button. */
+    public void create() {
+        // Open a new form to create the relation
+        Session.current.editNewModel(this.className);
+        FormView.setup(this.parentView.getSubview(this.fieldName));
+        Intent i = new Intent(this, FormView.class);
+        this.startActivity(i);
     }
 
     public boolean onItemLongClick(AdapterView parent, View v, int position,
@@ -188,6 +217,10 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
     }
 
     public void onAddDialog(DialogInterface dialog, int which) {
+        if (which == DialogInterface.BUTTON_NEUTRAL) {
+            create();
+            return;
+        }
         Model clickedModel = this.rels.get(which);
         Integer id = (Integer) clickedModel.get("id");
         List<Integer> ids = this.getIds(true);

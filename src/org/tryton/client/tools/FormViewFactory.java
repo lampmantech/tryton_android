@@ -314,7 +314,7 @@ public class FormViewFactory {
                                || type.equals("biginteger")) {
                         if (data.hasAttribute(name)) {
                             value = String.valueOf(((Integer)data.get(name)));
-                        } else {
+                        } else if (fallbackData != null) {
                             value = String.valueOf((Integer)fallbackData.get(name));
                         }
                     } else if (type.equals("float") || type.equals("numeric")) {

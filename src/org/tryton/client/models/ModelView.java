@@ -43,6 +43,7 @@ public class ModelView implements Serializable {
     /** The arch in data shape. Accessible only once build is called.
      * It contains fields form the fields map with some extra data. */
     protected List<Model> builtFields;
+    /** Views linked to fields of this view, indexed by field name. */
     protected Map<String, ModelViewTypes> subviews;
 
     /** Create the view from server data. It must be built to be used

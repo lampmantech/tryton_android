@@ -17,6 +17,8 @@
 */
 package org.tryton.client.data;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.tryton.client.models.Model;
@@ -40,23 +42,55 @@ public class Session {
     /** Model currently edited in form view. Use editModel to set its value */
     public Model editedModel;
     public Model tempModel;
+    /** Stack to allow to edit multiple models at once (for relationnal).
+     * The top of the stack is always editedModel and tempModel. */
+    private List<Model> editStack;
+    
+    private Session() {
+        this.editStack = new ArrayList<Model>();
+    }
 
-    private Session() {}
+    /** Push editing models on stack */
+    private void pushStack() {
+        this.editStack.add(editedModel);
+        this.editStack.add(tempModel);
+    }
+    /** Pop editing stack to set editing models with previous values. */
+    private void popStack() {
+        if (this.editStack.size() > 1) {
+            // Pop twice
+            this.editStack.remove(this.editStack.size() - 1);
+            this.editStack.remove(this.editStack.size() - 1);
+        }
+        if (this.editStack.size() > 1) {
+            // Set editing models if there are still one
+            this.editedModel = this.editStack.get(this.editStack.size() - 2);
+            this.tempModel = this.editStack.get(this.editStack.size() - 1);
+        } else {
+            // End of edit, stack is empty
+            this.editedModel = null;
+            this.tempModel = null;
+        }        
+    }
 
-    /** Set session to edit a record. Use null to stop editing. */
+    /** Set session to edit a record. */
     public void editModel(Model data) {
         this.editedModel = data;
-        if (data != null) {
-            this.tempModel = new Model(data.getClassName());
-            this.tempModel.set("id", data.get("id"));
-        } else {
-            this.tempModel = null;
-        }
+        this.tempModel = new Model(data.getClassName());
+        this.tempModel.set("id", data.get("id"));
+        this.pushStack();
     }
     /** Set session to create a new record. */
     public void editNewModel(String className) {
         this.editedModel = null;
         this.tempModel = new Model(className);
+        this.pushStack();
+    }
+
+    /** Finish editing the current model
+     * and return back to the previous, if any */
+    public void finishEditing() {
+        this.popStack();
     }
 
     public boolean editedIsDirty() {

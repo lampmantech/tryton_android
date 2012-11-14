@@ -177,8 +177,7 @@ public class FormView extends Activity
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // Reset session
-        Session.current.editModel(null);
+        Session.current.finishEditing();
     }
 
     @Override
