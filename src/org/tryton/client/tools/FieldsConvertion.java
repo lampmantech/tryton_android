@@ -34,13 +34,17 @@ import org.tryton.client.models.RelField;
 public class FieldsConvertion {
 
     /** Convert from server received float/decimal field value to double */
-    public static double numericToDouble(Map decimal) {
+    public static Double numericToDouble(Map decimal) {
         if (decimal.containsKey("decimal")) {
+            if (decimal.get("decimal") == null
+                || decimal.get("decimal").equals("")) {
+                return null;
+            }
             Double val = Double.parseDouble((String)decimal.get("decimal"));
             return val.doubleValue();
         } else {
             Log.e("Tryton", "Converting an invalid map to double");
-            return 0;
+            return null;
         }
     }
 
@@ -156,13 +160,18 @@ public class FieldsConvertion {
                     String val = timeToStr(mVal);
                     send.set(attr, val);
                 } else if (mVal.containsKey("decimal")) {
-                    // Format the decimal map to JSONObject
-                    JSONObject dec = new JSONObject();
-                    try {
-                        dec.put("__class__", "Decimal");
-                        dec.put("decimal", mVal.get("decimal"));
-                    } catch (Exception e) {}
-                    send.set(attr, dec);
+                    Double val = numericToDouble(mVal);
+                    if (val == null) {
+                        send.set(attr, JSONObject.NULL);
+                    } else {
+                        // Format the decimal map to JSONObject
+                        JSONObject dec = new JSONObject();
+                        try {
+                            dec.put("__class__", "Decimal");
+                            dec.put("decimal", mVal.get("decimal"));
+                        } catch (Exception e) {}
+                        send.set(attr, dec);
+                    }
                 } else {
                     // What's that?
                     Log.e("Tryton", "Unrecognized map attribute " + mVal);

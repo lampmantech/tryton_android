@@ -103,22 +103,40 @@ public class Session {
         for (String attr : this.tempModel.getAttributeNames()) {
             Object value = this.editedModel.get(attr);
             Object tmpValue = this.tempModel.get(attr);
+            // Special case of decimal null representation
+            if (value instanceof Map && ((Map)value).containsKey("decimal")
+                && FieldsConvertion.numericToDouble((Map)value) == null) {
+                value = null;
+            }
+            if (tmpValue instanceof Map
+                && ((Map)tmpValue).containsKey("decimal")
+                && FieldsConvertion.numericToDouble((Map)tmpValue) == null) {
+                tmpValue = null;
+            }
+            // Null comparisons
+            if ((tmpValue == null && value != null)
+                || (tmpValue != null && value == null)) {
+                return true;
+            }
+            // Values comparison
             if ((tmpValue == null && value != null)
                 || (tmpValue != null && !tmpValue.equals(value))) {
                 // Check for tree field values
-                if (value instanceof Map) {
+                if (value instanceof Map || tmpValue instanceof Map) {
                     Map mVal = (Map) value;
+                    Map tmpVal = (Map) tmpValue;
                     if (mVal.containsKey("decimal")) {
-                        Map tmpVal = (Map) tmpValue;
                         // Its a numeric
-                        double val = FieldsConvertion.numericToDouble(mVal);
-                        double tmp = FieldsConvertion.numericToDouble(tmpVal);
-                        if (val == tmp) {
+                        Double val = FieldsConvertion.numericToDouble(mVal);
+                        Double tmp = FieldsConvertion.numericToDouble(tmpVal);
+                        System.out.println(val + " " + tmp);
+                        if ((val == null && tmp == null)
+                            || (val != null && val.equals(tmp))
+                            || (tmp != null && tmp.equals(val))) {
                             // Not dirty
                             continue;
                         }
                     } else if (mVal.containsKey("year")) {
-                        Map tmpVal = (Map) tmpValue;
                         if (mVal.containsKey("hour")) {
                             // It's a datetime
                             int[] val = FieldsConvertion.dateTimeToIntA(mVal);
@@ -139,7 +157,6 @@ public class Session {
                             }
                         }
                     } else if (mVal.containsKey("hour")) {
-                        Map tmpVal = (Map) tmpValue;
                         // It's a time
                         int[] val = FieldsConvertion.timeToIntA(mVal);
                         int[] tmp = FieldsConvertion.timeToIntA(tmpVal);
@@ -148,6 +165,7 @@ public class Session {
                         }
                     }
                 }
+                System.out.println("dirty by " + attr);
                 return true;
             }
         }

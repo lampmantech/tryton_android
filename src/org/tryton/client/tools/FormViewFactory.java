@@ -317,6 +317,9 @@ public class FormViewFactory {
                         } else if (fallbackData != null) {
                             value = String.valueOf((Integer)fallbackData.get(name));
                         }
+                        if (value.equals("null")) {
+                            value = null;
+                        }
                     } else if (type.equals("float") || type.equals("numeric")) {
                         Object oval = null;
                         if (data.hasAttribute(name)) {
@@ -338,6 +341,9 @@ public class FormViewFactory {
                             value = String.valueOf(dval);
                         }
                     }
+                }
+                if (value == null) {
+                    value = "";
                 }
                 ((EditText)v).setText(value);
             } else if (type.equals("boolean")) {
@@ -513,14 +519,22 @@ public class FormViewFactory {
         } else if (type.equals("integer") || type.equals("biginteger")) {
             if (v instanceof EditText) {
                 EditText t = (EditText) v;
-                return Integer.parseInt(t.getText().toString());
+                try {
+                    return Integer.parseInt(t.getText().toString());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
             } else {
                 Log.e("Tryton", "Getting integer value form incorrect view");
             }
         } else if (type.equals("float")) {
             if (v instanceof EditText) {
                 EditText t = (EditText) v;
-                return Double.parseDouble(t.getText().toString());
+                try {
+                    return Double.parseDouble(t.getText().toString());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
             } else {
                 Log.e("Tryton", "Getting float value form incorrect view");
             }
