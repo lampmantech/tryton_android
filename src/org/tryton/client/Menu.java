@@ -134,8 +134,6 @@ public class Menu extends Activity implements Handler.Callback,
     /** Handle TrytonCall feedback. */
     @SuppressWarnings("unchecked")
     public boolean handleMessage(Message msg) {
-        // Close the loading dialog if present
-        this.hideLoadingDialog();
         // Process message
         switch (msg.what) {
         case TrytonCall.CALL_MENUS_OK:
@@ -149,8 +147,10 @@ public class Menu extends Activity implements Handler.Callback,
             // Update the view
             this.entries = menus;
             this.updateMenus(menus);
+            this.hideLoadingDialog();
             break;
         case TrytonCall.CALL_MENUS_NOK:
+            this.hideLoadingDialog();
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
             b.setMessage(R.string.network_error);
