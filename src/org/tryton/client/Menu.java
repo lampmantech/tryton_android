@@ -20,6 +20,7 @@ package org.tryton.client;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,8 +42,9 @@ import org.tryton.client.data.MenuCache;
 import org.tryton.client.views.MenuEntryAdapter;
 import org.tryton.client.views.MenuEntryItem;
 
-public class Menu extends Activity implements Handler.Callback,
-                                              AdapterView.OnItemClickListener {
+public class Menu extends Activity
+    implements Handler.Callback, AdapterView.OnItemClickListener,
+               DialogInterface.OnCancelListener {
 
     /** Use a static initializer to pass data to the activity. If not set
         the whole menu will be loaded and first level shown. */
@@ -52,6 +54,7 @@ public class Menu extends Activity implements Handler.Callback,
     private static List<MenuEntry> entriesInitializer;
 
     private List<MenuEntry> entries;
+    private int callId;
 
     private ListView menuList;
     private ProgressDialog loadingDialog;
@@ -66,6 +69,11 @@ public class Menu extends Activity implements Handler.Callback,
             for (int i = 0; i < count; i++) {
                 MenuEntry entry = (MenuEntry) state.getSerializable("entry" + i);
                 this.entries.add(entry);
+            }
+            this.callId = state.getInt("callId");
+            if (this.callId != 0) {
+                TrytonCall.update(callId, new Handler(this));
+                this.showLoadingDialog();
             }
         } else if (entriesInitializer != null) {
             this.entries = entriesInitializer;
@@ -85,12 +93,13 @@ public class Menu extends Activity implements Handler.Callback,
             if (cachedMenus != null) {
                 // Got it
                 this.entries = cachedMenus;
-            } else {
+            } else if (this.callId == 0) {
                 // Launch menu loading as it is empty
                 this.showLoadingDialog();
-                TrytonCall.getMenus(Session.current.userId,
-                                    Session.current.cookie,
-                                    Session.current.prefs, new Handler(this));
+                this.callId = TrytonCall.getMenus(Session.current.userId,
+                                                  Session.current.cookie,
+                                                  Session.current.prefs,
+                                                  new Handler(this));
             }
         }
         // Init view
@@ -112,6 +121,7 @@ public class Menu extends Activity implements Handler.Callback,
         for (int i = 0; i < this.entries.size(); i++) {
             outState.putSerializable("entry" + i, this.entries.get(i));
         }
+        outState.putInt("callId", this.callId);
     }
 
     public void showLoadingDialog() {
@@ -119,8 +129,16 @@ public class Menu extends Activity implements Handler.Callback,
             this.loadingDialog = new ProgressDialog(this);
             this.loadingDialog.setIndeterminate(true);
             this.loadingDialog.setMessage(this.getString(R.string.menu_loading));
+            this.loadingDialog.setOnCancelListener(this);
             this.loadingDialog.show();
-        }        
+        }
+    }
+
+    public void onCancel(DialogInterface dialog) {
+        TrytonCall.cancel(this.callId);
+        this.callId = 0;
+        this.loadingDialog = null;
+        this.finish();
     }
 
     /** Hide the loading dialog if shown. */
@@ -137,6 +155,7 @@ public class Menu extends Activity implements Handler.Callback,
         // Process message
         switch (msg.what) {
         case TrytonCall.CALL_MENUS_OK:
+            this.callId = 0;
             List<MenuEntry> menus = (List) msg.obj;
             // Cache the menu
             try {
@@ -151,6 +170,7 @@ public class Menu extends Activity implements Handler.Callback,
             break;
         case TrytonCall.CALL_MENUS_NOK:
             this.hideLoadingDialog();
+            this.callId = 0;
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.error);
             b.setMessage(R.string.network_error);

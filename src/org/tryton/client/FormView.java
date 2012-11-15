@@ -50,7 +50,8 @@ import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 
 public class FormView extends Activity
-    implements Handler.Callback, DialogInterface.OnClickListener {
+    implements Handler.Callback, DialogInterface.OnClickListener,
+               DialogInterface.OnCancelListener {
 
     private static final int LOADING_DATA = 0;
     private static final int LOADING_SEND = 1;
@@ -71,6 +72,9 @@ public class FormView extends Activity
     private Set<String> modelsToLoad;
     private ProgressDialog loadingDialog;
     private int currentDialog;
+    private int callId;
+    private int currentLoadingMsg;
+    private boolean kill; // Check if edit is finished when destroying activity
 
     private TableLayout table;
 
@@ -80,6 +84,12 @@ public class FormView extends Activity
         // Init data
         if (state != null) {
             this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
+            this.callId = state.getInt("callId");
+            this.currentLoadingMsg = state.getInt("currentLoadingMsg");
+            if (this.callId != 0) {
+                TrytonCall.update(this.callId, new Handler(this));
+                this.showLoadingDialog(this.currentLoadingMsg);
+            }
         } else {
             this.viewTypes = viewInitializer;
             viewInitializer = null;
@@ -156,7 +166,8 @@ public class FormView extends Activity
                 }
             }
         }
-        if (!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty()) {
+        if ((!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty())
+            && this.callId == 0) {
             // Start loading
             this.showLoadingDialog(LOADING_DATA);
             this.loadRel();
@@ -166,6 +177,8 @@ public class FormView extends Activity
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable("viewTypes", this.viewTypes);
+        outState.putInt("callId", this.callId);
+        outState.putInt("currentLoadingMsg", this.currentLoadingMsg);
     }
 
     @Override
@@ -177,7 +190,10 @@ public class FormView extends Activity
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Session.current.finishEditing();
+        if (this.kill) {
+            Session.current.finishEditing();
+        }
+        this.hideLoadingDialog();
     }
 
     @Override
@@ -197,6 +213,10 @@ public class FormView extends Activity
                 b.show();
                 // Skip standard behaviour
                 return true;
+            } else {
+                if (this.loadingDialog == null) {
+                    this.kill = true;
+                }
             }
         }
         // Use default behaviour
@@ -228,10 +248,10 @@ public class FormView extends Activity
                 // Show loading dialog and send delete call
                 this.showLoadingDialog(LOADING_SEND);
                 Session s = Session.current;
-                TrytonCall.deleteData(s.userId, s.cookie, s.prefs,
-                                      (Integer) s.editedModel.get("id"),
-                                      s.editedModel.getClassName(),
-                                      new Handler(this));
+                this.callId = TrytonCall.deleteData(s.userId, s.cookie, s.prefs,
+                                                    (Integer) s.editedModel.get("id"),
+                                                    s.editedModel.getClassName(),
+                                                    new Handler(this));
                 break;
                 // There is no listener bound to negative: default is dismiss.
             }
@@ -276,20 +296,31 @@ public class FormView extends Activity
 
     public void showLoadingDialog(int message) {
         if (this.loadingDialog == null) {
+            this.currentLoadingMsg = message;
             this.loadingDialog = new ProgressDialog(this);
             this.loadingDialog.setIndeterminate(true);
             String msg = "";
             switch (message) {
             case LOADING_DATA:
                 msg = this.getString(R.string.data_loading);
+                this.loadingDialog.setOnCancelListener(this);
                 break;
             case LOADING_SEND:
                 msg = this.getString(R.string.data_send);
+                this.loadingDialog.setCancelable(false);
                 break;
             }
             this.loadingDialog.setMessage(msg);
             this.loadingDialog.show();
         }        
+    }
+
+    public void onCancel(DialogInterface dialog) {
+        TrytonCall.cancel(this.callId);
+        this.callId = 0;
+        this.loadingDialog = null;
+        this.kill = true;
+        this.finish();
     }
 
     /** Hide the loading dialog if shown. */
@@ -302,7 +333,8 @@ public class FormView extends Activity
 
     /** Load a pending model and remove it from queue.
      * Return true if a load is launched, false if
-     * there is nothing to load. */
+     * there is nothing to load.
+     * Warning: you must check that callId is 0 to prevent multiple loads. */
     private boolean loadRel() {
         if (!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty()) {
             Session s = Session.current;
@@ -312,16 +344,18 @@ public class FormView extends Activity
             for (String model : this.relModelsToLoad) {
                 // This is the easyest way to get an Iterator on the set
                 // and get the first entry.
-                TrytonCall.getRelData(s.userId, s.cookie, s.prefs, model,
-                                      false, new Handler(this));
+                this.callId = TrytonCall.getRelData(s.userId, s.cookie,
+                                                    s.prefs, model,
+                                                    false, new Handler(this));
                 modelLoaded = model;
                 break;
             }
             if (modelLoaded == null) {
                 // relModelToLoad all loaded
                 for (String model : this.modelsToLoad) {
-                    TrytonCall.getRelData(s.userId, s.cookie, s.prefs, model,
-                                          true, new Handler(this));
+                    this.callId = TrytonCall.getRelData(s.userId, s.cookie,
+                                                        s.prefs, model, true,
+                                                        new Handler(this));
                     modelLoaded = model;
                     break;
                 }
@@ -381,6 +415,7 @@ public class FormView extends Activity
         // Process message
         switch (msg.what) {
         case TrytonCall.CALL_RELDATA_OK:
+            this.callId = 0;
             String className = (String) ((Object[])msg.obj)[0];
             List<Model> data = (List) ((Object[])msg.obj)[1];
             DataCache db = new DataCache(this);
@@ -397,6 +432,7 @@ public class FormView extends Activity
             }
             break;
         case TrytonCall.CALL_SAVE_OK:
+            this.callId = 0;
             this.hideLoadingDialog();
             Toast t = Toast.makeText(this, R.string.data_send_done,
                                      Toast.LENGTH_SHORT);
@@ -425,19 +461,23 @@ public class FormView extends Activity
                 this.refreshDisplay();
             } else {
                 // Edition: clear edition and return back to tree
-                this.finish(); // destroys edition in session
+                this.kill = true;
+                this.finish();
             }
             break;
         case TrytonCall.CALL_DELETE_OK:
+            this.callId = 0;
             this.hideLoadingDialog();
             // Update local db
             db = new DataCache(this);
             db.deleteData(Session.current.editedModel);
-            this.finish(); // kills session edit
+            this.kill = true;
+            this.finish();
             break;
         case TrytonCall.CALL_RELDATA_NOK:
         case TrytonCall.CALL_SAVE_NOK:
         case TrytonCall.CALL_DELETE_NOK:
+            this.callId = 0;
             this.hideLoadingDialog();
             Exception e = (Exception) msg.obj;
             if (!AlertBuilder.showUserError(e, this)
@@ -463,9 +503,9 @@ public class FormView extends Activity
     private void sendSave() {
         this.showLoadingDialog(LOADING_SEND);
         Session s = Session.current;
-        TrytonCall.saveData(s.userId, s.cookie, s.prefs,
-                            s.tempModel, s.editedModel, this,
-                            new Handler(this));
+        this.callId = TrytonCall.saveData(s.userId, s.cookie, s.prefs,
+                                          s.tempModel, s.editedModel, this,
+                                          new Handler(this));
     }
 
     //////////////////

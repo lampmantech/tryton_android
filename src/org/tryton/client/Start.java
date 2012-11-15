@@ -20,6 +20,7 @@ package org.tryton.client;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -57,6 +58,7 @@ public class Start extends Activity implements Handler.Callback {
     private EditText password;
     private Button loginBtn;
     private ProgressDialog loadingDialog;
+    private int callId;
 
     /** Called when the activity is first created. */
     @Override
@@ -65,6 +67,11 @@ public class Start extends Activity implements Handler.Callback {
         if (state != null) {
             // Recreated from a saved state
             this.serverVersion = state.getString("version");
+            this.callId = state.getInt("callId");
+            if (this.callId != 0) {
+                TrytonCall.update(this.callId, new Handler(this));
+                this.showLoadingDialog();
+            }
         }
         // Load configuration for TrytonCall
         TrytonCall.setup(Configure.getHost(this), Configure.getDatabase(this));
@@ -81,7 +88,13 @@ public class Start extends Activity implements Handler.Callback {
     /** Save current state before killing, if necessary (called by system) */
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString(this.serverVersion, "version");
+        outState.putString("version", this.serverVersion);
+        outState.putInt("callId", this.callId);
+    }
+
+    public void onDestroy() {
+        super.onDestroy();
+        this.hideLoadingDialog();
     }
 
     /** Called when activity comes to front */
@@ -131,8 +144,6 @@ public class Start extends Activity implements Handler.Callback {
 
     /** Handle TrytonCall feedback. */
     public boolean handleMessage(Message msg) {
-        // Close the loading dialog if present
-        this.hideLoadingDialog();
         // Process message
         switch (msg.what) {
         case TrytonCall.CALL_VERSION_OK:
@@ -157,8 +168,11 @@ public class Start extends Activity implements Handler.Callback {
                 Session.current.userId = userId;
                 Session.current.cookie = cookie;
                 // Get user preferences
-                TrytonCall.getPreferences(userId, cookie, new Handler(this));
+                this.callId = TrytonCall.getPreferences(userId, cookie,
+                                                        new Handler(this));
             } else {
+                this.hideLoadingDialog();
+                this.callId = 0;
                 // Show login error
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
                 b.setMessage(R.string.login_bad_login);
@@ -167,6 +181,8 @@ public class Start extends Activity implements Handler.Callback {
             }
             break;
         case TrytonCall.CALL_PREFERENCES_OK:
+            this.hideLoadingDialog();
+            this.callId = 0;
             // Save the preferences
             Session.current.prefs = (Preferences) msg.obj;
             // Clear password field
@@ -185,6 +201,8 @@ public class Start extends Activity implements Handler.Callback {
             break;
         case TrytonCall.CALL_LOGIN_NOK:
         case TrytonCall.CALL_PREFERENCES_NOK:
+            this.hideLoadingDialog();
+            this.callId = 0;
             Exception e = (Exception) msg.obj;
             if (!AlertBuilder.showUserError(e, this)
                 && !AlertBuilder.showUserError(e, this)) {
@@ -203,9 +221,9 @@ public class Start extends Activity implements Handler.Callback {
         // Show loading dialog
         this.showLoadingDialog();
         // Launch call (will be handled by handleMessage on response)
-        TrytonCall.login(this.login.getText().toString(),
-                         this.password.getText().toString(),
-                         new Handler(this));
+        this.callId = TrytonCall.login(this.login.getText().toString(),
+                                       this.password.getText().toString(),
+                                       new Handler(this));
     }
 
     /** Do the logout stuff */
@@ -231,6 +249,7 @@ public class Start extends Activity implements Handler.Callback {
         if (this.loadingDialog == null) {
             this.loadingDialog = new ProgressDialog(this);
             this.loadingDialog.setIndeterminate(true);
+            this.loadingDialog.setCancelable(false);
             this.loadingDialog.setMessage(this.getString(R.string.login_logging_in));
             this.loadingDialog.show();
         }        

@@ -75,6 +75,9 @@ public class TrytonCall {
     private static int timeout = 20000;
     private static int soTimeout = 30000;
 
+    private static int callSequence = 1;
+    private static Map<Integer, Handler> handlers = new HashMap<Integer, Handler>();
+
     public static boolean setup(String host, String database) {
         if (host == null || host.equals("")
             || database == null || database.equals("")) {
@@ -91,6 +94,33 @@ public class TrytonCall {
         c.setConnectionTimeout(timeout);
         c.setSoTimeout(soTimeout);
         return true;
+    }
+
+    public static void cancel(int callId) {
+        handlers.remove(callId);
+    }
+    public static void update(int callId, Handler h) {
+        if (handlers.containsKey(callId)) {
+            handlers.put(callId, h);
+        }
+    }
+    /** Send the message to the right handler if it was updated or not
+     * if it was canceled. */
+    private static void sendMessage(int callId, Message m) {
+        if (handlers.containsKey(callId)) {
+            Handler h = handlers.get(callId);
+            if (m.getTarget().equals(h)) {
+                m.sendToTarget();
+            } else {
+                m.setTarget(h);
+                m.sendToTarget();
+            }
+            handlers.remove(callId);
+        }
+    }
+    /** Check if a call has been canceled or not. */
+    private static boolean isCanceled(int callId) {
+        return (!handlers.containsKey(callId));
     }
 
     /** Check if the exception is an user error and return the message.
@@ -173,11 +203,13 @@ public class TrytonCall {
      * Message will contain success on arg1 and if success obj will be
      * a array with obj[0] as user id (integer) and obj[1] the cookie (string).
      */
-    public static boolean login(final String user, final String password,
+    public static int login(final String user, final String password,
                                 final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -206,10 +238,10 @@ public class TrytonCall {
                     m.what = CALL_LOGIN_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
     /** Check if the response of a call is "Not logged in".
@@ -234,11 +266,13 @@ public class TrytonCall {
         return true;
     }
 
-    public static boolean getPreferences(final int userId, final String cookie,
+    public static int getPreferences(final int userId, final String cookie,
                                          final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -266,10 +300,10 @@ public class TrytonCall {
                     m.what = CALL_PREFERENCES_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
     /** Utility function to search and read models in one function call. */
@@ -350,7 +384,7 @@ public class TrytonCall {
     }
 
     /** Get the full menu as a list of top level entries with children. */
-    public static boolean getMenus(final int userId, final String cookie,
+    public static int getMenus(final int userId, final String cookie,
                                    final Preferences prefs, final Handler h) {
         /* The procedure is broken into 5 parts:
          * Request the menus from the server
@@ -359,8 +393,10 @@ public class TrytonCall {
          * Build all menu entries individually
          * Build the tree */
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -385,6 +421,7 @@ public class TrytonCall {
                             iconIds.put(name, id);
                         }
                     }
+                    if (isCanceled(callId)) { return; }
                     // We've got the icon ids, get the icons themselves for each
                     // menu entry
                     Map<String, String> icons = new HashMap<String, String>();
@@ -415,6 +452,7 @@ public class TrytonCall {
                             icons.put(name, svg);
                         }
                     }
+                    if (isCanceled(callId)) { return; }
                     // We have all we need, create menu entries and return them
                     // First build all entries
                     Map<Integer, MenuEntry> allMenus = new HashMap<Integer, MenuEntry>();
@@ -441,6 +479,7 @@ public class TrytonCall {
                         }
                         allMenus.put(jsMenu.getInt("id"), menu);
                     }
+                    if (isCanceled(callId)) { return; }
                     // Second pass, build tree
                     List<MenuEntry> topLevelMenu = new ArrayList<MenuEntry>();
                     for (int i = 0; i < jsMenus.length(); i++) {
@@ -457,6 +496,7 @@ public class TrytonCall {
                             topLevelMenu.add(menu);
                         }
                     }
+                    if (isCanceled(callId)) { return; }
                     // We've got our menu tree, sort it by sequence
                     MenuEntry.SequenceSorter.recursiveSort(topLevelMenu);
                     // Trick: as we can't "double click" to open the view
@@ -490,10 +530,10 @@ public class TrytonCall {
                     m.what = CALL_MENUS_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
     /** Get a single given view. The view isn't build. Id may be null to
@@ -525,13 +565,15 @@ public class TrytonCall {
      * It loads the top views and default subviews directly, build the
      * views with ArchParser which loads the missing subviews with
      * getView. */
-    public static boolean getViews(final int userId, final String cookie,
-                                   final Preferences prefs,
-                                   final MenuEntry entry,
-                                   final Handler h) {
+    public static int getViews(final int userId, final String cookie,
+                               final Preferences prefs,
+                               final MenuEntry entry,
+                               final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -552,6 +594,7 @@ public class TrytonCall {
                         // Get each view
                         ModelViewTypes modelViews = new ModelViewTypes(model);
                         for (int i = 0; i < jsViewTypes.length(); i++) {
+                            if (isCanceled(callId)) { return; }
                             JSONArray jsTypeId = jsViewTypes.getJSONArray(i);
                             int viewId = jsTypeId.getInt(0);
                             String type = jsTypeId.getString(1);
@@ -580,6 +623,7 @@ public class TrytonCall {
                                         // TODO: wtf?
                                     }
                                 }
+                                if (isCanceled(callId)) { return; }
                                 // Build all subviews
                                 for (String extView : mView.getSubviews().keySet()) {
                                     ModelViewTypes t = mView.getSubviews().get(extView);
@@ -608,19 +652,21 @@ public class TrytonCall {
                         m.obj = e;
                     }
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
-    public static boolean getRelFields(final int userId, final String cookie,
-                                       final Preferences prefs,
-                                       final String modelName,
-                                       final Handler h) {
+    public static int getRelFields(final int userId, final String cookie,
+                                   final Preferences prefs,
+                                   final String modelName,
+                                   final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -649,17 +695,16 @@ public class TrytonCall {
                             }
                         }
                     }
-                    
                     m.what = CALL_RELFIELDS_OK;
                     m.obj = relFields;
                 } catch (Exception e) {
                     m.what = CALL_RELFIELDS_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
     
     private static void getRelationnals(int userId, String cookie,
@@ -745,13 +790,15 @@ public class TrytonCall {
         }
     }
 
-    public static boolean getDataCount(final int userId, final String cookie,
-                                       final Preferences prefs,
-                                       final String modelName,
-                                       final Handler h) {
+    public static int getDataCount(final int userId, final String cookie,
+                                   final Preferences prefs,
+                                   final String modelName,
+                                   final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -773,22 +820,24 @@ public class TrytonCall {
                         m.obj = e;
                     }
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
     /** Get some data for a model */
-    public static boolean getData(final int userId, final String cookie,
-                                  final Preferences prefs,
-                                  final String modelName,
-                                  final int offset, final int count,
-                                  final List<RelField> relFields,
-                                  final Handler h) {
+    public static int getData(final int userId, final String cookie,
+                              final Preferences prefs,
+                              final String modelName,
+                              final int offset, final int count,
+                              final List<RelField> relFields,
+                              final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -806,6 +855,7 @@ public class TrytonCall {
                         Model data = new Model(modelName, jsData);
                         allData.add(data);
                     }
+                    if (isCanceled(callId)) { return; }
                     // Check for relational fields and load them
                     for (RelField rel : relFields) {
                         getRelationnals(userId, cookie, prefs, allData,
@@ -825,21 +875,23 @@ public class TrytonCall {
                     m.what = CALL_DATA_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
     /** Get data for relationnal pickup */
-    public static boolean getRelData(final int userId, final String cookie,
+    public static int getRelData(final int userId, final String cookie,
                                      final Preferences prefs,
                                      final String modelName,
                                      final boolean fullLoad,
                                      final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -876,22 +928,24 @@ public class TrytonCall {
                     m.what = CALL_RELDATA_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
     /** Create or update a record. If record has no id it's a creation.
      * Handler gives back the updated/created record. */
-    public static boolean saveData(final int userId, final String cookie,
-                                   final Preferences prefs,
-                                   final Model model, final Model oldModel,
-                                   final Context ctx,
-                                   final Handler h) {
+    public static int saveData(final int userId, final String cookie,
+                               final Preferences prefs,
+                               final Model model, final Model oldModel,
+                               final Context ctx,
+                               final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -984,29 +1038,31 @@ public class TrytonCall {
                     m.what = CALL_SAVE_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;
+        return callId;
     }
 
-    public static boolean deleteData(final int userId, final String cookie,
-                                     final Preferences prefs,
-                                     final int id, final String className,
-                                     final Handler h) {
+    public static int deleteData(final int userId, final String cookie,
+                                 final Preferences prefs,
+                                 final int id, final String className,
+                                 final Handler h) {
         List<Integer> ids = new ArrayList<Integer>();
         ids.add(id);
         return deleteData(userId, cookie, prefs, ids, className, h);
     }
 
-    public static boolean deleteData(final int userId, final String cookie,
-                                     final Preferences prefs,
-                                     final List<Integer> ids,
-                                     final String className,
-                                     final Handler h) {
+    public static int deleteData(final int userId, final String cookie,
+                                 final Preferences prefs,
+                                 final List<Integer> ids,
+                                 final String className,
+                                 final Handler h) {
         if (c == null) {
-            return false;
+            return -1;
         }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
@@ -1037,9 +1093,9 @@ public class TrytonCall {
                     m.what = CALL_DELETE_NOK;
                     m.obj = e;
                 }
-                m.sendToTarget();
+                sendMessage(callId, m);
             }
         }.start();
-        return true;        
+        return callId;
     }
 }
