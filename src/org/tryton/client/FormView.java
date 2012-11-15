@@ -106,6 +106,11 @@ public class FormView extends Activity
                                              s.editedModel,
                                              s.prefs,
                                              this);
+            if (view.hasAttribute("name")
+                && view.getString("name").equals(Session.current.linkField)) {
+                // Hide many2one parent field
+                v.setVisibility(View.GONE);
+            }
             if (view.hasAttribute("type")
                 && (view.getString("type").equals("many2many")
                     || view.getString("type").equals("one2many"))) {
@@ -239,6 +244,7 @@ public class FormView extends Activity
                 break;
             case DialogInterface.BUTTON_NEGATIVE:
                 dialog.dismiss();
+                this.kill = true;
                 this.finish();
                 break;
             case DialogInterface.BUTTON_NEUTRAL:
@@ -462,7 +468,14 @@ public class FormView extends Activity
                 // Creation: add one to data count and
                 // reset session for a new record
                 db.addOne(className);
-                Session.current.tempModel = new Model(className);
+                if (Session.current.linkField != null) {
+                    String linkField = Session.current.linkField;
+                    Session.current.finishEditing();
+                    Session.current.editNewModel(className, linkField);
+                } else {
+                    Session.current.finishEditing();
+                    Session.current.editNewModel(className);
+                }
                 this.refreshDisplay();
             } else {
                 // Edition: clear edition and return back to tree

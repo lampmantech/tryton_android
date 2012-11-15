@@ -180,19 +180,35 @@ public class ToManyEditor extends Activity
     /** Action called on create button. */
     public void create() {
         // Open a new form to create the relation
-        Session.current.editNewModel(this.className);
+        Model parentField = this.parentView.getField(this.fieldName);
+        if (parentField.hasAttribute("relation_field")) {
+            String relField = parentField.getString("relation_field");
+            Session.current.editNewModel(this.className, relField);
+        } else {
+            Session.current.editNewModel(this.className);
+        }
         FormView.setup(this.parentView.getSubview(this.fieldName));
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
     }
 
+    private void edit(Model model) {
+        Model parentField = this.parentView.getField(this.fieldName);
+        if (parentField.hasAttribute("relation_field")) {
+            String relField = parentField.getString("relation_field");
+            Session.current.editModel(model, relField);
+        } else {
+            Session.current.editModel(model);
+        }
+        FormView.setup(this.parentView.getSubview(this.fieldName));
+        Intent i = new Intent(this, FormView.class);
+        this.startActivity(i);        
+    }
+
     public void onItemClick(AdapterView parent, View v, int position,
                                long id) {
         Model clicked = this.data.get(position);
-        Session.current.editModel(clicked);
-        FormView.setup(this.parentView.getSubview(this.fieldName));
-        Intent i = new Intent(this, FormView.class);
-        this.startActivity(i);
+        this.edit(clicked);
     }
 
     public boolean onItemLongClick(AdapterView parent, View v, int position,
