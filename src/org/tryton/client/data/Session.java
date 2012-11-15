@@ -42,7 +42,8 @@ public class Session {
     /** Model currently edited in form view. Use editModel to set its value */
     public Model editedModel;
     public Model tempModel;
-    public String linkField; // The link to the parent field
+    public String linkToParent;
+    public String linkToSelf;
     /** Stack to allow to edit multiple models at once (for relationnal).
      * The top of the stack is always editedModel, tempModel and linkField. */
     private List editStack;
@@ -56,7 +57,8 @@ public class Session {
     private void pushStack() {
         this.editStack.add(editedModel);
         this.editStack.add(tempModel);
-        this.editStack.add(linkField);
+        this.editStack.add(linkToParent);
+        this.editStack.add(linkToSelf);
     }
     /** Pop editing stack to set editing models with previous values. */
     private void popStack() {
@@ -65,17 +67,21 @@ public class Session {
             this.editStack.remove(this.editStack.size() - 1);
             this.editStack.remove(this.editStack.size() - 1);
             this.editStack.remove(this.editStack.size() - 1);
+            this.editStack.remove(this.editStack.size() - 1);
         }
-        if (this.editStack.size() > 2) {
+        int size = this.editStack.size();
+        if (size > 3) {
             // Set editing models if there are still one
-            this.editedModel = (Model) this.editStack.get(this.editStack.size() - 3);
-            this.tempModel = (Model) this.editStack.get(this.editStack.size() - 2);
-            this.linkField = (String) this.editStack.get(this.editStack.size() - 1);
+            this.editedModel = (Model) this.editStack.get(size - 4);
+            this.tempModel = (Model) this.editStack.get(size - 3);
+            this.linkToParent = (String) this.editStack.get(size - 2);
+            this.linkToSelf = (String) this.editStack.get(size - 1);
         } else {
             // End of edit, stack is empty
             this.editedModel = null;
             this.tempModel = null;
-            this.linkField = null;
+            this.linkToParent = null;
+            this.linkToSelf = null;
         }        
     }
 
@@ -84,29 +90,35 @@ public class Session {
         this.editedModel = data;
         this.tempModel = new Model(data.getClassName());
         this.tempModel.set("id", data.get("id"));
-        this.linkField = null;
+        this.linkToParent = null;
+        this.linkToSelf = null;
         this.pushStack();
     }
-    /** Set session to edit a one2many subrecord. Many2oneField is the 
-     * name of the field that links to the parent's one2many. */
-    public void editModel(Model data, String many2oneField) {
+    /** Set session to edit a one2many subrecord. ParentField is the 
+     * name of the field that links to new model. */
+    public void editModel(Model data, String parentField, String childField) {
         this.tempModel = new Model(data.getClassName());
         this.tempModel.set("id", data.get("id"));
-        this.tempModel.set(many2oneField, (Integer) this.editedModel.get("id"));
+        this.tempModel.set(childField, (Integer) this.editedModel.get("id"));
         this.editedModel = data;
-        this.linkField = many2oneField;
+        this.linkToParent = parentField;
+        this.linkToSelf = childField;
         this.pushStack();
     }
     /** Set session to create a new record. */
     public void editNewModel(String className) {
         this.editedModel = null;
         this.tempModel = new Model(className);
+        this.linkToParent = null;
+        this.linkToSelf = null;
         this.pushStack();
     }
-    public void editNewModel(String className, String many2oneField) {
+    public void editNewModel(String className, String parentField,
+                             String childField) {
         this.tempModel = new Model(className);
-        this.tempModel.set(many2oneField, (Integer) this.editedModel.get("id"));
-        this.linkField = many2oneField;
+        this.tempModel.set(childField, (Integer) this.editedModel.get("id"));
+        this.linkToParent = parentField;
+        this.linkToSelf = childField;
         this.editedModel = null;
         this.pushStack();
     }
@@ -115,6 +127,23 @@ public class Session {
      * and return back to the previous, if any */
     public void finishEditing() {
         this.popStack();
+    }
+
+    @SuppressWarnings("unchecked")
+    public void addToParent(int newId) {
+        Model parent = (Model) this.editStack.get(this.editStack.size() - 8);
+        Model tmpParent = (Model) this.editStack.get(this.editStack.size() - 7);
+        if (tmpParent.get(this.linkToParent) == null) {
+            List<Integer> ids = new ArrayList<Integer>();
+            if (parent.get(this.linkToParent) != null) {
+                List<Integer> pIds = (List<Integer>)parent.get(this.linkToParent);
+                ids.addAll(pIds);
+            }
+            ids.add(newId);
+            tmpParent.set(this.linkToParent, ids);
+        } else {
+            ((List<Integer>)tmpParent.get(this.linkToParent)).add(newId);
+        }
     }
 
     public boolean editedIsDirty() {
