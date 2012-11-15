@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.Button;
 import android.widget.ListView;
@@ -37,7 +38,8 @@ import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.views.TreeFullAdapter;
 
-public class ToManyEditor extends Activity implements OnItemLongClickListener {
+public class ToManyEditor extends Activity
+    implements OnItemLongClickListener, OnItemClickListener {
 
     /** Use a static initializer to pass data to the activity on start.
      * Set the className to edit and the field that is currently edited.
@@ -78,6 +80,8 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
         // Load views
         this.setContentView(R.layout.tomany);
         this.selected = (ListView) this.findViewById(R.id.tomany_list);
+        this.selected.setOnItemClickListener(this);
+        this.selected.setOnItemLongClickListener(this);
         Button add = (Button) this.findViewById(R.id.tomany_add);
         if (this.parentView.getField(this.fieldName).getString("type").equals("one2many")) {
             add.setText(R.string.tomany_add_new);
@@ -92,6 +96,10 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
         if (this.view == null) {
             this.view = this.parentView.getSubview(this.fieldName).getView("form");
         }
+    }
+
+    public void onResume() {
+        super.onResume();
         this.refresh();
     }
     
@@ -105,10 +113,8 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
         DataCache db = new DataCache(this);
         List<Integer> dataId = this.getIds(false);
         this.data = db.getData(this.className, dataId);
-
         TreeFullAdapter adapt = new TreeFullAdapter(view, data);
         this.selected.setAdapter(adapt);
-        this.selected.setOnItemLongClickListener(this);
     }
     
     /** Get ids of the registered items from the edited model.
@@ -175,6 +181,15 @@ public class ToManyEditor extends Activity implements OnItemLongClickListener {
     public void create() {
         // Open a new form to create the relation
         Session.current.editNewModel(this.className);
+        FormView.setup(this.parentView.getSubview(this.fieldName));
+        Intent i = new Intent(this, FormView.class);
+        this.startActivity(i);
+    }
+
+    public void onItemClick(AdapterView parent, View v, int position,
+                               long id) {
+        Model clicked = this.data.get(position);
+        Session.current.editModel(clicked);
         FormView.setup(this.parentView.getSubview(this.fieldName));
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
