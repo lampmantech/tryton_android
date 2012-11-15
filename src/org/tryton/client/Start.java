@@ -274,11 +274,11 @@ public class Start extends Activity implements Handler.Callback {
         // Create and add configuration entry
         MenuItem config = menu.add(Menu.NONE, MENU_CONFIG_ID, 0,
                                    this.getString(R.string.general_config));
-        config.setIcon(android.R.drawable.ic_menu_preferences);
+        config.setIcon(R.drawable.tryton_preferences_system);
         // Create and add about entry
         MenuItem about = menu.add(Menu.NONE, MENU_ABOUT_ID, 10,
                                   this.getString(R.string.general_about));
-        about.setIcon(android.R.drawable.ic_menu_info_details);
+        about.setIcon(R.drawable.tryton_help);
         return true;
     }
 

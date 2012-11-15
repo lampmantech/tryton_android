@@ -214,11 +214,11 @@ public class Menu extends Activity
         // Create and add configuration entry
         MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 100,
                                    this.getString(R.string.general_logout));
-        logout.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        logout.setIcon(R.drawable.tryton_log_out);
         MenuItem prefs = menu.add(android.view.Menu.NONE, MENU_PREFERENCES_ID,
                                   200,
                                   this.getString(R.string.general_preferences));
-        prefs.setIcon(android.R.drawable.ic_menu_preferences);
+        prefs.setIcon(R.drawable.tryton_preferences_system);
         return true;
     }
 

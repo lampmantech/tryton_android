@@ -522,15 +522,15 @@ public class FormView extends Activity
         // Create and add logout entry
         MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 100,
                                    this.getString(R.string.general_logout));
-        logout.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        logout.setIcon(R.drawable.tryton_log_out);
         // Set save
         MenuItem save = menu.add(android.view.Menu.NONE, MENU_SAVE_ID, 1,
                                  this.getString(R.string.form_save));
-        save.setIcon(android.R.drawable.ic_menu_crop);
+        save.setIcon(R.drawable.tryton_save);
         // Set delete
         MenuItem delete = menu.add(android.view.Menu.NONE, MENU_DEL_ID, 5,
                                    this.getString(R.string.form_delete));
-        delete.setIcon(android.R.drawable.ic_menu_delete);
+        delete.setIcon(R.drawable.tryton_delete);
         return true;
     }
 

@@ -510,15 +510,15 @@ public class TreeView extends Activity
         // Create and add logout entry
         MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 100,
                                    this.getString(R.string.general_logout));
-        logout.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+        logout.setIcon(R.drawable.tryton_log_out);
         // Set form entry (new data)
         MenuItem add = menu.add(android.view.Menu.NONE, MENU_NEW_ID, 1,
                                 this.getString(R.string.general_new_record));
-        add.setIcon(android.R.drawable.ic_menu_add);
+        add.setIcon(R.drawable.tryton_new);
         // Set view mode switch
         MenuItem mode = menu.add(android.view.Menu.NONE, MENU_MODE_ID, 10,
                                  this.getString(R.string.tree_switch_mode_summary));
-        mode.setIcon(android.R.drawable.ic_menu_crop);
+        mode.setIcon(R.drawable.tryton_fullscreen);
         return true;
     }
 
