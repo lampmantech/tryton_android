@@ -182,7 +182,6 @@ public class Session {
                         // Its a numeric
                         Double val = FieldsConvertion.numericToDouble(mVal);
                         Double tmp = FieldsConvertion.numericToDouble(tmpVal);
-                        System.out.println(val + " " + tmp);
                         if ((val == null && tmp == null)
                             || (val != null && val.equals(tmp))
                             || (tmp != null && tmp.equals(val))) {
@@ -218,7 +217,6 @@ public class Session {
                         }
                     }
                 }
-                System.out.println("dirty by " + attr);
                 return true;
             }
         }
