@@ -188,11 +188,16 @@ public class FormView extends Activity
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onPause() {
+        super.onPause();
         if (this.kill) {
             Session.current.finishEditing();
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
         this.hideLoadingDialog();
     }
 
