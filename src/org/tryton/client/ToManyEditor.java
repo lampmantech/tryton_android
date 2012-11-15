@@ -183,7 +183,8 @@ public class ToManyEditor extends Activity
         Model parentField = this.parentView.getField(this.fieldName);
         if (parentField.hasAttribute("relation_field")) {
             String relField = parentField.getString("relation_field");
-            Session.current.editNewModel(this.className, relField);
+            Session.current.editNewModel(this.className, this.fieldName,
+                                         relField);
         } else {
             Session.current.editNewModel(this.className);
         }
@@ -196,7 +197,7 @@ public class ToManyEditor extends Activity
         Model parentField = this.parentView.getField(this.fieldName);
         if (parentField.hasAttribute("relation_field")) {
             String relField = parentField.getString("relation_field");
-            Session.current.editModel(model, relField);
+            Session.current.editModel(model, this.fieldName, relField);
         } else {
             Session.current.editModel(model);
         }

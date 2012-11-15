@@ -107,7 +107,7 @@ public class FormView extends Activity
                                              s.prefs,
                                              this);
             if (view.hasAttribute("name")
-                && view.getString("name").equals(Session.current.linkField)) {
+                && view.getString("name").equals(Session.current.linkToSelf)) {
                 // Hide many2one parent field
                 v.setVisibility(View.GONE);
             }
@@ -468,10 +468,18 @@ public class FormView extends Activity
                 // Creation: add one to data count and
                 // reset session for a new record
                 db.addOne(className);
-                if (Session.current.linkField != null) {
-                    String linkField = Session.current.linkField;
+                if (Session.current.linkToParent != null) {
+                    String linkToParent = Session.current.linkToParent;
+                    String linkToSelf = Session.current.linkToSelf;
+                    // Add the id to parent
+                    if (m != null) {
+                        int id = (Integer) m.get("id");
+                        Session.current.addToParent(id);
+                    }
+                    // Create new record
                     Session.current.finishEditing();
-                    Session.current.editNewModel(className, linkField);
+                    Session.current.editNewModel(className, linkToParent,
+                                                 linkToSelf);
                 } else {
                     Session.current.finishEditing();
                     Session.current.editNewModel(className);
