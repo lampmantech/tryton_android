@@ -56,11 +56,20 @@
             android:onClick="login" />
   </LinearLayout>
   <!-- Server version note -->
+  <ImageView android:id="@+id/server_ssl"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
+             android:layout_alignParentBottom="true"
+             android:layout_marginLeft="@dimen/content_margin"
+             android:layout_marginBottom="@dimen/content_margin"
+             android:src="@drawable/tryton_lock" />
   <TextView android:id="@+id/server_version"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
+            android:layout_alignWithParentIfMissing="true"
+            android:layout_toRightOf="@id/server_ssl"
             android:textColor="#EEE"
             android:layout_marginLeft="@dimen/content_margin"
             android:layout_marginBottom="@dimen/content_margin" />

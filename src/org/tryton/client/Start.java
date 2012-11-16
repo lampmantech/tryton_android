@@ -138,11 +138,17 @@ public class Start extends Activity implements Handler.Callback {
     public void updateVersionLabel() {
         if (this.serverVersion == null) {
             // Unknown version, server is unavailable
+            this.findViewById(R.id.server_ssl).setVisibility(View.GONE);
             this.versionLabel.setText(R.string.login_server_unavailable);
             this.login.setEnabled(false);
             this.password.setEnabled(false);
             this.loginBtn.setEnabled(false);
         } else {
+            if (!Configure.getSSL(this)) {
+                this.findViewById(R.id.server_ssl).setVisibility(View.GONE);
+            } else {
+                this.findViewById(R.id.server_ssl).setVisibility(View.VISIBLE);
+            }
             this.versionLabel.setText(this.serverVersion);
             this.login.setEnabled(true);
             this.password.setEnabled(true);
