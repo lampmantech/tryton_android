@@ -36,6 +36,8 @@ import org.tryton.client.tools.TrytonCall;
  */
 public class Configure extends PreferenceActivity {
 
+    private static final String DEFAULT_PORT = "8000";
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle state) {
@@ -48,7 +50,8 @@ public class Configure extends PreferenceActivity {
     public void onPause() {
         super.onPause();
         // Refresh TrytonCall with the new values
-        TrytonCall.setup(Configure.getHost(this), Configure.getDatabase(this));
+        TrytonCall.setup(Configure.getSSL(this), Configure.getHost(this),
+                         Configure.getPort(this), Configure.getDatabase(this));
     }
 
     /** Check if the application is configured. */
@@ -68,6 +71,16 @@ public class Configure extends PreferenceActivity {
         return prefs.getString("host", "");
     }
 
+    public static String getPort(Context ctx) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        return prefs.getString("port", DEFAULT_PORT);
+    }
+
+    public static boolean getSSL(Context ctx) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        return prefs.getBoolean("ssl", false);
+    }
+
     /** Get database value
      * @return The user's database value, empty string by default.
      */
@@ -78,7 +91,7 @@ public class Configure extends PreferenceActivity {
 
     /** Get a code to uniquely identify the targeted database. */
     public static String getDatabaseCode(Context ctx) {
-        return getHost(ctx) + "/" + getDatabase(ctx);
+        return getHost(ctx) + ":" + getPort(ctx) + "/" + getDatabase(ctx);
     }
 
     public static boolean getAutoLogout(Context ctx) {

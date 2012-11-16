@@ -74,7 +74,8 @@ public class Start extends Activity implements Handler.Callback {
             }
         }
         // Load configuration for TrytonCall
-        TrytonCall.setup(Configure.getHost(this), Configure.getDatabase(this));
+        TrytonCall.setup(Configure.getSSL(this), Configure.getHost(this),
+                         Configure.getPort(this), Configure.getDatabase(this));
         // Load views from xml resource
         setContentView(R.layout.main);
         this.versionLabel = (TextView) this.findViewById(R.id.server_version);

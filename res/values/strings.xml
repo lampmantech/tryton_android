@@ -71,7 +71,11 @@ the original label is set after the tag -->
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string> <!-- AND: Host: -->
-  <string name="config_host_desc">Your Tryton server host (including port)</string> <!-- NEW -->
+  <string name="config_host_desc">Your Tryton server host</string> <!-- NEW -->
+  <string name="config_port_title">Port</string> <!-- AND Port: -->
+  <string name="config_port_desc">Your Tryton server port</string> <!-- NEW -->
+  <string name="config_ssl_title">Use SSL</string> <!-- NEW -->
+  <string name="config_ssl_desc">Check if your server uses SSL</string> <!-- NEW -->
   <string name="config_database_title">Database</string> <!-- AND: Database: -->
   <string name="config_database_desc">The database on your host to connect to</string> <!-- NEW -->
   <string name="config_user_preferences">User preferences</string> <!-- NEW -->

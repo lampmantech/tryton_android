@@ -82,19 +82,24 @@ public class TrytonCall {
     private static Map<Integer, Handler> handlers = new HashMap<Integer, Handler>();
     private static Map<Integer, Boolean> suspended = new HashMap<Integer, Boolean>();
 
-    public static boolean setup(String host, String database) {
+    public static boolean setup(boolean ssl, String host, String port,
+                                String database) {
         if (host == null || host.equals("")
+            || port == null || port.equals("")
             || database == null || database.equals("")) {
             c = null;
             return false;
         }
-        if (!host.startsWith("http://") && !host.startsWith("https://")) {
-            host = "http://" + host;
+        String url;
+        if (ssl) {
+            url = "https://";
+        } else {
+            url = "http://";
         }
-        if (!host.endsWith("/")) {
-            host = host + "/";
-        }
-        c = JSONRPCClient.create(host + database, TrytonCall.version);
+        url += host;
+        url += ":" + port;
+        url += "/" + database;
+        c = JSONRPCClient.create(url, TrytonCall.version);
         c.setConnectionTimeout(timeout);
         c.setSoTimeout(soTimeout);
         return true;
