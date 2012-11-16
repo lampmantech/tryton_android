@@ -83,6 +83,13 @@ public class Start extends Activity implements Handler.Callback {
         this.loginBtn = (Button) this.findViewById(R.id.login_btn);
         // Update server version label
         this.updateVersionLabel();
+        // Set last user on start
+        if (state == null) {
+            String user = Configure.getLastUser(this);
+            if (user != null) {
+                this.login.setText(user);
+            }
+        }
     }
 
     /** Save current state before killing, if necessary (called by system) */
@@ -167,6 +174,8 @@ public class Start extends Activity implements Handler.Callback {
                 Session.current.password = this.password.getText().toString();
                 Session.current.userId = userId;
                 Session.current.cookie = cookie;
+                // Save login for next time
+                Configure.saveUser(this.login.getText().toString(), this);
                 // Get user preferences
                 this.callId = TrytonCall.getPreferences(userId, cookie,
                                                         new Handler(this));

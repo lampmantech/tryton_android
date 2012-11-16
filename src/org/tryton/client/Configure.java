@@ -85,4 +85,15 @@ public class Configure extends PreferenceActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         return prefs.getBoolean("autologout", false);
     }
+
+    public static String getLastUser(Context ctx) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        return prefs.getString("lastuser", null);
+    }
+    public static void saveUser(String user, Context ctx) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putString("lastuser", user);
+        edit.commit();
+    }
 }
