@@ -228,7 +228,7 @@ public class TreeView extends Activity
         if (this.dataOffset < 0) {
             this.dataOffset = 0;
         }
-        this.loadData();
+        this.loadData(false);
     }
 
     public void nextPage(View button) {
@@ -243,7 +243,7 @@ public class TreeView extends Activity
             maxOffset -= PAGING_SUMMARY;
         }
         this.dataOffset = Math.min(this.dataOffset, maxOffset);
-        this.loadData();
+        this.loadData(false);
     }
 
     public void onItemClick(AdapterView<?> adapt, View v,
@@ -362,16 +362,16 @@ public class TreeView extends Activity
                                                               s.prefs, model,
                                                               new Handler(this));
                 } else {
-                    this.loadData();
+                    this.loadData(false);
                 }
             } else {
-                this.loadData();
+                this.loadData(false);
             }
         }
     }
 
     /** Load data. Requires that views and meta are loaded. */
-    private void loadData() {
+    private void loadData(boolean refresh) {
         if (this.callDataId != 0) {
             // A call is already pending, wait for its result
             return;
@@ -379,7 +379,6 @@ public class TreeView extends Activity
         String model = this.viewTypes.getModelName();
         Session s = Session.current;
         DataCache db = new DataCache(this);
-        // Get data from cache if present, otherwise from server
         int count = 10;
         switch (this.mode) {
         case MODE_EXTENDED:
@@ -389,15 +388,20 @@ public class TreeView extends Activity
             count = PAGING_SUMMARY;
             break;
         }
-        List<Model> cacheData = db.getData(model, this.dataOffset, count);
-        if (cacheData.size() == Math.min(this.totalDataCount - this.dataOffset,
-                                         count)) {
-            // Data is full, use it
-            this.data = cacheData;
-            this.updateList();
-            // Close the loading dialog if present
-            this.hideLoadingDialog();
-        } else if (this.callDataId == 0) {
+        if (!refresh) {
+            // Get data from cache if present, otherwise from server
+            List<Model> cacheData = db.getData(model, this.dataOffset, count);
+            if (cacheData.size() == Math.min(this.totalDataCount - this.dataOffset,
+                                             count)) {
+                // Data is full, use it
+                this.data = cacheData;
+                this.updateList();
+                // Close the loading dialog if present
+                this.hideLoadingDialog();
+                return;
+            }
+        }
+        if (this.callDataId == 0) {
             // Data is incomplete, or even empty, reload from server
             this.showLoadingDialog(LOADING_DATA);
             this.callDataId = TrytonCall.getData(s.userId, s.cookie, s.prefs,
@@ -471,7 +475,7 @@ public class TreeView extends Activity
             db = new DataCache(this);
             db.storeRelFields(this.viewTypes.getModelName(), rel);
             this.relFields = rel;
-            this.loadData();
+            this.loadData(false);
             break;
         case TrytonCall.CALL_DATA_OK:
             this.callDataId = 0;
@@ -504,6 +508,7 @@ public class TreeView extends Activity
     private static final int MENU_NEW_ID = 1;
     private static final int MENU_GRAPH_ID = 2;
     private static final int MENU_MODE_ID = 3;
+    private static final int MENU_REFRESH_ID = 4;
     /** Called on menu initialization */
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
@@ -519,6 +524,10 @@ public class TreeView extends Activity
         MenuItem mode = menu.add(android.view.Menu.NONE, MENU_MODE_ID, 10,
                                  this.getString(R.string.tree_switch_mode_summary));
         mode.setIcon(R.drawable.tryton_fullscreen);
+        // Set refresh
+        MenuItem refresh = menu.add(android.view.Menu.NONE, MENU_REFRESH_ID, 30,
+                                 this.getString(R.string.general_reload));
+        refresh.setIcon(R.drawable.tryton_refresh);
         return true;
     }
 
@@ -559,13 +568,16 @@ public class TreeView extends Activity
             } else {
                 this.mode = MODE_SUMMARY;
             }
-            this.loadData();
+            this.loadData(false);
             break;
         case MENU_NEW_ID:
             Session.current.editNewModel(this.viewTypes.getModelName());
             FormView.setup(this.viewTypes);
             Intent i = new Intent(this, FormView.class);
             this.startActivity(i);
+            break;
+        case MENU_REFRESH_ID:
+            this.loadData(true);
             break;
         }
         return true;
