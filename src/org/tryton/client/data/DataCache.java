@@ -183,6 +183,21 @@ public class DataCache extends SQLiteOpenHelper {
         db.close();
     }
 
+    /** Set datacount from records, assuming className is fully stored. */
+    public void updateDataCount(String className) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(MODEL_TABLE, new String[]{"count(id)"},
+                            "className = ?", new String[]{className},
+                            null, null, null, null);
+        int count = 0;
+        if (c.moveToNext()) {
+            count = c.getInt(0);
+        }
+        c.close();
+        db.close();
+        this.setDataCount(className, count);
+    }
+
     /** Add one to the count of data (when creating a new record) */
     public void addOne(String className) {
         SQLiteDatabase db = this.getWritableDatabase();

@@ -63,11 +63,14 @@ public class TrytonCall {
     public static final int CALL_RELFIELDS_OK = 7;
     public static final int CALL_RELFIELDS_NOK = -8;
     public static final int CALL_RELDATA_OK = 8;
+    public static final int CALL_RELDATA_PARTIAL = 108;
     public static final int CALL_RELDATA_NOK = -9;
     public static final int CALL_SAVE_OK = 9;
     public static final int CALL_SAVE_NOK = -10;
     public static final int CALL_DELETE_OK = 10;
     public static final int CALL_DELETE_NOK = -11;
+
+    private static final int CHUNK_SIZE = 50;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -77,6 +80,7 @@ public class TrytonCall {
 
     private static int callSequence = 1;
     private static Map<Integer, Handler> handlers = new HashMap<Integer, Handler>();
+    private static Map<Integer, Boolean> suspended = new HashMap<Integer, Boolean>();
 
     public static boolean setup(String host, String database) {
         if (host == null || host.equals("")
@@ -98,15 +102,29 @@ public class TrytonCall {
 
     public static void cancel(int callId) {
         handlers.remove(callId);
+        suspended.remove(callId);
     }
     public static void update(int callId, Handler h) {
         if (handlers.containsKey(callId)) {
             handlers.put(callId, h);
         }
     }
+    public static void resume(int callId) {
+        suspended.remove(callId);
+    }
+    private static void suspendCall(int callId) {
+        suspended.put(callId, true);
+    }
+    private static boolean isSuspended(int callId) {
+        return suspended.containsKey(callId);
+    }
     /** Send the message to the right handler if it was updated or not
      * if it was canceled. */
     private static void sendMessage(int callId, Message m) {
+        sendPartialMessage(callId, m);
+        handlers.remove(callId);
+    }
+    private static void sendPartialMessage(int callId, Message m) {
         if (handlers.containsKey(callId)) {
             Handler h = handlers.get(callId);
             if (m.getTarget().equals(h)) {
@@ -115,7 +133,6 @@ public class TrytonCall {
                 m.setTarget(h);
                 m.sendToTarget();
             }
-            handlers.remove(callId);
         }
     }
     /** Check if a call has been canceled or not. */
@@ -898,24 +915,46 @@ public class TrytonCall {
                 // Fields list by name
                 Map<String, Model> fields = new HashMap<String, Model>();
                 // Data list
-                List<Model> allData = new ArrayList<Model>();
+                List<Model> dataChunk = new ArrayList<Model>();
                 try {
                     // Search the data and add them to a list
-                    JSONArray result = search(userId, cookie, prefs,
-                                              "model." + modelName,
-                                              null, 0, 999999, fullLoad);
-                    for (int i = 0; i < result.length(); i++) {
-                        JSONObject jsData = result.getJSONObject(i);
-                        Model data = new Model(modelName, jsData);
-                        allData.add(data);
-                    }
-                    // Send back the list to the handler
-                    m.what = CALL_RELDATA_OK;
-                    m.obj = new Object[]{modelName, allData};
-                    if (fullLoad) {
-                        m.arg1 = 1;
-                    } else {
-                        m.arg1 = 0;
+                    int offset = 0;
+                    while (true) {
+                        if (isCanceled(callId)) { return; }
+                        if (isSuspended(callId)) { this.yield(); }
+                        // Load a chunk and send it back
+                        System.out.println("searching");
+                        JSONArray result = search(userId, cookie, prefs,
+                                                  "model." + modelName,
+                                                  null, offset, CHUNK_SIZE,
+                                                  fullLoad);
+                        System.out.println("found " + result.length());
+                        for (int i = 0; i < result.length(); i++) {
+                            JSONObject jsData = result.getJSONObject(i);
+                            Model data = new Model(modelName, jsData);
+                            dataChunk.add(data);
+                        }
+                        // Send back the list to the handler
+                        m.obj = new Object[]{modelName, dataChunk};
+                        if (fullLoad) {
+                            m.arg1 = 1;
+                        } else {
+                            m.arg1 = 0;
+                        }
+                        if (dataChunk.size() < CHUNK_SIZE) {
+                            System.out.println("done");
+                            m.what = CALL_RELDATA_OK;
+                            sendMessage(callId, m);
+                            return;
+                        } else {
+                            // Partial load
+                            m.what = CALL_RELDATA_PARTIAL;
+                            sendPartialMessage(callId, m);
+                            suspendCall(callId);
+                        }
+                        m = h.obtainMessage();
+                        dataChunk = new ArrayList<Model>();
+                        offset += CHUNK_SIZE;
                     }
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {

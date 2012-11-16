@@ -37,6 +37,7 @@ import java.util.List;
 
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.tools.TrytonCall;
+import org.tryton.client.data.DataLoader;
 import org.tryton.client.data.Session;
 import org.tryton.client.data.MenuCache;
 import org.tryton.client.views.MenuEntryAdapter;
@@ -72,7 +73,7 @@ public class Menu extends Activity
             }
             this.callId = state.getInt("callId");
             if (this.callId != 0) {
-                TrytonCall.update(callId, new Handler(this));
+                DataLoader.update(callId, new Handler(this));
                 this.showLoadingDialog();
             }
         } else if (entriesInitializer != null) {
@@ -80,27 +81,8 @@ public class Menu extends Activity
             entriesInitializer = null; // Reset as it will now be saved in state
         }
         if (this.entries.size() == 0) {
-            // There is no menu, check in cache and load it if empty
-            List<MenuEntry> cachedMenus = null;
-            try {
-                cachedMenus = MenuCache.load(this);
-            } catch (IOException e) {
-                if (!(e instanceof FileNotFoundException)) {
-                    // Ignore no cache exception
-                    Log.w("Tryton", "Unable to load menu cache", e);
-                }
-            }
-            if (cachedMenus != null) {
-                // Got it
-                this.entries = cachedMenus;
-            } else if (this.callId == 0) {
-                // Launch menu loading as it is empty
-                this.showLoadingDialog();
-                this.callId = TrytonCall.getMenus(Session.current.userId,
-                                                  Session.current.cookie,
-                                                  Session.current.prefs,
-                                                  new Handler(this));
-            }
+            this.showLoadingDialog();
+            DataLoader.loadMenu(this, new Handler(this), false);
         }
         // Init view
         this.setContentView(R.layout.menu);
@@ -108,6 +90,11 @@ public class Menu extends Activity
         this.menuList.setOnItemClickListener(this);
         // Link data to views
         this.updateMenus(this.entries);
+    }
+
+    public void onDestroy() {
+        super.onDestroy();
+        this.hideLoadingDialog();
     }
 
     private void updateMenus(List<MenuEntry> menus) {
@@ -154,21 +141,15 @@ public class Menu extends Activity
     public boolean handleMessage(Message msg) {
         // Process message
         switch (msg.what) {
-        case TrytonCall.CALL_MENUS_OK:
+        case DataLoader.MENUS_OK:
             this.callId = 0;
             List<MenuEntry> menus = (List) msg.obj;
-            // Cache the menu
-            try {
-                MenuCache.save(menus, this);
-            } catch (IOException e) {
-                    Log.w("Tryton", "Unable to cache menus", e);
-            }
             // Update the view
             this.entries = menus;
             this.updateMenus(menus);
             this.hideLoadingDialog();
             break;
-        case TrytonCall.CALL_MENUS_NOK:
+        case DataLoader.MENUS_NOK:
             this.hideLoadingDialog();
             this.callId = 0;
             AlertDialog.Builder b = new AlertDialog.Builder(this);

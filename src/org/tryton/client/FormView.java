@@ -425,8 +425,11 @@ public class FormView extends Activity
     public boolean handleMessage(Message msg) {
         // Process message
         switch (msg.what) {
+        case TrytonCall.CALL_RELDATA_PARTIAL:
         case TrytonCall.CALL_RELDATA_OK:
-            this.callId = 0;
+            if (msg.what == TrytonCall.CALL_RELDATA_OK) {
+                this.callId = 0;
+            }
             String className = (String) ((Object[])msg.obj)[0];
             List<Model> data = (List) ((Object[])msg.obj)[1];
             DataCache db = new DataCache(this);
@@ -435,11 +438,15 @@ public class FormView extends Activity
             } else {
                 db.storeClassData(className, data);
             }
-            db.setDataCount(className, data.size());
-            // Run next loading
-            if (!this.loadRel()) {
-                // This is the end
-                this.hideLoadingDialog();
+            if (msg.what == TrytonCall.CALL_RELDATA_OK) {
+                db.updateDataCount(className);
+                // Run next loading
+                if (!this.loadRel()) {
+                    // This is the end
+                    this.hideLoadingDialog();
+                }
+            } else {
+                TrytonCall.resume(this.callId);
             }
             break;
         case TrytonCall.CALL_SAVE_OK:
