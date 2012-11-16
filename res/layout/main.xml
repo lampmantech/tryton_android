@@ -28,7 +28,8 @@
       android:orientation="vertical">
     <TextView  
         android:layout_width="fill_parent" 
-        android:layout_height="wrap_content" 
+        android:layout_height="wrap_content"
+        android:textColor="#EEE"
         android:text="@string/login_user" />
     <EditText android:id="@+id/login"
               android:layout_width="wrap_content"
@@ -38,6 +39,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="#EEE"
         android:text="@string/login_password" />
     <EditText android:id="@+id/password"
               android:layout_width="wrap_content"
@@ -59,6 +61,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
+            android:textColor="#EEE"
             android:layout_marginLeft="@dimen/content_margin"
             android:layout_marginBottom="@dimen/content_margin" />
 
