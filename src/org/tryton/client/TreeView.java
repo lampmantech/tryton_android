@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.tryton.client.data.DataCache;
+import org.tryton.client.data.DataLoader;
 import org.tryton.client.data.ViewCache;
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
@@ -97,11 +98,11 @@ public class TreeView extends Activity
             this.callDataId = state.getInt("callDataId");
             this.currentLoadingMsg = state.getInt("currentLoadingMsg");
             if (this.callCountId != 0) {
-                TrytonCall.update(this.callCountId, new Handler(this));
+                DataLoader.update(this.callCountId, new Handler(this));
                 this.showLoadingDialog(this.currentLoadingMsg);
             }
             if (this.callDataId != 0) {
-                TrytonCall.update(this.callDataId, new Handler(this));
+                DataLoader.update(this.callDataId, new Handler(this));
                 this.showLoadingDialog(this.currentLoadingMsg);
             }
             this.totalDataCount = state.getInt("totalDataCount");
@@ -287,8 +288,8 @@ public class TreeView extends Activity
     }
 
     public void onCancel(DialogInterface dialog) {
-        TrytonCall.cancel(this.callCountId);
-        TrytonCall.cancel(this.callDataId);
+        DataLoader.cancel(this.callCountId);
+        DataLoader.cancel(this.callDataId);
         this.callDataId = 0;
         this.callCountId = 0;
         this.loadingDialog = null;
@@ -305,68 +306,28 @@ public class TreeView extends Activity
 
     /** Load views and all data when done (by cascading the calls in handler) */
     private void loadViewsAndData() {
-        if (this.callDataId != 0) {
-            // A call is already pending, wait for its result
-            return;
-        }
-        // Check if views are available from cache
-        try {
-            ModelViewTypes views = ViewCache.load(this.origin, this);
-            if (views != null) {
-                this.viewTypes = views;
-                this.loadDataAndMeta();
-            }
-        } catch (IOException e) {
-            if (!(e instanceof FileNotFoundException)) {
-                // Ignore no cache exception   
-                Log.i("Tryton",
-                      "Unable to load view cache for " + this.origin, e);
-            }
-        }
-        if (this.viewTypes == null) {
+        if (this.callDataId == 0) {
             this.showLoadingDialog(LOADING_VIEWS);
-            Session s = Session.current;
-            this.callDataId = TrytonCall.getViews(s.userId, s.cookie,
-                                                  s.prefs,
-                                                  this.origin,
-                                                  new Handler(this));
+            this.callDataId = DataLoader.loadViews(this, this.origin,
+                                                   new Handler(this), false);
         }
     }
     
     /** Load data count and rel fields, required for data.
      * Requires that views are loaded. */
     private void loadDataAndMeta() {
-        String model = this.viewTypes.getModelName();
-        Session s = Session.current;
-        DataCache db = new DataCache(this);
-        // Get total from cache if present, otherwise from server
+        String className = this.viewTypes.getModelName();
         if (this.callCountId == 0) {
-            this.totalDataCount = db.getDataCount(model);
-            if (this.totalDataCount == -1) {
-                this.showLoadingDialog(LOADING_DATA);
-                this.callCountId = TrytonCall.getDataCount(s.userId, s.cookie,
-                                                           s.prefs,
-                                                           model,
-                                                           new Handler(this));
-            }
+            this.showLoadingDialog(LOADING_DATA);
+            this.callCountId = DataLoader.loadDataCount(this, className,
+                                                        new Handler(this),
+                                                        false);
         }
-        // Get field definition
         if (this.callDataId == 0) {
-            if (this.relFields == null) {
-                this.relFields = db.getRelFields(model);
-                if (this.relFields == null && this.callDataId == 0) {
-                    // We don't have them. Query them, it will load data
-                    // on handler callback.
-                    this.showLoadingDialog(LOADING_DATA);
-                    this.callDataId = TrytonCall.getRelFields(s.userId, s.cookie,
-                                                              s.prefs, model,
-                                                              new Handler(this));
-                } else {
-                    this.loadData(false);
-                }
-            } else {
-                this.loadData(false);
-            }
+            this.showLoadingDialog(LOADING_DATA);
+            this.callDataId = DataLoader.loadRelFields(this, className,
+                                                       new Handler(this),
+                                                       false);
         }
     }
 
@@ -376,9 +337,6 @@ public class TreeView extends Activity
             // A call is already pending, wait for its result
             return;
         }
-        String model = this.viewTypes.getModelName();
-        Session s = Session.current;
-        DataCache db = new DataCache(this);
         int count = 10;
         switch (this.mode) {
         case MODE_EXTENDED:
@@ -388,28 +346,14 @@ public class TreeView extends Activity
             count = PAGING_SUMMARY;
             break;
         }
-        if (!refresh) {
-            // Get data from cache if present, otherwise from server
-            List<Model> cacheData = db.getData(model, this.dataOffset, count);
-            if (cacheData.size() == Math.min(this.totalDataCount - this.dataOffset,
-                                             count)) {
-                // Data is full, use it
-                this.data = cacheData;
-                this.updateList();
-                // Close the loading dialog if present
-                this.hideLoadingDialog();
-                return;
-            }
-        }
-        if (this.callDataId == 0) {
-            // Data is incomplete, or even empty, reload from server
-            this.showLoadingDialog(LOADING_DATA);
-            this.callDataId = TrytonCall.getData(s.userId, s.cookie, s.prefs,
-                                                 model,
-                                                 this.dataOffset, count,
-                                                 this.relFields,
-                                                 new Handler(this));
-        }
+        int expectedSize = Math.min(this.totalDataCount - this.dataOffset,
+                                    count);
+        String className = this.viewTypes.getModelName();
+        this.showLoadingDialog(LOADING_DATA);
+        this.callDataId = DataLoader.loadData(this, className, this.dataOffset,
+                                              count, expectedSize,
+                                              this.relFields, new Handler(this),
+                                              refresh);
     }
 
     /** Handle TrytonCall feedback. */
@@ -417,27 +361,21 @@ public class TreeView extends Activity
     public boolean handleMessage(Message msg) {
         // Process message
         switch (msg.what) {
-        case TrytonCall.CALL_VIEWS_OK:
+        case DataLoader.VIEWS_OK:
             // Close the loading dialog if present
             this.hideLoadingDialog();
             this.callDataId = 0;
-            // Save view and load data
-            ModelViewTypes viewTypes = (ModelViewTypes) msg.obj;
-            try {
-                ViewCache.save(this.origin, viewTypes, this);
-            } catch (IOException e) {
-                Log.w("Tryton",
-                      "Unable to cache view data for " + this.origin, e);
-            }
-            this.viewTypes = viewTypes;
+            @SuppressWarnings("unchecked")
+            Object[] ret = (Object[]) msg.obj;
+            this.viewTypes = (ModelViewTypes) ret[1];
             this.loadDataAndMeta();
             break;
-        case TrytonCall.CALL_VIEWS_NOK:
-        case TrytonCall.CALL_DATA_NOK:
-        case TrytonCall.CALL_DATACOUNT_NOK:
+        case DataLoader.VIEWS_NOK:
+        case DataLoader.DATA_NOK:
+        case DataLoader.DATACOUNT_NOK:
             // Close the loading dialog if present
             this.hideLoadingDialog();
-            if (msg.what == TrytonCall.CALL_DATACOUNT_NOK) {
+            if (msg.what == DataLoader.DATACOUNT_NOK) {
                 this.callCountId = 0;
             } else {
                 this.callDataId = 0;
@@ -453,11 +391,10 @@ public class TreeView extends Activity
                 ((Exception)msg.obj).printStackTrace();
             }
             break;
-        case TrytonCall.CALL_DATACOUNT_OK:
+        case DataLoader.DATACOUNT_OK:
             this.callCountId = 0;
-            int count = (Integer) msg.obj;
-            DataCache db = new DataCache(this);
-            db.setDataCount(this.viewTypes.getModelName(), count);
+            ret = (Object[]) msg.obj;
+            int count = (Integer) ret[1];
             this.totalDataCount = count;
             if (this.data == null) {
                 // Wait for data callback
@@ -468,20 +405,16 @@ public class TreeView extends Activity
                 this.updateList();
             }
             break;
-        case TrytonCall.CALL_RELFIELDS_OK:
+        case DataLoader.RELFIELDS_OK:
             this.callDataId = 0;
-            @SuppressWarnings("unchecked")
-            List<RelField> rel = (List<RelField>)msg.obj;
-            db = new DataCache(this);
-            db.storeRelFields(this.viewTypes.getModelName(), rel);
-            this.relFields = rel;
+            ret = (Object[]) msg.obj;
+            this.relFields = (List<RelField>) ret[1];
             this.loadData(false);
             break;
-        case TrytonCall.CALL_DATA_OK:
+        case DataLoader.DATA_OK:
             this.callDataId = 0;
-            List<Model> data = (List) msg.obj;
-            db = new DataCache(this);
-            db.storeData(this.viewTypes.getModelName(), data);
+            ret = (Object[]) msg.obj;
+            List<Model> data = (List<Model>) ret[1];
             this.data = data;
             if (this.totalDataCount == -1) {
                 // Wait for data count callback

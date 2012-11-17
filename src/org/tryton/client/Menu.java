@@ -122,7 +122,7 @@ public class Menu extends Activity
     }
 
     public void onCancel(DialogInterface dialog) {
-        TrytonCall.cancel(this.callId);
+        DataLoader.cancel(this.callId);
         this.callId = 0;
         this.loadingDialog = null;
         this.finish();

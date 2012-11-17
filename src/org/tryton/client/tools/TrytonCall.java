@@ -661,7 +661,8 @@ public class TrytonCall {
                         }
                         // Send them back
                         m.what = CALL_VIEWS_OK;
-                        m.obj = modelViews;
+                        Object[] ret = new Object[]{entry, modelViews};
+                        m.obj = ret;
                     }
                 } catch (JSONException e) {
                     m.what = CALL_VIEWS_NOK;
@@ -718,7 +719,8 @@ public class TrytonCall {
                         }
                     }
                     m.what = CALL_RELFIELDS_OK;
-                    m.obj = relFields;
+                    Object[] ret = new Object[]{modelName, relFields};
+                    m.obj = ret;
                 } catch (Exception e) {
                     m.what = CALL_RELFIELDS_NOK;
                     m.obj = e;
@@ -832,7 +834,7 @@ public class TrytonCall {
                     if (resp instanceof JSONArray) {
                         int count = ((JSONArray)resp).length();
                         m.what = CALL_DATACOUNT_OK;
-                        m.obj = count;
+                        m.obj = new Object[]{modelName, count};
                     }
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
@@ -885,7 +887,7 @@ public class TrytonCall {
                     }
                     // Send back the list to the handler
                     m.what = CALL_DATA_OK;
-                    m.obj = allData;
+                    m.obj = new Object[]{modelName, allData};
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
