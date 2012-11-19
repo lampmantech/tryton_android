@@ -382,6 +382,10 @@ public class TrytonCall {
         }
         // Prepare ids
         JSONArray jsIds = new JSONArray();
+        if (ids.size() == 0) {
+            // Return empty array, no data requested
+            return jsIds;
+        }
         for (int id : ids) {
             jsIds.put(id);
         }
