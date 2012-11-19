@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.tryton.client.R;
+import org.tryton.client.PickOne;
 import org.tryton.client.ToManyEditor;
 import org.tryton.client.data.DataCache;
 import org.tryton.client.models.Model;
@@ -242,17 +243,12 @@ public class FormViewFactory {
             } else if (type.equals("reference")) {
                 System.out.println("Reference type not supported yet");
             } else if (type.equals("many2one") || type.equals("one2one")) {
-                Spinner s = new Spinner(ctx);
-                ToOneAdapter adapt = new ToOneAdapter(field.getString("relation"), ctx);
-                s.setAdapter(adapt);
-                if (field.getString("string") != null) {
-                    s.setPrompt(field.getString("string"));
-                } else {
-                    s.setPrompt(field.getString("name"));
-                }
-                setReadonly(s, field);
-                setRequired(s, field, ctx);
-                return s;
+                Button b = new Button(ctx);
+                b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+                b.setOnClickListener(new ToOneClickListener(view, field.getString("name")));
+                setReadonly(b, field);
+                setRequired(b, field, ctx);
+                return b;
             } else if (type.equals("many2many") || type.equals("one2many")) {
                 Button b = new Button(ctx);
                 b.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
@@ -449,26 +445,14 @@ public class FormViewFactory {
             } else if (type.equals("reference")) {
                 System.out.println("Reference type not supported yet");
             } else if (type.equals("many2one") || type.equals("one2one")) {
+                String strVal = "";
                 if (data != null) {
-                    Integer value = null;
                     if (data.hasAttribute(name)) {
-                        value = (Integer) data.get(name);
+                        strVal = data.get2OneName(name);
                     } else if (fallbackData != null) {
-                        value = (Integer) fallbackData.get(name);
+                        strVal = fallbackData.get2OneName(name);
                     }
-                    if (value != null) {
-                        int iVal = value.intValue();
-                        ToOneAdapter adapt = (ToOneAdapter)((Spinner)v).getAdapter();
-                        List<Integer> values = adapt.getValues();
-                        for (int i = 0; i < values.size(); i++) {
-                            if (iVal == values.get(i).intValue()) {
-                                ((Spinner)v).setSelection(i + 1);
-                                break;
-                            }
-                        }
-                    } else {
-                        ((Spinner)v).setSelection(0);
-                    }
+                ((Button)v).setText(strVal);
                 }
             } else if (type.equals("many2many") || type.equals("one2many")) {
                 int size = 0;
@@ -599,16 +583,8 @@ public class FormViewFactory {
                 Log.e("Tryton", "Getting selection value from incorrect view");
             }
         } else if (type.equals("many2one") || type.equals("one2one")) {
-            if (v instanceof Spinner) {
-                Spinner s = (Spinner) v;
-                if (s.getSelectedItemPosition() != 0) {
-                    return s.getSelectedItem();
-                } else {
-                    return null;
-                }
-            } else {
-                Log.e("Tryton", "Getting x2one value from incorrect view");
-            }
+            // x2one fields uses their own value picking
+            return NO_VALUE;
         } else if (type.equals("many2many") || type.equals("one2many")) {
             // x2many fields uses their own value picking
             return NO_VALUE;
@@ -679,62 +655,19 @@ public class FormViewFactory {
         }
     }
 
-    /** An adapter to provide values to a x2one widget. It assumes the local
-     * database is loaded for the requested model name. */
-    public static class ToOneAdapter extends BaseAdapter {
+    public static class ToOneClickListener implements View.OnClickListener {
+        ModelView parentView;
+        private String fieldName;
 
-        private List<Integer> values;
-        private List<String> labels;
-
-        public ToOneAdapter(String className, Context ctx) {
-            this.values = new ArrayList<Integer>();
-            this.labels = new ArrayList<String>();
-            DataCache db = new DataCache(ctx);
-            List<Model> models = db.list(className);
-            for (Model m : models) {
-                values.add((Integer)m.get("id"));
-                labels.add(m.getString("rec_name"));
-            }
+        public ToOneClickListener(ModelView parentView, String fieldName) {
+            this.parentView = parentView;
+            this.fieldName = fieldName;
         }
 
-        /** Get values for selection checking */
-        public List<Integer> getValues() {
-            return this.values;
-        }
-
-        public long getItemId(int position) {
-            return position;
-        }
-
-        public Object getItem(int position) {
-            return this.values.get(position - 1);
-        }
-
-        public int getCount() {
-            return this.labels.size() + 1;
-        }
-
-        public View getView(int position, View convertView,
-                            ViewGroup parent) {
-            String label;
-            if (position == 0) {
-                // Special "no value" value
-                label = "";
-            } else {
-                label = this.labels.get(position - 1);
-            }
-            if (convertView instanceof TextView) {
-                ((TextView)convertView).setText(label);
-                return convertView;
-            } else {
-                TextView t = new TextView(parent.getContext());
-                Resources r = parent.getContext().getResources();
-                t.setMinimumHeight((int)r.getDimension(R.dimen.clickable_min_size));
-                t.setText(label);
-                t.setGravity(Gravity.CENTER_VERTICAL);
-                t.setTextColor(parent.getContext().getResources().getColor(android.R.color.primary_text_light));
-                return t;
-            }
+        public void onClick(View v) {
+            Intent i = new Intent (v.getContext(), PickOne.class);
+            PickOne.setup(this.parentView, this.fieldName);
+            v.getContext().startActivity(i);
         }
     }
 

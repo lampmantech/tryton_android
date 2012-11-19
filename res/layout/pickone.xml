@@ -24,10 +24,6 @@
              android:layout_width="fill_parent"
              android:layout_height="fill_parent"
              android:orientation="vertical">
-  <!-- Current value for single value -->
-  <TextView android:id="@+id/pickone_current"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" />
   <!-- Pagination header -->
   <LinearLayout android:layout_width="fill_parent"
                 android:layout_height="wrap_content"

@@ -153,7 +153,7 @@ public class Model implements Serializable {
     public String get2OneName(String name) {
         Model rel = this.toOne.get(name);
         if (rel != null) {
-            return rel.getString("name");
+            return rel.getString("rec_name");
         } else {
             return null;
         }

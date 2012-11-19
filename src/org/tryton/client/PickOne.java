@@ -28,9 +28,9 @@ import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ExpandableListView.OnGroupClickListener;
 import android.widget.Button;
 import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ import org.tryton.client.views.TreeSummaryAdapter;
 
 /** Activity to pick one record in a list, mainly for one2many fields. */
 public class PickOne extends Activity
-    implements OnGroupClickListener, Handler.Callback,
+    implements OnChildClickListener, Handler.Callback,
                DialogInterface.OnCancelListener {
 
     /** Use a static initializer to pass data to the activity on start. */
@@ -75,7 +75,6 @@ public class PickOne extends Activity
     private int callDataId;
 
     private ExpandableListView recordList;
-    private TextView currentLabel;
     private TextView pagination;
     private ImageButton nextPage, previousPage;
     private ProgressDialog loadingDialog;
@@ -111,16 +110,10 @@ public class PickOne extends Activity
         // Load views
         this.setContentView(R.layout.pickone);
         this.recordList = (ExpandableListView) this.findViewById(R.id.pickone_list);
-        this.recordList.setOnGroupClickListener(this);
-        this.currentLabel = (TextView) this.findViewById(R.id.pickone_current);
+        this.recordList.setOnChildClickListener(this);
         this.pagination = (TextView) this.findViewById(R.id.pickone_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.pickone_next_btn);
         this.previousPage = (ImageButton) this.findViewById(R.id.pickone_prev_btn);
-        if (this.isOneValue()) {
-            
-        } else {
-            this.currentLabel.setVisibility(View.GONE);
-        }
     }
 
     public void onResume() {
@@ -279,12 +272,13 @@ public class PickOne extends Activity
     }
 
     @SuppressWarnings("unchecked")
-    public boolean onGroupClick(ExpandableListView parent, View v, int position,
-                                long id) {
+    public boolean onChildClick(ExpandableListView parent, View v, int position,
+                                int childPosition, long id) {
         Model clicked = this.data.get(position);
         int clickedId = (Integer) clicked.get("id");
         if (this.isOneValue()) {
             Session.current.tempModel.set(this.fieldName, clickedId);
+            Session.current.tempModel.set2One(this.fieldName, clicked);
         } else {
             Model edit = Session.current.editedModel;
             Model tmp = Session.current.tempModel;
