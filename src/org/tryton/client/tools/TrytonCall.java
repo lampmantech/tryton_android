@@ -758,7 +758,9 @@ public class TrytonCall {
                     continue;
                 }
                 int id = (Integer) value;
-                ids.add(id);
+                if (!ids.contains(id)) {
+                    ids.add(id);
+                }
                 // Register the model as requesting this id
                 if (whoWants.get(id) == null) {
                     whoWants.put(id, new ArrayList<Model>());
@@ -777,7 +779,9 @@ public class TrytonCall {
                 for (int i = 0; i < jsIds.length(); i++) {
                     try {
                         int id = jsIds.getInt(i);
-                        ids.add(id);
+                        if (!ids.contains(id)) {
+                            ids.add(id);
+                        }
                         // Register the model as requesting this id
                         if (whoWants.get(id) == null) {
                             whoWants.put(id, new ArrayList<Model>());
