@@ -70,7 +70,7 @@ public class TrytonCall {
     public static final int CALL_DELETE_OK = 10;
     public static final int CALL_DELETE_NOK = -11;
 
-    private static final int CHUNK_SIZE = 50;
+    private static final int CHUNK_SIZE = 150;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =
@@ -988,12 +988,10 @@ public class TrytonCall {
                         if (isCanceled(callId)) { return; }
                         if (isSuspended(callId)) { this.yield(); }
                         // Load a chunk and send it back
-                        System.out.println("searching");
                         JSONArray result = search(userId, cookie, prefs,
                                                   "model." + modelName,
                                                   null, offset, CHUNK_SIZE,
                                                   fullLoad);
-                        System.out.println("found " + result.length());
                         for (int i = 0; i < result.length(); i++) {
                             JSONObject jsData = result.getJSONObject(i);
                             Model data = new Model(modelName, jsData);
@@ -1007,7 +1005,6 @@ public class TrytonCall {
                             m.arg1 = 0;
                         }
                         if (dataChunk.size() < CHUNK_SIZE) {
-                            System.out.println("done");
                             m.what = CALL_RELDATA_OK;
                             sendMessage(callId, m);
                             return;
