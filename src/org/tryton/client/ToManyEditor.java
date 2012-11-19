@@ -19,9 +19,12 @@ package org.tryton.client;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -33,13 +36,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.tryton.client.data.DataCache;
+import org.tryton.client.data.DataLoader;
 import org.tryton.client.data.Session;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
+import org.tryton.client.models.RelField;
+import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.views.TreeFullAdapter;
 
 public class ToManyEditor extends Activity
-    implements OnItemLongClickListener, OnItemClickListener {
+    implements OnItemLongClickListener, OnItemClickListener, Handler.Callback,
+               DialogInterface.OnCancelListener  {
 
     /** Use a static initializer to pass data to the activity on start.
      * Set the className to edit and the field that is currently edited.
@@ -56,12 +63,13 @@ public class ToManyEditor extends Activity
     private String fieldName;
     private String className;
     private List<Model> data;
+    private List<RelField> relFields;
     /** Holder for long click listener */
     private int longClickedIndex;
-    /** Holder for add click listener */
-    private List<Model> rels;
+    private int callId;
 
     private ListView selected;
+    private ProgressDialog loadingDialog;
 
     @Override
     public void onCreate(Bundle state) {
@@ -70,6 +78,18 @@ public class ToManyEditor extends Activity
         if (state != null) {
             this.parentView = (ModelView) state.getSerializable("parentView");
             this.fieldName = (String) state.getSerializable("fieldName");
+            this.callId = state.getInt("callId");
+            if (this.callId != 0) {
+                DataLoader.update(this.callId, new Handler(this));
+                this.showLoadingDialog();
+            }
+            if (state.containsKey("rel_count")) {
+                int count = state.getInt("rel_count");
+                this.relFields = new ArrayList<RelField>();
+                for (int i = 0; i < count; i++) {
+                    this.relFields.add((RelField)state.getSerializable("rel_" + i));
+                }
+            }
         } else {
             this.parentView = parentViewInitializer;
             this.fieldName = fieldNameInitializer;
@@ -96,25 +116,84 @@ public class ToManyEditor extends Activity
         if (this.view == null) {
             this.view = this.parentView.getSubview(this.fieldName).getView("form");
         }
+        // Load data
+        if (this.callId == 0) {
+            this.loadDataAndMeta();
+        }
     }
 
     public void onResume() {
         super.onResume();
-        this.refresh();
+        this.loadData();
+    }
+
+    public void onDestroy() {
+        super.onDestroy();
+        this.hideLoadingDialog();
     }
     
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable("parentView", this.parentView);
         outState.putSerializable("fieldName", this.fieldName);
+        if (this.relFields != null) {
+            outState.putSerializable("rel_count", this.relFields.size());
+            for (int i = 0; i < this.relFields.size(); i++) {
+                outState.putSerializable("rel_" + i, this.relFields.get(i));
+            }
+        }
+        outState.putInt("callId", this.callId);
     }
 
-    private void refresh() {
-        DataCache db = new DataCache(this);
-        List<Integer> dataId = this.getIds(false);
-        this.data = db.getData(this.className, dataId);
+    public void showLoadingDialog() {
+        if (this.loadingDialog == null) {
+            this.loadingDialog = new ProgressDialog(this);
+            this.loadingDialog.setIndeterminate(true);
+            this.loadingDialog.setMessage(this.getString(R.string.data_loading));
+            this.loadingDialog.setOnCancelListener(this);
+            this.loadingDialog.show();
+        }
+    }
+
+    public void onCancel(DialogInterface dialog) {
+        DataLoader.cancel(this.callId);
+        this.callId = 0;
+        this.loadingDialog = null;
+        this.finish();
+    }
+
+    /** Hide the loading dialog if shown. */
+    public void hideLoadingDialog() {
+        if (this.loadingDialog != null) {
+            this.loadingDialog.dismiss();
+            this.loadingDialog = null;
+        }
+    }
+
+    private void updateList() {
         TreeFullAdapter adapt = new TreeFullAdapter(view, data);
         this.selected.setAdapter(adapt);
+    }
+
+    /** Load data count and rel fields, required for data.
+     * Requires that views are loaded. */
+    private void loadDataAndMeta() {
+        if (this.callId == 0) {
+            this.showLoadingDialog();
+            this.callId = DataLoader.loadRelFields(this, this.className,
+                                                       new Handler(this),
+                                                       false);
+        }
+    }
+
+    private void loadData() {
+        if (this.callId == 0) {
+            List<Integer> dataId = this.getIds(false);
+            this.callId = DataLoader.loadData(this, this.className, dataId, 
+                                              this.relFields, new Handler(this),
+                                              false);
+            this.showLoadingDialog();
+        }
     }
     
     /** Get ids of the registered items from the edited model.
@@ -144,40 +223,12 @@ public class ToManyEditor extends Activity
 
     /** Action called on add button for many2many field (linked in xml) */
     public void add(View button) {
-        AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setTitle(R.string.tomany_add);
-        DataCache db = new DataCache(this);
-        List<Model> rels = db.list(this.className);
-        // Remove already selected values
-        for (Integer id : this.getIds(false)) {
-            for (int i = 0; i < rels.size(); i++) {
-                if (rels.get(i).get("id").equals(id)) {
-                    rels.remove(i);
-                    break;
-                }
-            }
-        }
-        this.rels = rels;
-        String[] values = new String[rels.size()];
-        for (int i = 0; i < values.length; i++) {
-            if (rels.get(i).hasAttribute("rec_name")
-                && rels.get(i).get("rec_name") != null) {
-                values[i] = rels.get(i).getString("rec_name");
-            } else {
-                Log.e("Tryton", "No rec_name found on " + rels.get(i));
-            }
-        }
-        DialogInterface.OnClickListener l = new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    onAddDialog(dialog, which);
-                }
-            };
-        b.setItems(values, l);
-        b.setNeutralButton(R.string.tomany_add_new, l);
-        b.show();
+        PickOne.setup(this.parentView, this.fieldName);
+        Intent i = new Intent(this, PickOne.class);
+        this.startActivity(i);
     }
 
-    /** Action called on create button. */
+    /** Action called on create button. Replaces add for one2many field. */
     public void create() {
         // Open a new form to create the relation
         Model parentField = this.parentView.getField(this.fieldName);
@@ -238,6 +289,44 @@ public class ToManyEditor extends Activity
         b.show();
         return true;
     }
+
+    /** Handle loading feedback. */
+    @SuppressWarnings("unchecked")
+    public boolean handleMessage(Message msg) {
+        // Process message
+        switch (msg.what) {
+        case DataLoader.RELFIELDS_OK:
+            this.callId = 0;
+            Object[] ret = (Object[]) msg.obj;
+            this.relFields = (List<RelField>) ret[1];
+            this.loadData();
+            break;
+        case DataLoader.DATA_OK:
+            this.callId = 0;
+            ret = (Object[]) msg.obj;
+            List<Model> data = (List<Model>) ret[1];
+            this.data = data;
+            this.updateList();
+            this.hideLoadingDialog();
+            break;
+        case DataLoader.DATA_NOK:
+        case DataLoader.RELFIELDS_NOK:
+            this.hideLoadingDialog();
+                this.callId = 0;
+            AlertDialog.Builder b = new AlertDialog.Builder(this);
+            b.setTitle(R.string.error);
+            b.setMessage(R.string.network_error);
+            b.show();
+            ((Exception)msg.obj).printStackTrace();
+            break;
+        case TrytonCall.NOT_LOGGED:
+            // TODO: this is brutal
+            // Logout
+            Start.logout(this);
+            break;
+        }
+        return true;
+    }
     
     /** Handler for item long click actions */
     public void onLongClickDialog(DialogInterface dialog, int which) {
@@ -245,18 +334,7 @@ public class ToManyEditor extends Activity
         Session s = Session.current;
         List<Integer> ids = this.getIds(true);
         ids.remove(this.longClickedIndex);
-        this.refresh();
+        this.updateList();
     }
 
-    public void onAddDialog(DialogInterface dialog, int which) {
-        if (which == DialogInterface.BUTTON_NEUTRAL) {
-            create();
-            return;
-        }
-        Model clickedModel = this.rels.get(which);
-        Integer id = (Integer) clickedModel.get("id");
-        List<Integer> ids = this.getIds(true);
-        ids.add(id);
-        this.refresh();
-    }
 }

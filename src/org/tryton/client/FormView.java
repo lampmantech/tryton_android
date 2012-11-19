@@ -153,30 +153,6 @@ public class FormView extends Activity
             }
         }
         this.table.addView(row);
-        // Check if we have all the data required for relationnal fields
-        this.relModelsToLoad = new HashSet<String>();
-        this.modelsToLoad = new HashSet<String>();
-        for (Model view : modelView.getStructure()) {
-            if (!(view.getClassName().equals("label"))) {
-                String type = view.getString("type");
-                DataCache db = new DataCache(this);
-                String relModel = view.getString("relation");
-                if ((type.equals("one2one") || type.equals("many2one"))
-                    && !db.isFullyLoaded(relModel, false)) {
-                    this.relModelsToLoad.add(relModel);
-                } else if ((type.equals("one2many")
-                            || type.equals("many2many"))
-                           && !db.isFullyLoaded(relModel, true)) {
-                    this.modelsToLoad.add(relModel);
-                }
-            }
-        }
-        if ((!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty())
-            && this.callId == 0) {
-            // Start loading
-            this.showLoadingDialog(LOADING_DATA);
-            this.loadRel();
-        }
     }
     
     public void onSaveInstanceState(Bundle outState) {

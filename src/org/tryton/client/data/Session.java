@@ -129,6 +129,7 @@ public class Session {
         this.popStack();
     }
 
+    /** Add a value for the edited Many2Many/One2Many parent field. */
     @SuppressWarnings("unchecked")
     public void addToParent(int newId) {
         Model parent = (Model) this.editStack.get(this.editStack.size() - 8);
@@ -139,10 +140,15 @@ public class Session {
                 List<Integer> pIds = (List<Integer>)parent.get(this.linkToParent);
                 ids.addAll(pIds);
             }
-            ids.add(newId);
-            tmpParent.set(this.linkToParent, ids);
+            if (!ids.contains(newId)) {
+                ids.add(newId);
+                tmpParent.set(this.linkToParent, ids);
+            }
         } else {
-            ((List<Integer>)tmpParent.get(this.linkToParent)).add(newId);
+            List<Integer> ids = (List<Integer>)tmpParent.get(this.linkToParent);
+            if (!ids.contains(newId)) {
+                ids.add(newId);
+            }
         }
     }
 

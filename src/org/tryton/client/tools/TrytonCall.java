@@ -731,6 +731,8 @@ public class TrytonCall {
         return callId;
     }
     
+    /** Set data with only id and rec_name to a list of models in fields that
+     * requires id. */
     private static void getRelationnals(int userId, String cookie,
                                         Preferences prefs,
                                         List<Model> models, RelField relField) {
@@ -904,6 +906,62 @@ public class TrytonCall {
         }.start();
         return callId;
     }
+
+    /** Get data by id */
+    public static int getData(final int userId, final String cookie,
+                              final Preferences prefs,
+                              final String modelName,
+                              final List<Integer> ids,
+                              final List<RelField> relFields,
+                              final Handler h) {
+        if (c == null) {
+            return -1;
+        }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                // Fields list by name
+                Map<String, Model> fields = new HashMap<String, Model>();
+                // Data list
+                List<Model> allData = new ArrayList<Model>();
+                try {
+                    // Search the data and add them to a list
+                    JSONArray result = read(userId, cookie, prefs,
+                                              "model." + modelName,
+                                              null, ids);
+                    for (int i = 0; i < result.length(); i++) {
+                        JSONObject jsData = result.getJSONObject(i);
+                        Model data = new Model(modelName, jsData);
+                        allData.add(data);
+                    }
+                    if (isCanceled(callId)) { return; }
+                    // Check for relational fields and load them
+                    for (RelField rel : relFields) {
+                        getRelationnals(userId, cookie, prefs, allData,
+                                        rel);
+                    }
+                    // Send back the list to the handler
+                    m.what = CALL_DATA_OK;
+                    m.obj = new Object[]{modelName, allData};
+                } catch (JSONRPCException e) {
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                    } else {
+                        m.what = CALL_DATA_NOK;
+                        m.obj = e;
+                    }
+                } catch (Exception e) {
+                    m.what = CALL_DATA_NOK;
+                    m.obj = e;
+                }
+                sendMessage(callId, m);
+            }
+        }.start();
+        return callId;
+    }
+
 
     /** Get data for relationnal pickup */
     public static int getRelData(final int userId, final String cookie,

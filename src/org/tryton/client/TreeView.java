@@ -67,7 +67,7 @@ public class TreeView extends Activity
     private static final int MODE_SUMMARY = 1;
     private static final int MODE_EXTENDED = 2;
 
-    private static final int PAGING_SUMMARY = 40;
+    static final int PAGING_SUMMARY = 40; // package scope, used by PickOne
     private static final int PAGING_EXTENDED = 10;
     
     private MenuEntry origin;

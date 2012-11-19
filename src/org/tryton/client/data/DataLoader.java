@@ -350,5 +350,37 @@ public class DataLoader {
         return callId;
     }
 
+    public static int loadData(final Context ctx, final String className,
+                               final List<Integer> ids,
+                               final List<RelField> relFields,
+                               final Handler h, final boolean forceRefresh) {
+        final int callId = callSequence++;
+        handlers.put(callId, h);
+        final Handler fwdHandler = newHandler(callId, ctx);
+        new Thread() {
+            public void run() {
+                if (!forceRefresh) {
+                    // Load from cache
+                    DataCache db = new DataCache(ctx);
+                    List<Model> data = db.getData(className, ids);
+                    if (data.size() == ids.size()) {
+                        Message m = fwdHandler.obtainMessage();
+                        m.what = DATA_OK;
+                        m.obj = new Object[]{className, data};
+                        m.sendToTarget();
+                        return;
+                    }
+                }
+                // Load from server
+                Session s = Session.current;
+                int tcId = TrytonCall.getData(s.userId, s.cookie, s.prefs,
+                                              className, ids, relFields,
+                                              fwdHandler);
+                trytonCalls.put(callId, tcId);
+            }
+        }.start();
+        return callId;
+    }
+
 }
 
