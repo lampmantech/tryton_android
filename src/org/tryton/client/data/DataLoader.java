@@ -35,6 +35,7 @@ import java.util.Set;
 import org.tryton.client.data.MenuCache;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.MenuEntry;
+import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
 import org.tryton.client.tools.TrytonCall;
@@ -87,6 +88,7 @@ public class DataLoader {
         switch (m.what) {
         case TrytonCall.CALL_MENUS_OK:
             // Cache the menu
+            @SuppressWarnings("unchecked")
             List<MenuEntry> menus = (List<MenuEntry>) m.obj;
             try {
                 MenuCache.save(menus, ctx);
@@ -329,6 +331,19 @@ public class DataLoader {
                                final int offset, final int count,
                                final int expectedCount,
                                final List<RelField> relFields,
+                               final ModelView view,
+                               final Handler h, final boolean forceRefresh) {
+        ModelViewTypes dummy = new ModelViewTypes(view.getModelName());
+        return loadData(ctx, className, offset, count, expectedCount, relFields,
+                       dummy, h, forceRefresh);
+
+    }
+
+    public static int loadData(final Context ctx, final String className,
+                               final int offset, final int count,
+                               final int expectedCount,
+                               final List<RelField> relFields,
+                               final ModelViewTypes views,
                                final Handler h, final boolean forceRefresh) {
         final int callId = callSequence++;
         handlers.put(callId, h);
@@ -351,7 +366,7 @@ public class DataLoader {
                 Session s = Session.current;
                 int tcId = TrytonCall.getData(s.userId, s.cookie, s.prefs,
                                               className, offset, count,
-                                              relFields, fwdHandler);
+                                              relFields, views, fwdHandler);
                 trytonCalls.put(callId, tcId);
             }
         }.start();
@@ -361,6 +376,17 @@ public class DataLoader {
     public static int loadData(final Context ctx, final String className,
                                final List<Integer> ids,
                                final List<RelField> relFields,
+                               final ModelView view,
+                               final Handler h, final boolean forceRefresh) {
+        ModelViewTypes dummy = new ModelViewTypes(view.getModelName());
+        return loadData(ctx, className, ids, relFields, dummy, h, forceRefresh);
+    }
+
+
+    public static int loadData(final Context ctx, final String className,
+                               final List<Integer> ids,
+                               final List<RelField> relFields,
+                               final ModelViewTypes views,
                                final Handler h, final boolean forceRefresh) {
         final int callId = callSequence++;
         handlers.put(callId, h);
@@ -383,7 +409,7 @@ public class DataLoader {
                 Session s = Session.current;
                 int tcId = TrytonCall.getData(s.userId, s.cookie, s.prefs,
                                               className, ids, relFields,
-                                              fwdHandler);
+                                              views, fwdHandler);
                 trytonCalls.put(callId, tcId);
             }
         }.start();
@@ -420,7 +446,7 @@ public class DataLoader {
                 ModelViewTypes vt = (ModelViewTypes) ((Object[])m.obj)[1];
                 this.className = vt.getModelName();
                 new ModelLoader(this.callId, this, this.ctx,
-                                this.className, this.forceRefresh).load();
+                                this.className, vt, this.forceRefresh).load();
                 break;
             case MODELDATA_OK:
                 Message msg = this.obtainMessage();
@@ -437,13 +463,16 @@ public class DataLoader {
         private MenuEntry menu;
         private boolean forceRefresh;
         private String className;
+        private ModelViewTypes views;
+        private List<String> fields;
         private int count;
         private int offset;
         private List<RelField> relFields;
         private Handler parent;
         private int subloadIndex;
         public ModelLoader(int callId, Handler parent, Context ctx,
-                           String className, boolean forceRefresh) {
+                           String className, ModelViewTypes views,
+                           boolean forceRefresh) {
             super(parent.getLooper());
             this.callId = callId;
             this.ctx = ctx;
@@ -451,6 +480,7 @@ public class DataLoader {
             this.forceRefresh = forceRefresh;
             this.parent = parent;
             this.className = className;
+            this.views = views;
         }
         public void load() {
             this.subcallId = loadDataCount(this.ctx, this.className, this,
@@ -458,6 +488,7 @@ public class DataLoader {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void handleMessage(Message m) {
             switch (m.what) {
             case DATACOUNT_OK:
@@ -470,7 +501,8 @@ public class DataLoader {
                 int expected = Math.min(TrytonCall.CHUNK_SIZE,
                                         this.count);
                 loadData(this.ctx, this.className, 0, TrytonCall.CHUNK_SIZE,
-                         expected, this.relFields, this, this.forceRefresh);
+                         expected, this.relFields, this.views, this,
+                         this.forceRefresh);
                 break;
             case DATA_OK:
                 this.offset += TrytonCall.CHUNK_SIZE;
@@ -479,7 +511,8 @@ public class DataLoader {
                 if (this.offset < this.count) {
                     loadData(this.ctx, this.className, this.offset,
                              TrytonCall.CHUNK_SIZE, expected,
-                             this.relFields, this, this.forceRefresh);
+                             this.relFields, this.views, this,
+                             this.forceRefresh);
                 } else {
                     loadedModels.add(this.className);
                     loadRec();
@@ -494,12 +527,30 @@ public class DataLoader {
         private void loadRec() {
             for (; this.subloadIndex < this.relFields.size(); this.subloadIndex++) {
                 RelField rel = this.relFields.get(this.subloadIndex);
+                String fieldName = rel.getFieldName();
                 String type = rel.getType();
                 String subclassName = rel.getRelModel();
-                if (!loadedModels.contains(subclassName) &&
-                    ((type.equals("many2one") || type.equals("many2many")))) {
+                // Get required fields from views
+                List<String> fields = new ArrayList<String>();
+                fields.add("id");
+                fields.add("rec_name");
+                for (String vtype : views.getTypes()) {
+                    ModelView v = views.getView(vtype);
+                    for (String f : v.getFields().keySet()) {
+                        if (!fields.contains(f)) {
+                            fields.add(f);
+                        }
+                    }
+                }
+                if (!loadedModels.contains(subclassName)
+                    && fields.contains(fieldName)
+                    && this.views.getView("form") != null
+                    && this.views.getView("form").getSubview(fieldName) != null
+                    && (type.equals("many2one") || type.equals("many2many"))) {
+                    ModelView form = this.views.getView("form");
+                    ModelViewTypes vt = form.getSubview(fieldName);
                     new ModelLoader(this.callId, this, this.ctx,
-                                    subclassName, this.forceRefresh).load();
+                                    subclassName, vt, this.forceRefresh).load();
                     break;
                 }
             }

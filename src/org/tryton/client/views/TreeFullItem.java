@@ -45,37 +45,55 @@ public class TreeFullItem extends LinearLayout {
         this.setGravity(Gravity.CENTER_VERTICAL);
         this.modelView = modelView;
         this.values = new ArrayList<TextView>();
-        for (int i = 0; i < this.modelView.getStructure().size(); i++) {
-            Model field = this.modelView.getStructure().get(i);
-            if (TreeViewFactory.isFieldView(field)) {
-                TextView t = new TextView(context);
-                this.values.add(t);
-                this.addView(t);
+        if (this.modelView != null) {
+            for (int i = 0; i < this.modelView.getStructure().size(); i++) {
+                Model field = this.modelView.getStructure().get(i);
+                if (TreeViewFactory.isFieldView(field)) {
+                    TextView t = new TextView(context);
+                    this.values.add(t);
+                    this.addView(t);
+                }
             }
+        } else {
+            // No view, use only rec_name
+            TextView t = new TextView(context);
+            this.values.add(t);
+            this.addView(t);
         }
         this.reuse(model, context);
     }
 
     public void reuse(Model model, Context ctx) {
         this.model = model;
-        List<Model> structure = this.modelView.getStructure();
-        int innerIndex = 0;
-        for (int i = 0; i < structure.size(); i++) {
-            Model field = structure.get(i);
-            if (TreeViewFactory.isFieldView(field)) {
-                TextView t = this.values.get(innerIndex);
-                String fieldName = (String) field.get("name");
-                String name = (String) field.get("string");
-                if (name == null) {
-                    name = (String) field.get("name");
+        if (this.modelView != null) {
+            List<Model> structure = this.modelView.getStructure();
+            int innerIndex = 0;
+            for (int i = 0; i < structure.size(); i++) {
+                Model field = structure.get(i);
+                if (TreeViewFactory.isFieldView(field)) {
+                    TextView t = this.values.get(innerIndex);
+                    String fieldName = (String) field.get("name");
+                    String name = (String) field.get("string");
+                    if (name == null) {
+                        name = (String) field.get("name");
+                    }
+                    String value = TreeViewFactory.getView(field, this.model,
+                                                           Session.current.prefs,
+                                                           ctx);
+                    t.setText(name + " " + value);
+                    innerIndex++;
                 }
-                String value = TreeViewFactory.getView(field, this.model,
-                                                       Session.current.prefs,
-                                                       ctx);
-                t.setText(name + " " + value);
-                innerIndex++;
-            }
-        } 
+            } 
+        } else {
+            TextView t = this.values.get(0);
+            Model recName = new Model("ir.ui.field");
+            recName.set("name", "rec_name");
+            recName.set("type", "char");
+            String value = TreeViewFactory.getView(recName, this.model,
+                                                   Session.current.prefs,
+                                                   ctx);
+            t.setText(value);
+        }
     }
 
     public Model getModel() {

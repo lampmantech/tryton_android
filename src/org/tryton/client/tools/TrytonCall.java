@@ -331,8 +331,8 @@ public class TrytonCall {
     /** Utility function to search and read models in one function call. */
     private static JSONArray search(int userId, String cookie,
                                     Preferences prefs, String model,
-                                    List args, int offset, int count,
-                                    boolean fullLoad)
+                                    List args, List<String> fields,
+                                    int offset, int count)
         throws JSONRPCException, JSONException {
         if (c == null) {
             return null;
@@ -348,33 +348,40 @@ public class TrytonCall {
         if (resp instanceof JSONArray) {
             // Get the ids
             JSONArray jsIds = (JSONArray) resp;
-            int[] ids = new int[jsIds.length()];
-            for (int i = 0; i < ids.length; i++) {
-                ids[i] = jsIds.getInt(i);
-            }
-            // Read the models
-            if (!fullLoad) {
-                JSONArray fields = new JSONArray();
-                fields.put("id");
-                fields.put("rec_name");
-                resp = c.call(model + ".read", userId, cookie, jsIds,
-                              fields, prefs.json());
-            } else {
-                resp = c.call(model + ".read", userId, cookie, jsIds,
-                              new JSONArray(), prefs.json());
-            }
-            if (resp instanceof JSONArray) {
-                // We've got them!
-                return (JSONArray) resp;
-            }
+            return read(userId, cookie, prefs, model, fields, jsIds);
         }
         return null;
+    }
+        
+    private static JSONArray read(int userId, String cookie,
+                                  Preferences prefs, String model,
+                                  List<String> fields, JSONArray ids)
+        throws JSONRPCException, JSONException {
+        // Read the models
+        Object resp;
+        if (fields == null) {
+            resp = c.call(model + ".read", userId, cookie,
+                          ids, new JSONArray(), prefs.json());
+        } else {
+            JSONArray jsFields = new JSONArray();
+            for (String field : fields) {
+                jsFields.put(field);
+            }
+            resp = c.call(model + ".read", userId, cookie,
+                          ids, jsFields, prefs.json());
+        }
+        if (resp instanceof JSONArray) {
+            // We've got them!
+            return (JSONArray) resp;
+        } else {
+            return null;
+        }
     }
 
     /** Get data from ids */
     private static JSONArray read(int userId, String cookie,
                                   Preferences prefs, String model,
-                                  String[] fields,
+                                  List<String> fields,
                                   List<Integer> ids)
         throws JSONRPCException, JSONException {
         if (c == null) {
@@ -388,25 +395,8 @@ public class TrytonCall {
         }
         for (int id : ids) {
             jsIds.put(id);
-        }
-        // Read the models
-        Object resp;
-        if (fields == null) {
-            resp = c.call(model + ".read", userId, cookie,
-                          jsIds, new JSONArray(), prefs.json());
-        } else {
-            JSONArray jsFields = new JSONArray();
-            for (String field : fields) {
-                jsFields.put(field);
-            }
-            resp = c.call(model + ".read", userId, cookie,
-                          jsIds, jsFields, prefs.json());
-        }
-        if (resp instanceof JSONArray) {
-            // We've got them!
-            return (JSONArray) resp;
-        }
-        return null;
+        } 
+        return read(userId, cookie, prefs, model, fields, jsIds);
     }
 
     /** Get the full menu as a list of top level entries with children. */
@@ -430,8 +420,7 @@ public class TrytonCall {
                     // Get the first "1000" menu entries
                     JSONArray jsMenus = search(userId, cookie, prefs,
                                                "model.ir.ui.menu",
-                                               null,
-                                               0, 1000, true);
+                                               null, null, 0, 1000);
                     // Get icon ids
                     Map<String, Integer> iconIds = new HashMap<String, Integer>();
                     Object oIconIds = c.call("model.ir.ui.icon.list_icons",
@@ -796,10 +785,12 @@ public class TrytonCall {
         }
         // Get all relationnal data
         try {
+            List<String> fields = new ArrayList<String>();
+            fields.add("id");
+            fields.add("rec_name");
             JSONArray rels = read(userId, cookie, prefs,
                                   "model." + relModelName,
-                                  new String[]{"id", "rec_name"},
-                                  ids);
+                                  fields, ids);
             for (int i = 0; i < rels.length(); i++) {
                 try {
                     JSONObject oModel = rels.getJSONObject(i);
@@ -860,12 +851,25 @@ public class TrytonCall {
         return callId;
     }
 
+    public static int getData(final int userId, final String cookie,
+                              final Preferences prefs,
+                              final String modelName,
+                              final int offset, final int count,
+                              final List<RelField> relFields,
+                              final ModelView view,
+                              final Handler h) {
+        ModelViewTypes dummy = new ModelViewTypes(view.getModelName());
+        return getData(userId, cookie, prefs, modelName, offset, count,
+                       relFields, dummy, h);
+    }
+
     /** Get some data for a model */
     public static int getData(final int userId, final String cookie,
                               final Preferences prefs,
                               final String modelName,
                               final int offset, final int count,
                               final List<RelField> relFields,
+                              final ModelViewTypes views,
                               final Handler h) {
         if (c == null) {
             return -1;
@@ -876,14 +880,27 @@ public class TrytonCall {
             public void run() {
                 Message m = h.obtainMessage();
                 // Fields list by name
-                Map<String, Model> fields = new HashMap<String, Model>();
+                // Get required fields from views
+                List<String> fields = new ArrayList<String>();
+                fields.add("id");
+                fields.add("rec_name");
+                if (views != null) {
+                    for (String type : views.getTypes()) {
+                        ModelView v = views.getView(type);
+                        for (String fieldName : v.getFields().keySet()) {
+                            if (!fields.contains(fieldName)) {
+                                fields.add(fieldName);
+                            }
+                        }
+                    }
+                }
                 // Data list
                 List<Model> allData = new ArrayList<Model>();
                 try {
                     // Search the data and add them to a list
                     JSONArray result = search(userId, cookie, prefs,
                                               "model." + modelName,
-                                              null, offset, count, true);
+                                              null, fields, offset, count);
                     for (int i = 0; i < result.length(); i++) {
                         JSONObject jsData = result.getJSONObject(i);
                         Model data = new Model(modelName, jsData);
@@ -921,6 +938,7 @@ public class TrytonCall {
                               final String modelName,
                               final List<Integer> ids,
                               final List<RelField> relFields,
+                              final ModelViewTypes views,
                               final Handler h) {
         if (c == null) {
             return -1;
@@ -930,15 +948,27 @@ public class TrytonCall {
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
-                // Fields list by name
-                Map<String, Model> fields = new HashMap<String, Model>();
+                // Get required fields from views
+                List<String> fields = new ArrayList<String>();
+                fields.add("id");
+                fields.add("rec_name");
+                if (views != null) {
+                    for (String type : views.getTypes()) {
+                        ModelView v = views.getView(type);
+                        for (String fieldName : v.getFields().keySet()) {
+                            if (!fields.contains(fieldName)) {
+                                fields.add(fieldName);
+                            }
+                        }
+                    }
+                }
                 // Data list
                 List<Model> allData = new ArrayList<Model>();
                 try {
                     // Search the data and add them to a list
                     JSONArray result = read(userId, cookie, prefs,
                                               "model." + modelName,
-                                              null, ids);
+                                              fields, ids);
                     for (int i = 0; i < result.length(); i++) {
                         JSONObject jsData = result.getJSONObject(i);
                         Model data = new Model(modelName, jsData);
@@ -998,8 +1028,8 @@ public class TrytonCall {
                         // Load a chunk and send it back
                         JSONArray result = search(userId, cookie, prefs,
                                                   "model." + modelName,
-                                                  null, offset, CHUNK_SIZE,
-                                                  fullLoad);
+                                                  null, null,
+                                                  offset, CHUNK_SIZE);
                         for (int i = 0; i < result.length(); i++) {
                             JSONObject jsData = result.getJSONObject(i);
                             Model data = new Model(modelName, jsData);

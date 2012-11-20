@@ -190,8 +190,8 @@ public class ToManyEditor extends Activity
         if (this.callId == 0) {
             List<Integer> dataId = this.getIds(false);
             this.callId = DataLoader.loadData(this, this.className, dataId, 
-                                              this.relFields, new Handler(this),
-                                              false);
+                                              this.relFields, this.view,
+                                              new Handler(this), false);
             this.showLoadingDialog();
         }
     }

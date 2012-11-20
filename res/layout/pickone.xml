@@ -50,7 +50,7 @@
                  android:visibility="invisible" />
   </LinearLayout>
   <!-- Values list. -->
-  <ExpandableListView android:id="@+id/pickone_list"
+  <ListView android:id="@+id/pickone_list"
                       android:layout_width="fill_parent"
                       android:layout_height="fill_parent"
                       android:layout_weight="1"

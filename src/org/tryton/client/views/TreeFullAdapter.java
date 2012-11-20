@@ -67,8 +67,7 @@ public class TreeFullAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         Model m = this.data.get(position);
-        if (convertView != null && convertView instanceof TreeFullItem
-            && ((TreeFullItem)convertView).getModelView().equals(this.modelView) ) {
+        if (convertView != null && convertView instanceof TreeFullItem) {
             // Reusing allows to update a view that goes off-screen to reduce
             // scrolling cpu usage (thus smoothing it).
             TreeFullItem item = (TreeFullItem) convertView;

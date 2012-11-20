@@ -29,8 +29,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ListView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -45,11 +45,11 @@ import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
 import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.tools.TrytonCall;
-import org.tryton.client.views.TreeSummaryAdapter;
+import org.tryton.client.views.TreeFullAdapter;
 
 /** Activity to pick one record in a list, mainly for one2many fields. */
 public class PickOne extends Activity
-    implements OnChildClickListener, Handler.Callback,
+    implements OnItemClickListener, Handler.Callback,
                DialogInterface.OnCancelListener {
 
     /** Use a static initializer to pass data to the activity on start. */
@@ -74,7 +74,7 @@ public class PickOne extends Activity
     private int callCountId;
     private int callDataId;
 
-    private ExpandableListView recordList;
+    private ListView recordList;
     private TextView pagination;
     private ImageButton nextPage, previousPage;
     private ProgressDialog loadingDialog;
@@ -109,11 +109,22 @@ public class PickOne extends Activity
         this.className = this.parentView.getField(this.fieldName).getString("relation");
         // Load views
         this.setContentView(R.layout.pickone);
-        this.recordList = (ExpandableListView) this.findViewById(R.id.pickone_list);
-        this.recordList.setOnChildClickListener(this);
+        this.recordList = (ListView) this.findViewById(R.id.pickone_list);
+        this.recordList.setOnItemClickListener(this);
         this.pagination = (TextView) this.findViewById(R.id.pickone_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.pickone_next_btn);
         this.previousPage = (ImageButton) this.findViewById(R.id.pickone_prev_btn);
+        ModelViewTypes views = this.parentView.getSubview(this.fieldName);
+        ModelView subview = null;
+        if (views != null) {
+            subview = views.getView("tree");
+            if (subview == null) {
+                subview = views.getView("form");
+            }
+        }
+        if (subview == null) {
+            this.findViewById(R.id.pick_create).setVisibility(View.GONE);
+        }
     }
 
     public void onResume() {
@@ -166,12 +177,14 @@ public class PickOne extends Activity
         }
         // Update data
         ModelViewTypes views = this.parentView.getSubview(this.fieldName);
-        ModelView subview = views.getView("tree");
-        if (subview == null) {
-            subview = views.getView("form");
+        ModelView subview = null;
+        if (views != null) {
+            subview = views.getView("tree");
+            if (subview == null) {
+                subview = views.getView("form");
+            }
         }
-        TreeSummaryAdapter sumadapt = new TreeSummaryAdapter(subview,
-                                                             this.data);
+        TreeFullAdapter sumadapt = new TreeFullAdapter(subview, this.data);
         this.recordList.setAdapter(sumadapt);
     }
 
@@ -240,8 +253,9 @@ public class PickOne extends Activity
             int count = TreeView.PAGING_SUMMARY;
             int expectedSize = Math.min(this.totalDataCount - this.dataOffset,
                                         count);
+            ModelViewTypes views = this.parentView.getSubview(this.fieldName);
             DataLoader.loadData(this, this.className, this.dataOffset,
-                                count, expectedSize, this.relFields,
+                                count, expectedSize, this.relFields, views,
                                 new Handler(this), false);
         }
     }
@@ -272,8 +286,8 @@ public class PickOne extends Activity
     }
 
     @SuppressWarnings("unchecked")
-    public boolean onChildClick(ExpandableListView parent, View v, int position,
-                                int childPosition, long id) {
+    public void onItemClick(AdapterView parent, View v, int position,
+                               long id) {
         Model clicked = this.data.get(position);
         int clickedId = (Integer) clicked.get("id");
         if (this.isOneValue()) {
@@ -300,7 +314,6 @@ public class PickOne extends Activity
             }
         }
         this.finish();
-        return true;
     }
 
     /** Action called on create button. */

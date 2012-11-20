@@ -352,7 +352,8 @@ public class TreeView extends Activity
         this.showLoadingDialog(LOADING_DATA);
         this.callDataId = DataLoader.loadData(this, className, this.dataOffset,
                                               count, expectedSize,
-                                              this.relFields, new Handler(this),
+                                              this.relFields, this.viewTypes,
+                                              new Handler(this),
                                               refresh);
     }
 
