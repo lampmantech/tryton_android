@@ -21,11 +21,32 @@
     It is loaded from the org.tryton.client.Menu activity.
     Each list item is defined in menu_entry_item.xml.
 -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="fill_parent"
-             android:layout_height="fill_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:orientation="vertical">
   <ListView android:id="@+id/menu_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
+            android:layout_weight="1"
             style="@style/main_container"/>
-</FrameLayout>
+  <LinearLayout android:id="@+id/menu_loadbar"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                style="@style/main_container"
+                android:visibility="gone">
+    <Button android:id="@+id/menu_load_cache"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/menu_cache"
+            android:onClick="loadCache"/>
+    <Button android:id="@+id/menu_load_cache"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/general_cancel"
+            android:onClick="cancelCache"/>
+  </LinearLayout>
+</LinearLayout>

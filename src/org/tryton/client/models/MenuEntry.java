@@ -76,6 +76,16 @@ public class MenuEntry implements Serializable {
     public List<MenuEntry> getChildren() {
         return this.children;
     }
+    /** Get direct and indirect children */
+    public List<MenuEntry> getAllChildren() {
+        List<MenuEntry> ret = new ArrayList<MenuEntry>();
+        ret.addAll(this.children);
+        for (MenuEntry child : this.children) {
+            ret.addAll(child.getAllChildren());
+        }
+        return ret;
+    }
+
     /** Add a child at the end */
     public void addChild(MenuEntry child) {
         this.children.add(child);

@@ -70,7 +70,7 @@ public class TrytonCall {
     public static final int CALL_DELETE_OK = 10;
     public static final int CALL_DELETE_NOK = -11;
 
-    private static final int CHUNK_SIZE = 150;
+    public static final int CHUNK_SIZE = 150;
     
     private static JSONRPCClient c;
     private static final JSONRPCParams.Versions version =

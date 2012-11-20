@@ -35,6 +35,8 @@ public class MenuEntryItem extends RelativeLayout {
 
     private TextView label;
     private ImageView icon;
+    private ImageView pick;
+    private boolean selected;
 
     public MenuEntryItem(Context context, MenuEntry menu) {
         super(context);
@@ -43,7 +45,19 @@ public class MenuEntryItem extends RelativeLayout {
                                              true);
         this.label = (TextView) this.findViewById(R.id.menu_label);
         this.icon = (ImageView) this.findViewById(R.id.menu_icon);
+        this.pick = (ImageView) this.findViewById(R.id.menu_pick);
         this.reuse(menu, context);
+    }
+
+    public MenuEntryItem(Context context, MenuEntry menu, boolean selected) {
+        super(context);
+        LayoutInflater.from(context).inflate(R.layout.menu_item,
+                                             this,
+                                             true);
+        this.label = (TextView) this.findViewById(R.id.menu_label);
+        this.icon = (ImageView) this.findViewById(R.id.menu_icon);
+        this.pick = (ImageView) this.findViewById(R.id.menu_pick);
+        this.reuse(menu, selected, context);
     }
 
     public void reuse(MenuEntry menu, Context ctx) {
@@ -54,6 +68,34 @@ public class MenuEntryItem extends RelativeLayout {
         } else {
             this.setDefaultIcon(ctx);
         }
+        this.pick.setVisibility(View.GONE);
+    }
+
+    public void reuse(MenuEntry menu, boolean selected, Context ctx) {
+        this.entry = menu;
+        this.selected = selected;
+        this.label.setText(this.entry.getLabel());
+        if (this.entry.getIcon() != null) {
+            this.icon.setImageDrawable(this.entry.getIcon());
+        } else {
+            this.setDefaultIcon(ctx);
+        }
+        this.pick.setVisibility(View.VISIBLE);
+        this.updateChecked();
+    }
+
+    private void updateChecked() {
+        if (this.selected) {
+            this.pick.setImageResource(R.drawable.btn_check_buttonless_on);
+        } else {
+            this.pick.setImageResource(R.drawable.btn_check_buttonless_off);
+        }
+
+    }
+
+    public void setSelection(boolean selected) {
+        this.selected = selected;
+        this.updateChecked();
     }
 
     private void setDefaultIcon(Context ctx) {

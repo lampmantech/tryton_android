@@ -27,8 +27,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.tryton.client.data.MenuCache;
 import org.tryton.client.models.Model;
@@ -51,6 +53,8 @@ public class DataLoader {
     public static final int RELFIELDS_NOK = 1007;
     public static final int DATA_OK = 1008;
     public static final int DATA_NOK = 1009;
+    public static final int MENUDATA_OK = 1010;
+    private static final int MODELDATA_OK = 1011;
 
     private static int callSequence = 1;
     private static Map<Integer, Handler> handlers = new HashMap<Integer, Handler>();
@@ -77,11 +81,7 @@ public class DataLoader {
             handlers.put(callId, h);
         }
     }
-    /** Send the message to the right handler if it was updated or not
-     * if it was canceled. Also save data in local cache when transmitting
-     * server data. */
-    @SuppressWarnings("unchecked")
-    private static void forwardMessage(int callId, Message m, Context ctx) {
+    private static int processMessage(Message m, Context ctx) {
         int what = m.what;
         // Translate local or tryton response code to data loader code
         switch (m.what) {
@@ -147,6 +147,14 @@ public class DataLoader {
             what = DATA_NOK;
             break;
         }
+        return what;
+    }
+    /** Send the message to the right handler if it was updated or not
+     * if it was canceled. Also save data in local cache when transmitting
+     * server data. */
+    @SuppressWarnings("unchecked")
+    private static void forwardMessage(int callId, Message m, Context ctx) {
+        int what = processMessage(m, ctx);
         // Forward the message
         if (handlers.containsKey(callId)) {
             Handler h = handlers.get(callId);
@@ -382,5 +390,148 @@ public class DataLoader {
         return callId;
     }
 
-}
+    private static Set<String> loadedModels;
 
+    private static class EntryHandler extends Handler {
+        private int callId;
+        private int subcallId;
+        private Context ctx;
+        private MenuEntry menu;
+        private boolean forceRefresh;
+        private String className;
+        private int count;
+        private int offset;
+        private List<RelField> relFields;
+        public EntryHandler(int callId, Looper loop, Context ctx,
+                            MenuEntry menu, boolean forceRefresh) {
+            super(loop);
+            this.callId = callId;
+            this.ctx = ctx;
+            this.menu = menu;
+            this.forceRefresh = forceRefresh;
+        }
+        public void setFirstCallId(int callId) {
+            this.subcallId = callId;
+        }
+        @Override
+        public void handleMessage(Message m) {
+            switch (m.what) {
+            case VIEWS_OK:
+                ModelViewTypes vt = (ModelViewTypes) ((Object[])m.obj)[1];
+                this.className = vt.getModelName();
+                new ModelLoader(this.callId, this, this.ctx,
+                                this.className, this.forceRefresh).load();
+                break;
+            case MODELDATA_OK:
+                Message msg = this.obtainMessage();
+                msg.what = MENUDATA_OK;
+                forwardMessage(this.callId, msg, this.ctx);
+                break;
+            }
+        }
+    }
+    private static class ModelLoader extends Handler {
+        private int callId;
+        private int subcallId;
+        private Context ctx;
+        private MenuEntry menu;
+        private boolean forceRefresh;
+        private String className;
+        private int count;
+        private int offset;
+        private List<RelField> relFields;
+        private Handler parent;
+        private int subloadIndex;
+        public ModelLoader(int callId, Handler parent, Context ctx,
+                           String className, boolean forceRefresh) {
+            super(parent.getLooper());
+            this.callId = callId;
+            this.ctx = ctx;
+            this.menu = menu;
+            this.forceRefresh = forceRefresh;
+            this.parent = parent;
+            this.className = className;
+        }
+        public void load() {
+            this.subcallId = loadDataCount(this.ctx, this.className, this,
+                                           this.forceRefresh);
+        }
+
+        @Override
+        public void handleMessage(Message m) {
+            switch (m.what) {
+            case DATACOUNT_OK:
+                this.count = (Integer) ((Object[])m.obj)[1];
+                loadRelFields(this.ctx, this.className, this,
+                              this.forceRefresh);
+                break;
+            case RELFIELDS_OK:
+                this.relFields = (List<RelField>) ((Object[])m.obj)[1];
+                int expected = Math.min(TrytonCall.CHUNK_SIZE,
+                                        this.count);
+                loadData(this.ctx, this.className, 0, TrytonCall.CHUNK_SIZE,
+                         expected, this.relFields, this, this.forceRefresh);
+                break;
+            case DATA_OK:
+                this.offset += TrytonCall.CHUNK_SIZE;
+                expected = Math.min(TrytonCall.CHUNK_SIZE,
+                                    this.count - this.offset);
+                if (this.offset < this.count) {
+                    loadData(this.ctx, this.className, this.offset,
+                             TrytonCall.CHUNK_SIZE, expected,
+                             this.relFields, this, this.forceRefresh);
+                } else {
+                    loadedModels.add(this.className);
+                    loadRec();
+                }
+                break;
+            case MODELDATA_OK:
+                
+                loadRec();
+                break;
+            }
+        }
+        private void loadRec() {
+            for (; this.subloadIndex < this.relFields.size(); this.subloadIndex++) {
+                RelField rel = this.relFields.get(this.subloadIndex);
+                String type = rel.getType();
+                String subclassName = rel.getRelModel();
+                if (!loadedModels.contains(subclassName) &&
+                    ((type.equals("many2one") || type.equals("many2many")))) {
+                    new ModelLoader(this.callId, this, this.ctx,
+                                    subclassName, this.forceRefresh).load();
+                    break;
+                }
+            }
+            if (this.subloadIndex == this.relFields.size()) {
+                // Finished, notify parent
+                Message msg = this.parent.obtainMessage();
+                msg.what = MODELDATA_OK;
+                msg.sendToTarget();
+            }
+        }
+    }
+
+    private static EntryHandler newEntryHandler(int callId, Context ctx,
+                                                MenuEntry menu,
+                                                boolean forceRefresh) {
+        try {
+            dataLoaderLoop.start();
+        } catch (IllegalThreadStateException e) { /* Already started */ }
+        return new EntryHandler(callId, dataLoaderLoop.getLooper(), ctx,
+                                menu, forceRefresh);
+    }
+
+    public static int loadFullEntry(final Context ctx, final MenuEntry entry,
+                                    final Handler h, boolean forceRefresh) {
+        loadedModels = new HashSet<String>();
+        final int callId = callSequence++;
+        handlers.put(callId, h);
+        final EntryHandler entryHandler = newEntryHandler(callId, ctx, entry,
+                                                          forceRefresh);
+        int subcallId = loadViews(ctx, entry, entryHandler, forceRefresh);
+        entryHandler.setFirstCallId(subcallId);
+        return callId;
+    }
+
+}

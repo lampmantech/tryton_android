@@ -54,8 +54,15 @@ public class Menu extends Activity
     }
     private static List<MenuEntry> entriesInitializer;
 
+    public static final int MODE_NAV = 0;
+    public static final int MODE_CACHE = 1;
+
     private List<MenuEntry> entries;
+    private List<Boolean> pickedEntries; // For caching
     private int callId;
+    private int mode;
+    private List<MenuEntry> entriesToCache;
+    private int cacheProgress;
 
     private ListView menuList;
     private ProgressDialog loadingDialog;
@@ -65,11 +72,29 @@ public class Menu extends Activity
         super.onCreate(state);
         // Init data
         this.entries = new ArrayList<MenuEntry>();
+        this.pickedEntries = new ArrayList<Boolean>();
+        this.entriesToCache = null;
         if (state != null) {
             int count = state.getInt("count");
             for (int i = 0; i < count; i++) {
                 MenuEntry entry = (MenuEntry) state.getSerializable("entry" + i);
                 this.entries.add(entry);
+            }
+            for (int i = 0; i < count; i++) {
+                boolean b = state.getBoolean("pick" + i);
+                this.pickedEntries.add(b);
+            }
+            this.mode = state.getInt("mode");
+            if (state.containsKey("cacheProgress")) {
+                this.cacheProgress = state.getInt("cacheProgress");
+                int cacheCount = state.getInt("toCacheCount");
+                this.entriesToCache = new ArrayList<MenuEntry>();
+                for (int i = 0; i < cacheCount; i++) {
+                    MenuEntry entry = (MenuEntry) state.getSerializable("toCache" + i);
+                    this.entriesToCache.add(entry);
+                }
+                this.showCachingDialog(this.cacheProgress);
+                this.updateCachingMessage();
             }
             this.callId = state.getInt("callId");
             if (this.callId != 0) {
@@ -78,7 +103,11 @@ public class Menu extends Activity
             }
         } else if (entriesInitializer != null) {
             this.entries = entriesInitializer;
+            for (int i = 0; i < this.entries.size(); i++) {
+                this.pickedEntries.add(false);
+            }
             entriesInitializer = null; // Reset as it will now be saved in state
+            this.mode = MODE_NAV;
         }
         if (this.entries.size() == 0) {
             this.showLoadingDialog();
@@ -98,8 +127,19 @@ public class Menu extends Activity
     }
 
     private void updateMenus(List<MenuEntry> menus) {
-        MenuEntryAdapter adapt = new MenuEntryAdapter(menus);
-        this.menuList.setAdapter(adapt);
+        View cacheBar = this.findViewById(R.id.menu_loadbar);
+        switch (this.mode) {
+        case MODE_NAV:
+            MenuEntryAdapter adapt = new MenuEntryAdapter(menus);
+            this.menuList.setAdapter(adapt);
+            cacheBar.setVisibility(View.GONE);
+            break;
+        case MODE_CACHE:
+            adapt = new MenuEntryAdapter(menus, this.pickedEntries);
+            this.menuList.setAdapter(adapt);
+            cacheBar.setVisibility(View.VISIBLE);
+            break;
+        }
     }
 
     public void onSaveInstanceState(Bundle outState) {
@@ -107,8 +147,17 @@ public class Menu extends Activity
         outState.putInt("count", this.entries.size());
         for (int i = 0; i < this.entries.size(); i++) {
             outState.putSerializable("entry" + i, this.entries.get(i));
+            outState.putBoolean("pick" + i, this.pickedEntries.get(i));
         }
         outState.putInt("callId", this.callId);
+        outState.putInt("mode", this.mode);
+        if (this.entriesToCache != null) {
+            outState.putInt("cacheProgress", this.cacheProgress);
+            outState.putInt("toCacheCount", this.entriesToCache.size());
+            for (int i = 0; i < this.entriesToCache.size(); i++) {
+                outState.putSerializable("toCache" + i, this.entriesToCache.get(i));
+            }
+        }
     }
 
     public void showLoadingDialog() {
@@ -119,6 +168,25 @@ public class Menu extends Activity
             this.loadingDialog.setOnCancelListener(this);
             this.loadingDialog.show();
         }
+    }
+
+    public void showCachingDialog(int progress) {
+        if (this.loadingDialog == null) {
+            this.loadingDialog = new ProgressDialog(this);
+            this.loadingDialog.setIndeterminate(false);
+            this.loadingDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            this.loadingDialog.setMax(this.entriesToCache.size());
+            this.loadingDialog.setMessage(""); // Required to update it later
+            this.loadingDialog.setProgress(progress);
+            this.loadingDialog.show();
+        }
+    }
+
+    public void updateCachingMessage() {
+        String pmsg = String.format(this.getString(R.string.menu_caching,
+                                                   this.entriesToCache.get(this.cacheProgress).getLabel()));
+        this.loadingDialog.setMessage(pmsg);
+        this.loadingDialog.setProgress(this.cacheProgress);
     }
 
     public void onCancel(DialogInterface dialog) {
@@ -136,7 +204,7 @@ public class Menu extends Activity
         }
     }
 
-    /** Handle TrytonCall feedback. */
+    /** Handle loader feedback. */
     @SuppressWarnings("unchecked")
     public boolean handleMessage(Message msg) {
         // Process message
@@ -146,6 +214,10 @@ public class Menu extends Activity
             List<MenuEntry> menus = (List) msg.obj;
             // Update the view
             this.entries = menus;
+            this.pickedEntries.clear();
+            for (int i = 0; i < this.entries.size(); i++) {
+                this.pickedEntries.add(false);
+            }
             this.updateMenus(menus);
             this.hideLoadingDialog();
             break;
@@ -157,6 +229,22 @@ public class Menu extends Activity
             b.setMessage(R.string.network_error);
             b.show();
             ((Exception)msg.obj).printStackTrace();
+            break;
+        case DataLoader.MENUDATA_OK:
+            this.callId = 0;
+            this.cacheProgress++;
+            if (this.cacheProgress < this.entriesToCache.size()) {
+                this.updateCachingMessage();
+                this.callId = DataLoader.loadFullEntry(this,
+                                                       this.entriesToCache.get(this.cacheProgress),
+                                                       new Handler(this), true);
+            } else {
+                this.hideLoadingDialog();
+                this.entriesToCache = null;
+                this.cacheProgress = 0;
+                this.mode = MODE_NAV;
+                this.updateMenus(this.entries);
+            }
             break;
         case TrytonCall.NOT_LOGGED:
             // TODO: this is brutal
@@ -171,17 +259,61 @@ public class Menu extends Activity
                             long id) {
         MenuEntryItem itemClicked = (MenuEntryItem) v;
         MenuEntry clickedMenu = itemClicked.getMenuEntry();
-        if (clickedMenu.getChildren().size() > 0) {
-            // Setup a new instance of Menu and call it
-            Menu.setup(clickedMenu.getChildren());
-            Intent i = new Intent(this, Menu.class);
-            this.startActivity(i);
-        } else if (clickedMenu.getActionType() != null) {
-            // Setup a tree view and go to it
-            TreeView.setup(clickedMenu);
-            Intent i = new Intent(this, TreeView.class);
-            this.startActivity(i);
+        if (this.mode == MODE_NAV) {
+            if (clickedMenu.getChildren().size() > 0) {
+                // Setup a new instance of Menu and call it
+                Menu.setup(clickedMenu.getChildren());
+                Intent i = new Intent(this, Menu.class);
+                this.startActivity(i);
+            } else if (clickedMenu.getActionType() != null) {
+                // Setup a tree view and go to it
+                TreeView.setup(clickedMenu);
+                Intent i = new Intent(this, TreeView.class);
+                this.startActivity(i);
+            }
+        } else {
+            MenuEntryItem item = (MenuEntryItem) v;
+            boolean selected = this.pickedEntries.get(position);
+            selected = !selected;
+            item.setSelection(selected);
+            this.pickedEntries.remove(position);
+            this.pickedEntries.add(position, selected);
         }
+    }
+    
+    public void loadCache(View v) {
+        this.cacheProgress = 0;
+        this.entriesToCache = new ArrayList<MenuEntry>();
+        for (int i = 0; i < this.entries.size(); i++) {
+            boolean selected = this.pickedEntries.get(i);
+            if (selected) {
+                MenuEntry menu = this.entries.get(i);
+                this.entriesToCache.add(menu);
+                this.entriesToCache.addAll(menu.getAllChildren());
+            }
+        }
+        for (int i = 0; i < this.entriesToCache.size(); i++) {
+            MenuEntry menu = this.entriesToCache.get(i);
+            if (menu.getChildren().size() > 0) {
+                this.entriesToCache.remove(menu);
+                i--;
+            }
+        }
+        if (this.entriesToCache.size() > 0) {
+            this.callId = DataLoader.loadFullEntry(this,
+                                                   this.entriesToCache.get(0),
+                                                   new Handler(this), true);
+            this.showCachingDialog(0);
+            this.updateCachingMessage();
+        } else {
+            this.entriesToCache = null;
+            this.mode = MODE_NAV;
+        }
+    }
+
+    public void cancelCache(View v) {
+        this.mode = MODE_NAV;
+        this.updateMenus(this.entries);
     }
 
     //////////////////
@@ -189,6 +321,7 @@ public class Menu extends Activity
     //////////////////
     private static final int MENU_LOGOUT_ID = 0;
     private static final int MENU_PREFERENCES_ID = 1;
+    private static final int MENU_CACHE_ID = 2;
     /** Called on menu initialization */
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
@@ -203,6 +336,22 @@ public class Menu extends Activity
         return true;
     }
 
+    @Override
+    public boolean onPrepareOptionsMenu(android.view.Menu menu) {
+        if (this.mode != MODE_CACHE) {
+            if (menu.findItem(MENU_CACHE_ID) == null) {
+                MenuItem cacheMode = menu.add(android.view.Menu.NONE,
+                                              MENU_CACHE_ID, 50,
+                                              this.getString(R.string.menu_cache));
+                cacheMode.setIcon(R.drawable.tryton_save);
+            }
+        } else {
+            menu.removeItem(MENU_CACHE_ID);
+        }
+        return true;
+    }
+
+
     /** Called on menu selection */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -213,6 +362,14 @@ public class Menu extends Activity
         case MENU_PREFERENCES_ID:
             Intent i = new Intent(this, Preferences.class);
             this.startActivity(i);
+            break;
+        case MENU_CACHE_ID:
+            this.mode = MODE_CACHE;
+            this.pickedEntries.clear();
+            for (int j = 0; j < this.entries.size(); j++) {
+                this.pickedEntries.add(false);
+            }
+            this.updateMenus(this.entries);
             break;
         }
         return true;

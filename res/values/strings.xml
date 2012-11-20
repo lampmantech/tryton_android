@@ -49,6 +49,8 @@ the original label is set after the tag -->
 
   <!-- Menu labels -->
   <string name="menu_loading">Loading menu</string> <!-- NEW -->
+  <string name="menu_cache">Preload data</string> <!-- NEW -->
+  <string name="menu_caching">Caching %s...</string> <!-- NEW -->
 
   <!-- View labels -->
   <string name="view_loading">Loading views</string> <!-- NEW -->

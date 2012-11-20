@@ -35,10 +35,18 @@ import java.util.List;
 public class MenuEntryAdapter extends BaseAdapter {
 
     private List<MenuEntry> entries;
+    private List<Boolean> selection;
 
+    /** Create an adapter for simple listing */
     public MenuEntryAdapter(List<MenuEntry> entries) {
         super();
         this.entries = entries;
+    }
+    /** Create an adapter for selecting multiple entries */
+    public MenuEntryAdapter(List<MenuEntry> entries, List<Boolean> selection) {
+        super();
+        this.entries = entries;
+        this.selection = selection;
     }
 
     @Override
@@ -68,12 +76,21 @@ public class MenuEntryAdapter extends BaseAdapter {
             // Reusing allows to update a view that goes off-screen to reduce
             // scrolling cpu usage (thus smoothing it).
             MenuEntryItem item = (MenuEntryItem) convertView;
-            item.reuse(m, parent.getContext());
+            if (this.selection == null) {
+                item.reuse(m, parent.getContext());
+            } else {
+                item.reuse(m, selection.get(position), parent.getContext());
+            }
             return item;
         } else {
             // Not reusing. Create the view from scratch.
             Context ctx = parent.getContext();
-            MenuEntryItem item = new MenuEntryItem(ctx, m);
+            MenuEntryItem item;
+            if (this.selection == null) {
+                item = new MenuEntryItem(ctx, m);
+            } else {
+                item = new MenuEntryItem(ctx, m, selection.get(position));
+            }
             return item;
         }
     }
