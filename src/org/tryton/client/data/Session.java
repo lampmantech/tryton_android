@@ -182,6 +182,15 @@ public class Session {
                 || (tmpValue != null && !tmpValue.equals(value))) {
                 // Check for tree field values
                 if (value instanceof Map || tmpValue instanceof Map) {
+                    if (value instanceof Double) {
+                        Double tmp = FieldsConvertion.numericToDouble((Map)tmpValue);
+                        if ((value == null && tmp == null)
+                            || (value != null && value.equals(tmp))
+                            || (tmp != null && tmp.equals(value))) {
+                            // Not dirty
+                            continue;
+                        }
+                    }
                     Map mVal = (Map) value;
                     Map tmpVal = (Map) tmpValue;
                     if (mVal.containsKey("decimal")) {
