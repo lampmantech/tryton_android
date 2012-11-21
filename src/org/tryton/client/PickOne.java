@@ -365,31 +365,28 @@ public class PickOne extends Activity
             if (this.data == null) {
                 // Wait for data callback
             } else {
-                // Close the loading dialog if present
-                // and update list (loading finished)
-                this.hideLoadingDialog();
-                this.updateList();
+                // Load data
+                this.loadData();
             }
             break;
         case DataLoader.RELFIELDS_OK:
             this.callDataId = 0;
             ret = (Object[]) msg.obj;
             this.relFields = (List<RelField>) ret[1];
-            this.loadData();
+            if (this.totalDataCount == -1) {
+                // Wait for data count callback
+            } else {
+                // Load data
+                this.loadData();
+            }
             break;
         case DataLoader.DATA_OK:
             this.callDataId = 0;
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
             this.data = data;
-            if (this.totalDataCount == -1) {
-                // Wait for data count callback
-            } else {
-                // Close the loading dialog if present
-                // and update list (loading finished)
-                this.hideLoadingDialog();
-                this.updateList();
-            }
+            this.hideLoadingDialog();
+            this.updateList();
             break;
         case TrytonCall.NOT_LOGGED:
             // TODO: this is brutal

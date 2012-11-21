@@ -353,7 +353,8 @@ public class DataLoader {
                 if (!forceRefresh) {
                     // Load from cache
                     DataCache db = new DataCache(ctx);
-                    List<Model> data = db.getData(className, offset, count);
+                    List<Model> data = db.getData(className, offset, count, views);
+                    System.out.println("expectxng " + expectedCount);
                     if (data.size() == expectedCount) {
                         Message m = fwdHandler.obtainMessage();
                         m.what = DATA_OK;
@@ -396,7 +397,7 @@ public class DataLoader {
                 if (!forceRefresh) {
                     // Load from cache
                     DataCache db = new DataCache(ctx);
-                    List<Model> data = db.getData(className, ids);
+                    List<Model> data = db.getData(className, ids, views);
                     if (data.size() == ids.size()) {
                         Message m = fwdHandler.obtainMessage();
                         m.what = DATA_OK;
@@ -519,42 +520,54 @@ public class DataLoader {
                 }
                 break;
             case MODELDATA_OK:
-                
                 loadRec();
                 break;
             }
         }
         private void loadRec() {
-            for (; this.subloadIndex < this.relFields.size(); this.subloadIndex++) {
+            if (this.subloadIndex < this.relFields.size()) {
                 RelField rel = this.relFields.get(this.subloadIndex);
                 String fieldName = rel.getFieldName();
                 String type = rel.getType();
                 String subclassName = rel.getRelModel();
+                System.out.println("load sub " + subclassName + " form " + className + " " + fieldName);
                 // Get required fields from views
-                List<String> fields = new ArrayList<String>();
-                fields.add("id");
-                fields.add("rec_name");
-                for (String vtype : views.getTypes()) {
-                    ModelView v = views.getView(vtype);
-                    for (String f : v.getFields().keySet()) {
-                        if (!fields.contains(f)) {
-                            fields.add(f);
+                List<String> fields = null;;
+                if (views != null) {
+                    fields = views.getAllFieldNames();
+                } else {
+                    fields = new ArrayList<String>();
+                }
+                if (!fields.contains("id")) { fields.add("id"); }
+                if (!fields.contains("rec_name")) { fields.add("rec_name"); }
+                if (fields.contains(fieldName)) {
+                    System.out.println("true");
+                    ModelViewTypes vt = null;
+                    if (this.views != null) {
+                        ModelView form = this.views.getView("form");
+                        if (form != null) {
+                            vt = form.getSubview(fieldName);
                         }
                     }
+                    if (!loadedModels.contains(subclassName)) {
+                        new ModelLoader(this.callId, this, this.ctx,
+                                        subclassName, vt,
+                                        this.forceRefresh).load();
+                    } else {
+                        // For subfields that are already loaded don't
+                        // force refresh (will merge with current data
+                        // if required)
+                        new ModelLoader(this.callId, this, this.ctx,
+                                        subclassName, vt, false).load();
+                    }
+                    // Prepare for next and wait model loader
+                    this.subloadIndex++;
+                } else {
+                    // Continue with next
+                    this.subloadIndex++;
+                    this.loadRec();
                 }
-                if (!loadedModels.contains(subclassName)
-                    && fields.contains(fieldName)
-                    && this.views.getView("form") != null
-                    && this.views.getView("form").getSubview(fieldName) != null
-                    && (type.equals("many2one") || type.equals("many2many"))) {
-                    ModelView form = this.views.getView("form");
-                    ModelViewTypes vt = form.getSubview(fieldName);
-                    new ModelLoader(this.callId, this, this.ctx,
-                                    subclassName, vt, this.forceRefresh).load();
-                    break;
-                }
-            }
-            if (this.subloadIndex == this.relFields.size()) {
+            } else {
                 // Finished, notify parent
                 Message msg = this.parent.obtainMessage();
                 msg.what = MODELDATA_OK;
@@ -578,11 +591,20 @@ public class DataLoader {
         loadedModels = new HashSet<String>();
         final int callId = callSequence++;
         handlers.put(callId, h);
-        final EntryHandler entryHandler = newEntryHandler(callId, ctx, entry,
-                                                          forceRefresh);
-        int subcallId = loadViews(ctx, entry, entryHandler, forceRefresh);
-        entryHandler.setFirstCallId(subcallId);
-        return callId;
+        String action = entry.getActionType();
+        if (action != null &&
+            (action.equals("ir.action.wizard")
+             || action.equals("ir.action.report")
+             || action.equals("ir.action.url"))) {
+            System.out.println("Type " + action + " not supported yet");
+            return -1;
+        } else {
+            final EntryHandler entryHandler = newEntryHandler(callId, ctx, entry,
+                                                              forceRefresh);
+            int subcallId = loadViews(ctx, entry, entryHandler, forceRefresh);
+            entryHandler.setFirstCallId(subcallId);
+            return callId;
+        }
     }
 
 }

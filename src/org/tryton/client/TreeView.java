@@ -221,7 +221,7 @@ public class TreeView extends Activity
     public void prevPage(View button) {
         switch (this.mode) {
         case MODE_EXTENDED:
-            this.dataOffset -= PAGING_EXTENDED;
+             this.dataOffset -= PAGING_EXTENDED;
             break;
         case MODE_SUMMARY:
             this.dataOffset -= PAGING_SUMMARY;
@@ -397,34 +397,31 @@ public class TreeView extends Activity
             ret = (Object[]) msg.obj;
             int count = (Integer) ret[1];
             this.totalDataCount = count;
-            if (this.data == null) {
-                // Wait for data callback
+            if (this.relFields == null) {
+                // Wait for relfields callback
             } else {
-                // Close the loading dialog if present
-                // and update list (loading finished)
-                this.hideLoadingDialog();
-                this.updateList();
+                // Load data
+                this.loadData(false);
             }
             break;
         case DataLoader.RELFIELDS_OK:
             this.callDataId = 0;
             ret = (Object[]) msg.obj;
             this.relFields = (List<RelField>) ret[1];
-            this.loadData(false);
+            if (this.totalDataCount == -1) {
+                // Wait for data count callback
+            } else {
+                // Load data
+                this.loadData(false);
+            }
             break;
         case DataLoader.DATA_OK:
             this.callDataId = 0;
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
             this.data = data;
-            if (this.totalDataCount == -1) {
-                // Wait for data count callback
-            } else {
-                // Close the loading dialog if present
-                // and update list (loading finished)
-                this.hideLoadingDialog();
-                this.updateList();
-            }
+            this.hideLoadingDialog();
+            this.updateList();
             break;
         case TrytonCall.NOT_LOGGED:
             // TODO: this is brutal

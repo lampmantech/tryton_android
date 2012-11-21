@@ -725,7 +725,7 @@ public class TrytonCall {
     }
     
     /** Set data with only id and rec_name to a list of models in fields that
-     * requires id. */
+     * requires id. It also convert false id to null for consistency. */
     private static void getRelationnals(int userId, String cookie,
                                         Preferences prefs,
                                         List<Model> models, RelField relField) {
@@ -742,10 +742,14 @@ public class TrytonCall {
             for (Model m : models) {
                 // Get the id of the relationnal data
                 Object value = m.get(fieldName);
-                if (value == null || value instanceof Model) {
-                    // This one is already loaded or not defined
+                if (value == Boolean.FALSE) {
+                    m.set(fieldName, null); // Convert false to null
+                }
+                if (value == null || value == Boolean.FALSE) {
+                    // This one is not defined
                     continue;
                 }
+                
                 int id = (Integer) value;
                 if (!ids.contains(id)) {
                     ids.add(id);
@@ -760,11 +764,19 @@ public class TrytonCall {
             for (Model m : models) {
                 // Get the ids of the relationnal data
                 Object value = m.get(fieldName);
-                if (value == null || value instanceof List) {
-                    // This one is already loaded or not defined
+                if (value == Boolean.FALSE) {
+                    m.set(fieldName, null); // Convert false to null
+                }
+                if (value == null || value == Boolean.FALSE) {
+                    // This one is not defined
                     continue;
                 }
-                JSONArray jsIds = (JSONArray) value;
+                @SuppressWarnings("unchecked")
+                List<Integer> mIds = (List<Integer>) value;
+                JSONArray jsIds = new JSONArray();
+                for (Integer id : mIds) {
+                    jsIds.put(id);
+                }
                 for (int i = 0; i < jsIds.length(); i++) {
                     try {
                         int id = jsIds.getInt(i);
@@ -881,19 +893,14 @@ public class TrytonCall {
                 Message m = h.obtainMessage();
                 // Fields list by name
                 // Get required fields from views
-                List<String> fields = new ArrayList<String>();
-                fields.add("id");
-                fields.add("rec_name");
+                List<String> fields = null;;
                 if (views != null) {
-                    for (String type : views.getTypes()) {
-                        ModelView v = views.getView(type);
-                        for (String fieldName : v.getFields().keySet()) {
-                            if (!fields.contains(fieldName)) {
-                                fields.add(fieldName);
-                            }
-                        }
-                    }
+                    fields = views.getAllFieldNames();
+                } else {
+                    fields = new ArrayList<String>();
                 }
+                if (!fields.contains("id")) { fields.add("id"); }
+                if (!fields.contains("rec_name")) { fields.add("rec_name"); }
                 // Data list
                 List<Model> allData = new ArrayList<Model>();
                 try {
@@ -949,19 +956,14 @@ public class TrytonCall {
             public void run() {
                 Message m = h.obtainMessage();
                 // Get required fields from views
-                List<String> fields = new ArrayList<String>();
-                fields.add("id");
-                fields.add("rec_name");
+                List<String> fields = null;
                 if (views != null) {
-                    for (String type : views.getTypes()) {
-                        ModelView v = views.getView(type);
-                        for (String fieldName : v.getFields().keySet()) {
-                            if (!fields.contains(fieldName)) {
-                                fields.add(fieldName);
-                            }
-                        }
-                    }
+                    fields = views.getAllFieldNames();
+                } else {
+                    fields = new ArrayList<String>();
                 }
+                if (!fields.contains("id")) { fields.add("id"); }
+                if (!fields.contains("rec_name")) { fields.add("rec_name"); }
                 // Data list
                 List<Model> allData = new ArrayList<Model>();
                 try {
@@ -1015,8 +1017,6 @@ public class TrytonCall {
         new Thread() {
             public void run() {
                 Message m = h.obtainMessage();
-                // Fields list by name
-                Map<String, Model> fields = new HashMap<String, Model>();
                 // Data list
                 List<Model> dataChunk = new ArrayList<Model>();
                 try {

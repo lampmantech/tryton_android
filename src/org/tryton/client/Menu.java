@@ -238,6 +238,12 @@ public class Menu extends Activity
                 this.callId = DataLoader.loadFullEntry(this,
                                                        this.entriesToCache.get(this.cacheProgress),
                                                        new Handler(this), true);
+                if (this.callId == -1) {
+                    // Simulate a loading done message to load next
+                    Message m = new Message();
+                    m.what = DataLoader.MENUDATA_OK;
+                    this.handleMessage(m);
+                }
             } else {
                 this.hideLoadingDialog();
                 this.entriesToCache = null;
@@ -300,11 +306,18 @@ public class Menu extends Activity
             }
         }
         if (this.entriesToCache.size() > 0) {
+            this.showCachingDialog(0);
             this.callId = DataLoader.loadFullEntry(this,
                                                    this.entriesToCache.get(0),
                                                    new Handler(this), true);
-            this.showCachingDialog(0);
-            this.updateCachingMessage();
+            if (this.callId == -1) {
+                // Simulate a loading done message to load next
+                Message m = new Message();
+                m.what = DataLoader.MENUDATA_OK;
+                this.handleMessage(m);
+            } else {
+                this.updateCachingMessage();
+            }
         } else {
             this.entriesToCache = null;
             this.mode = MODE_NAV;

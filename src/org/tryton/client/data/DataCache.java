@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.tryton.client.models.Model;
+import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
 
 /** This class assumes the cache of data and is the only source
@@ -35,6 +36,8 @@ import org.tryton.client.models.RelField;
     the cache and the requester then get the data from the cache.
     This allows fine memory management to avoid out of memory errors. */
 public class DataCache extends SQLiteOpenHelper {
+
+    private static final int CACHE_LIFETIME = 36000000; // 10 hours
 
     /** The database version to detect and do updates */
     private static final int DB_VERSION = 1;
@@ -304,19 +307,28 @@ public class DataCache extends SQLiteOpenHelper {
         return ret;
     }
 
+    /** Get full models from the result of a query. If the record is partial
+     * it is ignored.
+     * The query must set data as first field. */
     private List<Model> readModels(Cursor c, SQLiteDatabase db,
                                    String className) {
         List<Model> models = new ArrayList<Model>();
         while (c.moveToNext()) {
+            if (c.isNull(0)) {
+                continue;
+            }
             byte[] data = c.getBlob(0);
             try {
                 Model m = Model.fromByteArray(data);
                 models.add(m);
                 // Get relationnal fields
+                long minTime = System.currentTimeMillis() - CACHE_LIFETIME;
                 Cursor cf = db.query(REL_TABLE, new String[]{"field, relModel"},
-                                     "className = ? AND type IN (?, ?)",
+                                     "className = ? AND type IN (?, ?) "
+                                     + "AND writeTime > ?",
                                      new String[]{className,
-                                                  "many2one", "one2one"},
+                                                  "many2one", "one2one",
+                                                  String.valueOf(minTime)},
                                      null, null, null, null);
                 while (cf.moveToNext()) {
                     String field = cf.getString(0);
@@ -335,7 +347,8 @@ public class DataCache extends SQLiteOpenHelper {
         return models;
     }
    
-    public List<Model> getData(String className, int offset, int count) {
+    public List<Model> getData(String className, int offset, int count,
+                               ModelViewTypes views) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor c = db.query(MODEL_TABLE, new String[]{"data"},
                             "className = ? AND data NOT NULL",
@@ -344,10 +357,32 @@ public class DataCache extends SQLiteOpenHelper {
         List<Model> models = this.readModels(c, db, className);
         c.close();
         db.close();
+        // Check if the model have the required fields
+        List<String> fields = null;
+        if (views != null) {
+            fields = views.getAllFieldNames();
+        } else {
+            fields = new ArrayList<String>();
+        }
+        if (!fields.contains("id")) { fields.add("id"); }
+        if (!fields.contains("rec_name")) { fields.add("rec_name"); }
+        for (int i = 0; i < models.size(); i++) {
+            Model data = models.get(i);
+            for (String field : fields) {
+                if (!data.hasAttribute(field)) {
+                    models.remove(i);
+                    i--;
+                    System.out.println("refused by fields");
+                    break;
+                }
+            }
+        }
+        System.out.println("found " + models.size() + " valid form local cache");
         return models;
     }
 
-    public List<Model> getData(String className, List<Integer> ids) {
+    public List<Model> getData(String className, List<Integer> ids,
+                               ModelViewTypes views) {
         if (ids == null || ids.size() == 0) {
             return new ArrayList<Model>();
         }
@@ -364,6 +399,25 @@ public class DataCache extends SQLiteOpenHelper {
         List<Model> models = this.readModels(c, db, className);
         c.close();
         db.close();
+        // Check if the model have the required fields
+        List<String> fields = null;
+        if (views != null) {
+            fields = views.getAllFieldNames();
+        } else {
+            fields = new ArrayList<String>();
+        }
+        if (!fields.contains("id")) { fields.add("id"); }
+        if (!fields.contains("rec_name")) { fields.add("rec_name"); }
+        for (int i = 0; i < models.size(); i++) {
+            Model data = models.get(i);
+            for (String field : fields) {
+                if (!data.hasAttribute(field)) {
+                    models.remove(i);
+                    i--;
+                    break;
+                }
+            }
+        }
         return models;
     }
 
@@ -482,21 +536,43 @@ public class DataCache extends SQLiteOpenHelper {
         long time = System.currentTimeMillis();
         for (Model m : data) {
             try {
+                Model storeModel = m;
+                // Check if a record is present
+                long minTime = System.currentTimeMillis() - CACHE_LIFETIME;
+                Cursor c = db.query(MODEL_TABLE, new String[]{"data", "id",
+                                                              "writeTime"},
+                    "id = ? and className = ? and writeTime > ?",
+                    new String[]{m.get("id").toString(), className,
+                                 String.valueOf(minTime)}, null, null,
+                    null, null);
+                List<Model> currentdata = this.readModels(c, db, className);
+                if (currentdata.size() > 0) {
+                    // Merge data with current values
+                    Model d = currentdata.get(0);
+                    d.merge(m);
+                    storeModel = d;
+                } else {
+                    // Maybe some outdated data, purge them
+                    db.delete(MODEL_TABLE, "id = ? and className = ?",
+                              new String[]{m.get("id").toString(), className});
+                }
+                c.close();
+                // Insert value
                 ContentValues v = new ContentValues();
                 v.put("name", m.getString("rec_name"));
                 v.put("id", (Integer) m.get("id"));
                 v.put("className", className);
-                v.put("data", m.toByteArray());
+                v.put("data", storeModel.toByteArray());
                 v.put("writeTime", time);
                 // Try to update record
                 if (db.update(MODEL_TABLE, v, "id = ? and className = ?",
-                              new String[]{m.get("id").toString(), className}
+                              new String[]{storeModel.get("id").toString(), className}
                               ) == 0) {
                     // Record is not present, insert it
                     db.insert(MODEL_TABLE, null, v);
                 }
                 // Store relationnal fields
-                this.storeRelData(m.getRelModels(), time, db);
+                this.storeRelData(storeModel.getRelModels(), time, db);
             } catch (IOException e) {
                 Log.e("Tryton", "Unable to convert model to byte[]", e);
             }

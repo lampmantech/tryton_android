@@ -18,6 +18,8 @@
 package org.tryton.client.models;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.Map;
 import java.util.Set;
@@ -50,5 +52,18 @@ public class ModelViewTypes implements Serializable {
 
     public String getModelName() {
         return this.modelName;
+    }
+
+    public List<String> getAllFieldNames() {
+        List<String> fields = new ArrayList<String>();
+        for (String type : this.getTypes()) {
+            ModelView v = this.views.get(type);
+            for (String fieldName : v.getFields().keySet()) {
+                if (!fields.contains(fieldName)) {
+                    fields.add(fieldName);
+                }
+            }
+        }
+        return fields;
     }
 }

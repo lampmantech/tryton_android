@@ -192,6 +192,14 @@ public class Model implements Serializable {
         }
     }
 
+    /** Merge current values with values from m. Current values will be
+     * replaced by m values when overlapping */
+    public void merge(Model m) {
+        for (String attr : m.getAttributeNames()) {
+            this.set(attr, m.get(attr));
+        }
+    }
+
     /** Convert this model to raw bytes to store it */
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
