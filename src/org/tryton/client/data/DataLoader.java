@@ -102,19 +102,15 @@ public class DataLoader {
             Object[] ret = (Object[]) m.obj;
             MenuEntry origin = (MenuEntry) ret[0];
             ModelViewTypes viewTypes = (ModelViewTypes) ret[1];
-            try {
-                ViewCache.save(origin, viewTypes, ctx);
-            } catch (IOException e) {
-                Log.w("Tryton",
-                      "Unable to cache view data for " + origin, e);
-            }
+            DataCache db = new DataCache(ctx);
+            db.storeViews(origin, viewTypes);
             what = VIEWS_OK;
             break;
         case TrytonCall.CALL_DATACOUNT_OK:
             ret = (Object[]) m.obj;
             String className = (String) ret[0];
             int count = (Integer) ret[1];
-            DataCache db = new DataCache(ctx);
+            db = new DataCache(ctx);
             db.setDataCount(className, count);
             what = DATACOUNT_OK;
             break;
@@ -238,15 +234,8 @@ public class DataLoader {
             public void run() {
                 // Check if views are available from cache
                 ModelViewTypes views = null;
-                try {
-                    views = ViewCache.load(origin, ctx);
-                } catch (IOException e) {
-                    if (!(e instanceof FileNotFoundException)) {
-                        // Ignore no cache exception   
-                        Log.i("Tryton",
-                              "Unable to load view cache for " + origin, e);
-                    }
-                }
+                DataCache db = new DataCache(ctx);
+                views = db.loadViews(origin.getId());
                 if (views != null) {
                     Message m = fwdHandler.obtainMessage();
                     m.what = VIEWS_OK;
@@ -354,7 +343,6 @@ public class DataLoader {
                     // Load from cache
                     DataCache db = new DataCache(ctx);
                     List<Model> data = db.getData(className, offset, count, views);
-                    System.out.println("expectxng " + expectedCount);
                     if (data.size() == expectedCount) {
                         Message m = fwdHandler.obtainMessage();
                         m.what = DATA_OK;
@@ -380,6 +368,7 @@ public class DataLoader {
                                final ModelView view,
                                final Handler h, final boolean forceRefresh) {
         ModelViewTypes dummy = new ModelViewTypes(view.getModelName());
+        dummy.putView("dummy", view);
         return loadData(ctx, className, ids, relFields, dummy, h, forceRefresh);
     }
 
@@ -530,7 +519,6 @@ public class DataLoader {
                 String fieldName = rel.getFieldName();
                 String type = rel.getType();
                 String subclassName = rel.getRelModel();
-                System.out.println("load sub " + subclassName + " form " + className + " " + fieldName);
                 // Get required fields from views
                 List<String> fields = null;;
                 if (views != null) {
@@ -541,7 +529,6 @@ public class DataLoader {
                 if (!fields.contains("id")) { fields.add("id"); }
                 if (!fields.contains("rec_name")) { fields.add("rec_name"); }
                 if (fields.contains(fieldName)) {
-                    System.out.println("true");
                     ModelViewTypes vt = null;
                     if (this.views != null) {
                         ModelView form = this.views.getView("form");

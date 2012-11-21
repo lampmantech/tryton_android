@@ -26,10 +26,15 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
+import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
+import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
+import org.tryton.client.tools.ArchParser;
 
 /** This class assumes the cache of data and is the only source
     for the application itself. When calling for data TrytonCall fills
@@ -46,10 +51,16 @@ public class DataCache extends SQLiteOpenHelper {
     private static final String MODEL_TABLE = "models";
     private static final String COUNT_TABLE = "count";
     private static final String REL_TABLE = "relationnals";
+    private static final String VIEWTYPES_TABLE = "viewtypes";
+    private static final String VIEW_TABLE = "view";
 
     public DataCache (Context ctx) {
         super(ctx, "Tryton", null, DB_VERSION);
     }
+
+    ////////////////////////
+    // General operations //
+    ////////////////////////
     
     /** Database initialization script */
     public void onCreate(SQLiteDatabase db) {
@@ -74,6 +85,21 @@ public class DataCache extends SQLiteOpenHelper {
                    + "type TEXT NOT NULL, "
                    + "relModel TEXT, "
                    + "PRIMARY KEY (className, field))");
+        db.execSQL("CREATE TABLE " + VIEWTYPES_TABLE + " ("
+                   + "id INTEGER NOT NULL, "      // Not used
+                   + "className TEXT NOT NULL, "  // Class name
+                   + "type TEXT NOT NULL, "       // View type
+                   + "viewId INTEGER NOT NULL, "  // View id
+                   + "menuId INTEGER, "           // Optionnal origin menu id
+                   + "writeTime INTEGER, "
+                   + "PRIMARY KEY (id))");
+        db.execSQL("CREATE TABLE " + VIEW_TABLE + " ("
+                   + "id INTEGER NOT NULL, "
+                   + "className TEXT NOT NULL, "
+                   + "defaultView INTEGER, "     // 1 if default for className
+                   + "writeTime INTEGER, "
+                   + "data BLOB, "
+                   + "PRIMARY KEY (id))");
     }
 
     /** Upgrade procedure from oldVersion (the one installed)
@@ -126,6 +152,156 @@ public class DataCache extends SQLiteOpenHelper {
         }
         db.close();
     }
+
+    /////////////////////
+    // View operations //
+    /////////////////////
+
+    private Set<Integer> storedIds;
+
+    private void storeView(SQLiteDatabase db, ModelView v, long writeTime) {
+        if (storedIds.contains(new Integer(v.getId()))) {
+            return;
+        } else {
+            storedIds.add(v.getId());
+        }
+        // Insert view
+        ContentValues cv = new ContentValues();
+        cv.put("id", v.getId());
+        cv.put("className", v.getModelName());
+        cv.put("writeTime", writeTime);
+        cv.put("defaultView", v.isDefault());
+        try {
+            cv.put("data", v.toByteArray());
+        } catch (IOException e) {
+            Log.e("Tryton", "Unable to convert model to byte[]", e);
+            return;
+        }
+        // Try to update record
+        if (db.update(VIEW_TABLE, cv, "id = ? and className = ?",
+                      new String[]{String.valueOf(v.getId()), v.getModelName()}
+                      ) == 0) {
+            // Record is not present, insert it
+            db.insert(VIEW_TABLE, null, cv);
+        }
+        // Insert subviews
+        for (String sub : v.getSubviews().keySet()) {
+            for (String type : v.getSubview(sub).getTypes()) {
+                storeView(db, v.getSubview(sub).getView(type), writeTime);
+            }
+        }
+    }
+
+    public void storeViews(MenuEntry origin, ModelViewTypes viewTypes) {
+        this.storedIds = new TreeSet<Integer>();
+        SQLiteDatabase db = this.getWritableDatabase();
+        long time = System.currentTimeMillis();
+        ContentValues v = new ContentValues();
+        v.put("menuId", origin.getId());
+        v.put("writeTime", time);
+        for (String type : viewTypes.getTypes()) {
+            // Insert link to view
+            ModelView view = viewTypes.getView(type);
+            v.put("type", type);
+            v.put("viewId", view.getId());
+            v.put("className", view.getModelName());
+            // Try to update record
+            if (db.update(VIEWTYPES_TABLE, v, "menuId = ? and type = ?",
+                          new String[]{String.valueOf(origin.getId()), type}
+                          ) == 0) {
+                // Record is not present, insert it
+                db.insert(VIEWTYPES_TABLE, null, v);
+            }
+            // Insert view
+            storeView(db, view, time);
+        }
+        db.close();
+    }
+
+    private ModelView loadView(SQLiteDatabase db, String className, int id) {
+        Cursor c = null;
+        if (id != 0) {
+            c = db.query(VIEW_TABLE, new String[]{"data"},
+                         "className = ? and id = ?",
+                         new String[]{className, String.valueOf(id)},
+                         null, null, null, null);
+        } else {
+            c = db.query(VIEW_TABLE, new String[]{"data"},
+                         "className = ? and defaultView = 1",
+                         new String[]{className},
+                         null, null, null, null);
+        }
+        ModelView v = null;
+        if (c.moveToNext()) {
+            byte[] data = c.getBlob(0);
+            try {
+                v = ModelView.fromByteArray(data);
+            } catch (IOException e) {
+                Log.e("Tryton", "Unable to read stored data", e);
+            }
+        }
+        c.close();
+        return v;
+    }
+
+    public ModelViewTypes loadViews(int menuId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(VIEWTYPES_TABLE,
+                            new String[]{"className", "type", "viewId"},
+                            "menuId = ?",
+                            new String[]{String.valueOf(menuId)},
+                            null, null, null, null);
+        ModelViewTypes ret = null;
+        while (c.moveToNext()) {
+            if (ret == null) {
+                ret = new ModelViewTypes(c.getString(0));
+            }
+            String type = c.getString(1);
+            int viewId = c.getInt(2);
+            ModelView v = loadView(db, c.getString(0), viewId);
+            // Build and load subviews
+            ArchParser p = new ArchParser(v);
+            p.buildTree();
+            // Load missing views
+            for (ArchParser.MissingView mv : p.getDiscovered()) {
+                System.out.println(mv.getClassName());
+                System.out.println(mv.getId());
+                ModelView sub = null;
+                if (mv.getId() != null) {
+                    sub = loadView(db, mv.getClassName(), mv.getId());
+                } else {
+                    sub = loadView(db, mv.getClassName(), 0);
+                }
+                if (sub != null) {
+                    ModelViewTypes t = v.getSubview(mv.getFieldName());
+                    if (t == null) {
+                        t = new ModelViewTypes(mv.getClassName());
+                        v.getSubviews().put(mv.getFieldName(), t);
+                    }
+                    t.putView(mv.getType(), sub);
+                } else {
+                    // TODO: wtf?
+                }
+            }
+            // Build subviews
+            for (String extView : v.getSubviews().keySet()) {
+                ModelViewTypes t = v.getSubviews().get(extView);
+                for (String vt : t.getTypes()) {
+                    ModelView sub = t.getView(vt);
+                    ArchParser p2 = new ArchParser(sub);
+                    p2.buildTree();
+                }
+            }
+            ret.putView(type, v);
+        }
+        c.close();
+        db.close();
+        return ret;
+    }
+
+    /////////////////////
+    // Data operations //
+    /////////////////////
 
     public int getDataCount(String className) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -372,12 +548,10 @@ public class DataCache extends SQLiteOpenHelper {
                 if (!data.hasAttribute(field)) {
                     models.remove(i);
                     i--;
-                    System.out.println("refused by fields");
                     break;
                 }
             }
         }
-        System.out.println("found " + models.size() + " valid form local cache");
         return models;
     }
 
@@ -496,6 +670,9 @@ public class DataCache extends SQLiteOpenHelper {
 
     private void storeRelData(List<Model> rel, long time, SQLiteDatabase db) {
         for (Model m : rel) {
+            if (m == null) {
+                continue;
+            }
             ContentValues v = new ContentValues();
             v.put("name", m.getString("rec_name"));
             v.put("id", (Integer) m.get("id"));

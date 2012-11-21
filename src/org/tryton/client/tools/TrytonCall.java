@@ -569,7 +569,7 @@ public class TrytonCall {
         if (oView instanceof JSONObject) {
             try {
                 JSONObject jsFields = (JSONObject) oView;
-                ModelView mView = new ModelView(jsFields);
+                ModelView mView = new ModelView(jsFields, id == null);
                 return mView;
             } catch (JSONException e) {}
         }

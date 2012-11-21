@@ -68,8 +68,6 @@ public class FormView extends Activity
     private static ModelViewTypes viewInitializer;
 
     private ModelViewTypes viewTypes;
-    private Set<String> relModelsToLoad;
-    private Set<String> modelsToLoad;
     private ProgressDialog loadingDialog;
     private int currentDialog;
     private int callId;
@@ -318,45 +316,6 @@ public class FormView extends Activity
         }
     }
 
-    /** Load a pending model and remove it from queue.
-     * Return true if a load is launched, false if
-     * there is nothing to load.
-     * Warning: you must check that callId is 0 to prevent multiple loads. */
-    private boolean loadRel() {
-        if (!this.relModelsToLoad.isEmpty() || !this.modelsToLoad.isEmpty()) {
-            Session s = Session.current;
-            String modelLoaded = null;
-            // Run the first model and remove it. LoadRel will be recalled
-            // on handler callback.
-            for (String model : this.relModelsToLoad) {
-                // This is the easyest way to get an Iterator on the set
-                // and get the first entry.
-                this.callId = TrytonCall.getRelData(s.userId, s.cookie,
-                                                    s.prefs, model,
-                                                    false, new Handler(this));
-                modelLoaded = model;
-                break;
-            }
-            if (modelLoaded == null) {
-                // relModelToLoad all loaded
-                for (String model : this.modelsToLoad) {
-                    this.callId = TrytonCall.getRelData(s.userId, s.cookie,
-                                                        s.prefs, model, true,
-                                                        new Handler(this));
-                    modelLoaded = model;
-                    break;
-                }
-                this.modelsToLoad.remove(modelLoaded);
-            } else {
-                // Remove from pending models
-                this.relModelsToLoad.remove(modelLoaded);
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     /** Update temp model to current values */
     private void updateTempModel() {
         Model tmp = Session.current.tempModel;
@@ -401,30 +360,6 @@ public class FormView extends Activity
     public boolean handleMessage(Message msg) {
         // Process message
         switch (msg.what) {
-        case TrytonCall.CALL_RELDATA_PARTIAL:
-        case TrytonCall.CALL_RELDATA_OK:
-            if (msg.what == TrytonCall.CALL_RELDATA_OK) {
-                this.callId = 0;
-            }
-            String className = (String) ((Object[])msg.obj)[0];
-            List<Model> data = (List) ((Object[])msg.obj)[1];
-            DataCache db = new DataCache(this);
-            if (msg.arg1 == 0) {
-                db.storeRelData(className, data);
-            } else {
-                db.storeClassData(className, data);
-            }
-            if (msg.what == TrytonCall.CALL_RELDATA_OK) {
-                db.updateDataCount(className);
-                // Run next loading
-                if (!this.loadRel()) {
-                    // This is the end
-                    this.hideLoadingDialog();
-                }
-            } else {
-                TrytonCall.resume(this.callId);
-            }
-            break;
         case TrytonCall.CALL_SAVE_OK:
             this.callId = 0;
             this.hideLoadingDialog();
@@ -433,8 +368,8 @@ public class FormView extends Activity
             t.show();
             // Update data with fresh one
             Model m = (Model) msg.obj;
-            className = Session.current.tempModel.getClassName();
-            db = new DataCache(this);
+            String className = Session.current.tempModel.getClassName();
+            DataCache db = new DataCache(this);
             if (m != null) {
                 db.storeData(m.getClassName(), m);
             } else {
@@ -483,7 +418,6 @@ public class FormView extends Activity
             this.kill = true;
             this.finish();
             break;
-        case TrytonCall.CALL_RELDATA_NOK:
         case TrytonCall.CALL_SAVE_NOK:
         case TrytonCall.CALL_DELETE_NOK:
             this.callId = 0;
