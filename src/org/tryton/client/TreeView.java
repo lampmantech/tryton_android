@@ -470,7 +470,7 @@ public class TreeView extends Activity
             // Set graph entry
             MenuItem graph = menu.add(android.view.Menu.NONE, MENU_GRAPH_ID, 2,
                                       this.getString(R.string.general_graph));
-            graph.setIcon(android.R.drawable.ic_menu_gallery);
+            graph.setIcon(R.drawable.tryton_chart);
         }
         // Set mode label
         MenuItem mode = menu.findItem(MENU_MODE_ID);
