@@ -31,19 +31,36 @@ public class ModelViewTypes implements Serializable {
     static final long serialVersionUID = 4878345939938015119L;
 
     private String modelName;
+    private Map<String, Integer> viewIds;
     private Map<String, ModelView> views;
 
     public ModelViewTypes(String modelName) {
         this.modelName = modelName;
+        this.viewIds = new TreeMap<String, Integer>();
         this.views = new TreeMap<String, ModelView>();
     }
-
+    
+    /** Add a subview id, without view */
+    public void putViewId(String type, int id) {
+        this.viewIds.put(type, id);
+    }
+    /** Add a subview (also add its id) */
     public void putView(String type, ModelView view) {
         this.views.put(type, view);
+        this.viewIds.put(type, view.getId());
     }
 
     public ModelView getView(String type) {
         return this.views.get(type);
+    }
+
+    public int getViewId(String type) {
+        Integer id = this.viewIds.get(type);
+        if (id == null) {
+            return 0;
+        } else {
+            return id.intValue();
+        }
     }
 
     public Set<String> getTypes() {

@@ -62,6 +62,7 @@ public class PickOne extends Activity
 
     private ModelView parentView;
     private String fieldName;
+    private ModelView view;
     private String className;
     private int totalDataCount = -1;
     private int dataOffset;
@@ -92,6 +93,7 @@ public class PickOne extends Activity
         if (state != null) {
             this.parentView = (ModelView) state.getSerializable("parentView");
             this.fieldName = (String) state.getSerializable("fieldName");
+            this.view = (ModelView) state.getSerializable("view");
             if (this.callCountId != 0) {
                 DataLoader.update(this.callCountId, new Handler(this));
                 this.showLoadingDialog();
@@ -114,16 +116,34 @@ public class PickOne extends Activity
         this.pagination = (TextView) this.findViewById(R.id.pickone_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.pickone_next_btn);
         this.previousPage = (ImageButton) this.findViewById(R.id.pickone_prev_btn);
-        ModelViewTypes views = this.parentView.getSubview(this.fieldName);
         ModelView subview = null;
-        if (views != null) {
-            subview = views.getView("tree");
-            if (subview == null) {
-                subview = views.getView("form");
+
+        String viewType = null;
+        int viewId = 0;
+        if (this.view == null) {
+            ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
+            if (viewTypes.getViewId("tree") != 0) {
+                this.view = viewTypes.getView("tree");
+                viewId = viewTypes.getViewId("tree");
+                viewType = "tree";
+            } else if (viewTypes.getViewId("form") != 0 && viewType == null) {
+                this.view = this.parentView.getSubview(this.fieldName).getView("form");
+                viewId = viewTypes.getViewId("form");
+                viewType = "form";
             }
         }
-        if (subview == null) {
-            this.findViewById(R.id.pick_create).setVisibility(View.GONE);
+        if (this.view == null) {
+            if (viewType == null) {
+                // No view, will use default rec_name listing
+                // without being enabled to create new records
+                this.findViewById(R.id.pick_create).setVisibility(View.GONE);
+            } else {
+                // Must load the view
+                this.loadViewsAndData(viewType, viewId);
+            }
+        } else {
+            // Load data
+            this.loadDataAndMeta();
         }
     }
 
@@ -142,6 +162,7 @@ public class PickOne extends Activity
         super.onSaveInstanceState(outState);
         outState.putSerializable("parentView", this.parentView);
         outState.putSerializable("fieldName", this.fieldName);
+        outState.putSerializable("view", this.view);
         if (this.relFields != null) {
             outState.putSerializable("rel_count", this.relFields.size());
             for (int i = 0; i < this.relFields.size(); i++) {
@@ -228,6 +249,16 @@ public class PickOne extends Activity
         if (this.loadingDialog != null) {
             this.loadingDialog.dismiss();
             this.loadingDialog = null;
+        }
+    }
+
+    /** Load views and all data when done (by cascading the calls in handler) */
+    private void loadViewsAndData(String type, int id) {
+        if (this.callDataId == 0) {
+            this.showLoadingDialog();
+            this.callDataId = DataLoader.loadView(this, this.className,
+                                                  id, type,
+                                                  new Handler(this), false);
         }
     }
 
@@ -327,7 +358,8 @@ public class PickOne extends Activity
         } else {
             Session.current.editNewModel(this.className);
         }
-        FormView.setup(this.parentView.getSubview(this.fieldName));
+        // TODO: IMPORTANT
+        //FormView.setup(this.parentView.getSubview(this.fieldName));
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
     }
@@ -356,6 +388,12 @@ public class PickOne extends Activity
                 b.show();
                 ((Exception)msg.obj).printStackTrace();
             }
+            break;
+        case DataLoader.VIEWS_OK:
+            this.callDataId = 0;
+            ModelView view = (ModelView) msg.obj;
+            this.view = view;
+            this.loadDataAndMeta();
             break;
         case DataLoader.DATACOUNT_OK:
             this.callCountId = 0;

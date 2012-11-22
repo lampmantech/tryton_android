@@ -69,6 +69,8 @@ public class TrytonCall {
     public static final int CALL_SAVE_NOK = -10;
     public static final int CALL_DELETE_OK = 10;
     public static final int CALL_DELETE_NOK = -11;
+    public static final int CALL_VIEW_OK = 11;
+    public static final int CALL_VIEW_NOK = -12;
 
     public static final int CHUNK_SIZE = 150;
     
@@ -570,13 +572,59 @@ public class TrytonCall {
             try {
                 JSONObject jsFields = (JSONObject) oView;
                 ModelView mView = new ModelView(jsFields, id == null);
+                // Build the view
+                ArchParser parser = new ArchParser(mView);
+                parser.buildTree();
+                // Build all subviews
+                for (String extView : mView.getSubviews().keySet()) {
+                    ModelViewTypes t = mView.getSubviews().get(extView);
+                    for (String vt : t.getTypes()) {
+                        ModelView sub = t.getView(vt);
+                        ArchParser p = new ArchParser(sub);
+                        p.buildTree();
+                    }
+                }
                 return mView;
             } catch (JSONException e) {}
         }
         return null;
     }
 
-    /** Get the views and subviews for a meny entry.
+    public static int getView(final int userId, final String cookie,
+                              final Preferences prefs, final String model,
+                              final Integer id, final String type,
+                              final Handler h) {
+        if (c == null) {
+            return -1;
+        }
+        final int callId = callSequence++;
+        handlers.put(callId, h);
+        new Thread() {
+            public void run() {
+                Message m = h.obtainMessage();
+                try {
+                    ModelView view = null;
+                    if (id != 0) {
+                        view = getView(userId, cookie, prefs,
+                                       model, id, type);
+                    } else {
+                        view = getView(userId, cookie, prefs,
+                                       model, null, type);
+                    }
+                    m.what = CALL_VIEW_OK;
+                    Object ret = view;
+                    m.obj = ret;
+                } catch (JSONRPCException e) {
+                    m.what = CALL_VIEW_NOK;
+                    m.obj = e;
+                }
+                sendMessage(callId, m);
+            }
+        }.start();
+        return callId;
+    }
+
+    /** Get the views for a meny entry.
      * It loads the top views and default subviews directly, build the
      * views with ArchParser which loads the missing subviews with
      * getView. */
@@ -620,24 +668,6 @@ public class TrytonCall {
                                 // Build the view
                                 ArchParser parser = new ArchParser(mView);
                                 parser.buildTree();
-                                // Get the views that where found during parsing
-                                for (ArchParser.MissingView v : parser.getDiscovered()) {
-                                    ModelView sub = getView(userId, cookie,
-                                                            prefs,
-                                                            v.getClassName(),
-                                                            v.getId(),
-                                                            v.getType());
-                                    if (sub != null) {
-                                        ModelViewTypes t = mView.getSubview(v.getFieldName());
-                                        if (t == null) {
-                                            t = new ModelViewTypes(v.getClassName());
-                                            mView.getSubviews().put(v.getFieldName(), t);
-                                        }
-                                        t.putView(v.getType(), sub);
-                                    } else {
-                                        // TODO: wtf?
-                                    }
-                                }
                                 if (isCanceled(callId)) { return; }
                                 // Build all subviews
                                 for (String extView : mView.getSubviews().keySet()) {

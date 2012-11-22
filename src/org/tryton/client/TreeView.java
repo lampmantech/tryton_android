@@ -43,6 +43,7 @@ import org.tryton.client.data.DataLoader;
 import org.tryton.client.data.ViewCache;
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
+import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
 import org.tryton.client.tools.AlertBuilder;
@@ -250,7 +251,13 @@ public class TreeView extends Activity
     public void onItemClick(AdapterView<?> adapt, View v,
                             int position, long id) {
         Model clickedData = this.data.get(position);
-        FormView.setup(this.viewTypes);
+        ModelView formView = this.viewTypes.getView("form");
+        if (formView != null) {
+            FormView.setup(formView);
+        } else {
+            FormView.setup(this.viewTypes.getViewId("form"));
+        }
+        FormView.setup(formView);
         Session.current.editModel(clickedData);
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
@@ -258,7 +265,12 @@ public class TreeView extends Activity
     public boolean onChildClick(ExpandableListView parent, View v, int groupPos,
                                 int childPos, long id) {
         Model clickedData = this.data.get(groupPos);
-        FormView.setup(this.viewTypes);
+        ModelView formView = this.viewTypes.getView("form");
+        if (formView != null) {
+            FormView.setup(formView);
+        } else {
+            FormView.setup(this.viewTypes.getViewId("form"));
+        }
         Session.current.editModel(clickedData);
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
@@ -503,7 +515,12 @@ public class TreeView extends Activity
             break;
         case MENU_NEW_ID:
             Session.current.editNewModel(this.viewTypes.getModelName());
-            FormView.setup(this.viewTypes);
+            ModelView formView = this.viewTypes.getView("form");
+            if (formView != null) {
+                FormView.setup(formView);
+            } else {
+                FormView.setup(this.viewTypes.getViewId("form"));
+            }
             Intent i = new Intent(this, FormView.class);
             this.startActivity(i);
             break;

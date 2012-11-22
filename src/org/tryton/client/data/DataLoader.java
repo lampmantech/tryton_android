@@ -97,13 +97,19 @@ public class DataLoader {
             }
             what = MENUS_OK;
             break;
+        case TrytonCall.CALL_VIEW_OK:
+            ModelView view = (ModelView) m.obj;
+            DataCache db = new DataCache(ctx);
+            db.storeView(view);
+            what = VIEWS_OK;
+            break;
         case TrytonCall.CALL_VIEWS_OK:
             @SuppressWarnings("unchecked")
             Object[] ret = (Object[]) m.obj;
             MenuEntry origin = (MenuEntry) ret[0];
             ModelViewTypes viewTypes = (ModelViewTypes) ret[1];
-            DataCache db = new DataCache(ctx);
-            db.storeViews(origin, viewTypes);
+            db = new DataCache(ctx);
+            db.storeViewTypes(origin, viewTypes);
             what = VIEWS_OK;
             break;
         case TrytonCall.CALL_DATACOUNT_OK:
@@ -134,6 +140,10 @@ public class DataLoader {
             break;
         case TrytonCall.CALL_MENUS_NOK:
             what = MENUS_NOK;
+            break;
+        case TrytonCall.CALL_VIEWS_NOK:
+        case TrytonCall.CALL_VIEW_NOK:
+            what = VIEWS_NOK;
             break;
         case TrytonCall.CALL_DATACOUNT_NOK:
             what = DATACOUNT_NOK;
@@ -248,6 +258,40 @@ public class DataLoader {
                                                           s.prefs,
                                                           origin,
                                                           fwdHandler);
+                    trytonCalls.put(callId, tcId);
+                }
+            }
+        }.start();
+        return callId;
+    }
+
+    public static int loadView(final Context ctx, final String className,
+                               final int viewId, final String type,
+                               final Handler h, final boolean forceRefresh) {
+        final int callId = callSequence++;
+        handlers.put(callId, h);
+        final Handler fwdHandler = newHandler(callId, ctx);
+        new Thread() {
+            public void run() {
+                // Check if the view is available from cache
+                ModelView view = null;
+                DataCache db = new DataCache(ctx);
+                if (viewId != 0) {
+                    view = db.loadView(viewId);
+                } else {
+                    view = db.loadDefaultView(className, type);
+                }
+                if (view != null) {
+                    Message m = fwdHandler.obtainMessage();
+                    m.what = VIEWS_OK;
+                    m.obj = view;
+                    m.sendToTarget();
+                    return;
+                } else {
+                    Session s = Session.current;
+                    int tcId = TrytonCall.getView(s.userId, s.cookie,
+                                                  s.prefs, className, viewId,
+                                                  type, fwdHandler);
                     trytonCalls.put(callId, tcId);
                 }
             }

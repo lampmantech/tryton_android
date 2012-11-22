@@ -51,8 +51,9 @@ public class DataCache extends SQLiteOpenHelper {
     private static final String MODEL_TABLE = "models";
     private static final String COUNT_TABLE = "count";
     private static final String REL_TABLE = "relationnals";
-    private static final String VIEWTYPES_TABLE = "viewtypes";
+    private static final String MENUVIEWS_TABLE = "menuviews";
     private static final String VIEW_TABLE = "view";
+    private static final String SUBVIEWS_TABLE = "subviews";
 
     public DataCache (Context ctx) {
         super(ctx, "Tryton", null, DB_VERSION);
@@ -85,17 +86,23 @@ public class DataCache extends SQLiteOpenHelper {
                    + "type TEXT NOT NULL, "
                    + "relModel TEXT, "
                    + "PRIMARY KEY (className, field))");
-        db.execSQL("CREATE TABLE " + VIEWTYPES_TABLE + " ("
-                   + "id INTEGER NOT NULL, "      // Not used
-                   + "className TEXT NOT NULL, "  // Class name
-                   + "type TEXT NOT NULL, "       // View type
-                   + "viewId INTEGER NOT NULL, "  // View id
-                   + "menuId INTEGER, "           // Optionnal origin menu id
+        db.execSQL("CREATE TABLE " + MENUVIEWS_TABLE + " ("
+                   + "menuId INTEGER NOT NULL, "
+                   + "type TEXT NOT NULL, "
+                   + "viewId INTEGER NOT NULL, "
                    + "writeTime INTEGER, "
-                   + "PRIMARY KEY (id))");
+                   + "PRIMARY KEY (menuId, type))");
+        db.execSQL("CREATE TABLE " + SUBVIEWS_TABLE + " ("
+                   + "viewId INTEGER NOT NULL, "
+                   + "fieldName TEXT NOT NULL, "
+                   + "type TEXT NOT NULL, "
+                   + "subviewId INTEGER NOT NULL, "
+                   + "writeTime INTEGER, "
+                   + "PRIMARY KEY (viewId, fieldName, type))");
         db.execSQL("CREATE TABLE " + VIEW_TABLE + " ("
                    + "id INTEGER NOT NULL, "
                    + "className TEXT NOT NULL, "
+                   + "type TEXT NOT NULL, "
                    + "defaultView INTEGER, "     // 1 if default for className
                    + "writeTime INTEGER, "
                    + "data BLOB, "
@@ -160,15 +167,11 @@ public class DataCache extends SQLiteOpenHelper {
     private Set<Integer> storedIds;
 
     private void storeView(SQLiteDatabase db, ModelView v, long writeTime) {
-        if (storedIds.contains(new Integer(v.getId()))) {
-            return;
-        } else {
-            storedIds.add(v.getId());
-        }
         // Insert view
         ContentValues cv = new ContentValues();
         cv.put("id", v.getId());
         cv.put("className", v.getModelName());
+        cv.put("type", v.getType());
         cv.put("writeTime", writeTime);
         cv.put("defaultView", v.isDefault());
         try {
@@ -178,22 +181,56 @@ public class DataCache extends SQLiteOpenHelper {
             return;
         }
         // Try to update record
-        if (db.update(VIEW_TABLE, cv, "id = ? and className = ?",
-                      new String[]{String.valueOf(v.getId()), v.getModelName()}
+        if (db.update(VIEW_TABLE, cv, "id = ? and className = ? and type = ?",
+                      new String[]{String.valueOf(v.getId()), v.getModelName(),
+                                   v.getType()}
                       ) == 0) {
             // Record is not present, insert it
             db.insert(VIEW_TABLE, null, cv);
         }
-        // Insert subviews
-        for (String sub : v.getSubviews().keySet()) {
-            for (String type : v.getSubview(sub).getTypes()) {
-                storeView(db, v.getSubview(sub).getView(type), writeTime);
+        // Register subviews
+        for (String field : v.getSubviews().keySet()) {
+            ModelViewTypes subviewTypes = v.getSubview(field);
+            storeSubview(db, v.getId(), field, subviewTypes);
+        }
+    }
+
+    public void storeView(ModelView v) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        long time = System.currentTimeMillis();
+        storeView(db, v, time);
+        db.close();
+    }
+    
+    private void storeSubview(SQLiteDatabase db, int parentId, String fieldName,
+                             ModelViewTypes viewTypes) {
+        long time = System.currentTimeMillis();
+        ContentValues v = new ContentValues();
+        v.put("writeTime", time);
+        v.put("viewId", parentId);
+        v.put("fieldName", fieldName);
+        for (String type : viewTypes.getTypes()) {
+            // Insert link to view
+            v.put("type", type);
+            v.put("subviewId", viewTypes.getViewId(type));
+            // Try to update record
+            if (db.update(SUBVIEWS_TABLE, v,
+                          "viewId = ? and fieldName = ? and type = ?",
+                          new String[]{String.valueOf(parentId), fieldName,
+                                       type}
+                          ) == 0) {
+                // Record is not present, insert it
+                db.insert(SUBVIEWS_TABLE, null, v);
+            }
+            // Insert views
+            ModelView view = viewTypes.getView(type);
+            if (view != null) {
+                storeView(db, view, time);
             }
         }
     }
 
-    public void storeViews(MenuEntry origin, ModelViewTypes viewTypes) {
-        this.storedIds = new TreeSet<Integer>();
+    public void storeViewTypes(MenuEntry origin, ModelViewTypes viewTypes) {
         SQLiteDatabase db = this.getWritableDatabase();
         long time = System.currentTimeMillis();
         ContentValues v = new ContentValues();
@@ -201,102 +238,143 @@ public class DataCache extends SQLiteOpenHelper {
         v.put("writeTime", time);
         for (String type : viewTypes.getTypes()) {
             // Insert link to view
-            ModelView view = viewTypes.getView(type);
             v.put("type", type);
-            v.put("viewId", view.getId());
-            v.put("className", view.getModelName());
+            v.put("viewId", viewTypes.getViewId(type));
             // Try to update record
-            if (db.update(VIEWTYPES_TABLE, v, "menuId = ? and type = ?",
+            if (db.update(MENUVIEWS_TABLE, v,
+                          "menuId = ? and type = ?",
                           new String[]{String.valueOf(origin.getId()), type}
                           ) == 0) {
                 // Record is not present, insert it
-                db.insert(VIEWTYPES_TABLE, null, v);
+                db.insert(MENUVIEWS_TABLE, null, v);
             }
-            // Insert view
-            storeView(db, view, time);
+            // Insert views
+            ModelView view = viewTypes.getView(type);
+            if (view != null) {
+                storeView(db, view, time);
+            }
         }
         db.close();
     }
 
-    private ModelView loadView(SQLiteDatabase db, String className, int id) {
-        Cursor c = null;
-        if (id != 0) {
-            c = db.query(VIEW_TABLE, new String[]{"data"},
-                         "className = ? and id = ?",
-                         new String[]{className, String.valueOf(id)},
-                         null, null, null, null);
-        } else {
-            c = db.query(VIEW_TABLE, new String[]{"data"},
-                         "className = ? and defaultView = 1",
-                         new String[]{className},
-                         null, null, null, null);
+    private ModelView buildView(byte[] data) {
+        ModelView view = null;
+        try {
+            view = ModelView.fromByteArray(data);
+            // Build
+            ArchParser p = new ArchParser(view);
+            p.buildTree();
+            // Build all subviews
+            for (String extView : view.getSubviews().keySet()) {
+                ModelViewTypes viewTypes = view.getSubviews().get(extView);
+                for (String type : viewTypes.getTypes()) {
+                    ModelView subview = viewTypes.getView(type);
+                        ArchParser parser = new ArchParser(subview);
+                        parser.buildTree();
+                }
+            }
+        } catch (IOException e) {
+            Log.e("Tryton", "Unable to read stored data", e);
         }
+        return view;
+    }
+
+    private ModelView loadDefaultView(SQLiteDatabase db,
+                                      String className, String type) {
+        Cursor c = null;
+        c = db.query(VIEW_TABLE, new String[]{"data"},
+                     "className = ? and type = ? and defaultView = 1",
+                     new String[]{className, type},
+                     null, null, null, null);
         ModelView v = null;
         if (c.moveToNext()) {
             byte[] data = c.getBlob(0);
-            try {
-                v = ModelView.fromByteArray(data);
-            } catch (IOException e) {
-                Log.e("Tryton", "Unable to read stored data", e);
-            }
+            v = buildView(data);
         }
         c.close();
         return v;
     }
 
+    public ModelView loadDefaultView(String className, String type) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ModelView view = loadDefaultView(db, className, type);
+        db.close();
+        return view;
+    }
+
+    private ModelView loadView(SQLiteDatabase db, int id) {
+        Cursor c = null;
+        c = db.query(VIEW_TABLE, new String[]{"data"}, "id = ?",
+                     new String[]{String.valueOf(id)},
+                     null, null, null, null);
+        ModelView v = null;
+        if (c.moveToNext()) {
+            byte[] data = c.getBlob(0);
+            v = buildView(data);
+        }
+        c.close();
+        return v;
+    }
+
+    /** Load a given view. If id is 0 use loadDefaultView instead. */
+    public ModelView loadView(int viewId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ModelView v = loadView(db, viewId);
+        db.close();
+        return v;
+    }
+
     public ModelViewTypes loadViews(int menuId) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(VIEWTYPES_TABLE,
-                            new String[]{"className", "type", "viewId"},
+        Cursor c = db.query(MENUVIEWS_TABLE,
+                            new String[]{"type", "viewId"},
                             "menuId = ?",
                             new String[]{String.valueOf(menuId)},
                             null, null, null, null);
         ModelViewTypes ret = null;
         while (c.moveToNext()) {
-            if (ret == null) {
-                ret = new ModelViewTypes(c.getString(0));
+            String type = c.getString(0);
+            int viewId = c.getInt(1);
+            ModelView v = loadView(db, viewId);
+            if (ret == null && v != null) {
+                ret = new ModelViewTypes(v.getModelName());
             }
-            String type = c.getString(1);
-            int viewId = c.getInt(2);
-            ModelView v = loadView(db, c.getString(0), viewId);
-            // Build and load subviews
-            ArchParser p = new ArchParser(v);
-            p.buildTree();
-            // Load missing views
-            for (ArchParser.MissingView mv : p.getDiscovered()) {
-                System.out.println(mv.getClassName());
-                System.out.println(mv.getId());
-                ModelView sub = null;
-                if (mv.getId() != null) {
-                    sub = loadView(db, mv.getClassName(), mv.getId());
-                } else {
-                    sub = loadView(db, mv.getClassName(), 0);
-                }
-                if (sub != null) {
-                    ModelViewTypes t = v.getSubview(mv.getFieldName());
-                    if (t == null) {
-                        t = new ModelViewTypes(mv.getClassName());
-                        v.getSubviews().put(mv.getFieldName(), t);
-                    }
-                    t.putView(mv.getType(), sub);
-                } else {
-                    // TODO: wtf?
-                }
+            if (ret != null && v != null) {
+                ret.putView(type, v);
             }
-            // Build subviews
-            for (String extView : v.getSubviews().keySet()) {
-                ModelViewTypes t = v.getSubviews().get(extView);
-                for (String vt : t.getTypes()) {
-                    ModelView sub = t.getView(vt);
-                    ArchParser p2 = new ArchParser(sub);
-                    p2.buildTree();
-                }
-            }
-            ret.putView(type, v);
         }
         c.close();
         db.close();
         return ret;
+    }
+
+    public ModelViewTypes loadSubviews(ModelView parent, String fieldName) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(SUBVIEWS_TABLE,
+                            new String[]{"type", "subviewId"},
+                            "viewId = ?",
+                            new String[]{String.valueOf(parent.getId())},
+                            null, null, null, null);
+        ModelViewTypes viewTypes = new ModelViewTypes(parent.getModelName());
+        while (c.moveToNext()) {
+            if (viewTypes == null) {
+                viewTypes = new ModelViewTypes(c.getString(0));
+            }
+            String type = c.getString(0);
+            int subviewId = c.getInt(1);
+            ModelView subview = null;
+            if (subviewId == 0) {
+                Model field = parent.getField(fieldName);
+                String subclassName = field.getClassName();
+                subview = loadDefaultView(db, subclassName, type);
+            } else {
+                subview = loadView(db, subviewId);
+            }
+            viewTypes.putView(type, subview);
+        }
+        c.close();
+        db.close();
+        return viewTypes;
     }
 
     /////////////////////

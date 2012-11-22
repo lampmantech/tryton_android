@@ -40,6 +40,7 @@ import org.tryton.client.data.DataLoader;
 import org.tryton.client.data.Session;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
+import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.views.TreeFullAdapter;
@@ -90,6 +91,7 @@ public class ToManyEditor extends Activity
                     this.relFields.add((RelField)state.getSerializable("rel_" + i));
                 }
             }
+            this.view = (ModelView) state.getSerializable("view");
         } else {
             this.parentView = parentViewInitializer;
             this.fieldName = fieldNameInitializer;
@@ -112,12 +114,25 @@ public class ToManyEditor extends Activity
                 });
         }
         // Load model subview
-        this.view = this.parentView.getSubview(this.fieldName).getView("tree");
+        String viewType = null;
+        int viewId = 0;
         if (this.view == null) {
-            this.view = this.parentView.getSubview(this.fieldName).getView("form");
+            ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
+            if (viewTypes.getViewId("tree") != 0) {
+                this.view = viewTypes.getView("tree");
+                viewId = viewTypes.getViewId("tree");
+                viewType = "tree";
+            } else if (viewTypes.getViewId("form") != 0 && viewType == null) {
+                this.view = this.parentView.getSubview(this.fieldName).getView("form");
+                viewId = viewTypes.getViewId("form");
+                viewType = "form";
+            }
         }
-        // Load data
-        if (this.callId == 0) {
+        if (this.view == null) {
+            // Must load the view
+            this.loadViewsAndData(viewType, viewId);
+        } else {
+            // Load data
             this.loadDataAndMeta();
         }
     }
@@ -136,6 +151,7 @@ public class ToManyEditor extends Activity
         super.onSaveInstanceState(outState);
         outState.putSerializable("parentView", this.parentView);
         outState.putSerializable("fieldName", this.fieldName);
+        outState.putSerializable("view", this.view);
         if (this.relFields != null) {
             outState.putSerializable("rel_count", this.relFields.size());
             for (int i = 0; i < this.relFields.size(); i++) {
@@ -175,14 +191,24 @@ public class ToManyEditor extends Activity
         this.selected.setAdapter(adapt);
     }
 
+    /** Load views and all data when done (by cascading the calls in handler) */
+    private void loadViewsAndData(String type, int id) {
+        if (this.callId == 0) {
+            this.showLoadingDialog();
+            this.callId = DataLoader.loadView(this, this.className,
+                                              id, type,
+                                              new Handler(this), false);
+        }
+    }
+
     /** Load data count and rel fields, required for data.
      * Requires that views are loaded. */
     private void loadDataAndMeta() {
         if (this.callId == 0) {
             this.showLoadingDialog();
             this.callId = DataLoader.loadRelFields(this, this.className,
-                                                       new Handler(this),
-                                                       false);
+                                                   new Handler(this),
+                                                   false);
         }
     }
 
@@ -239,7 +265,14 @@ public class ToManyEditor extends Activity
         } else {
             Session.current.editNewModel(this.className);
         }
-        FormView.setup(this.parentView.getSubview(this.fieldName));
+        ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
+        ModelView form = viewTypes.getView("form");
+        if (form != null) {
+            FormView.setup(form);
+        } else {
+            int viewId = viewTypes.getViewId("form");
+            FormView.setup(viewId);
+        }
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
     }
@@ -252,7 +285,14 @@ public class ToManyEditor extends Activity
         } else {
             Session.current.editModel(model);
         }
-        FormView.setup(this.parentView.getSubview(this.fieldName));
+        ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
+        ModelView form = viewTypes.getView("form");
+        if (form != null) {
+            FormView.setup(form);
+        } else {
+            int viewId = viewTypes.getViewId("form");
+            FormView.setup(viewId);
+        }
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);        
     }
@@ -295,6 +335,12 @@ public class ToManyEditor extends Activity
     public boolean handleMessage(Message msg) {
         // Process message
         switch (msg.what) {
+        case DataLoader.VIEWS_OK:
+            this.callId = 0;
+            ModelView view = (ModelView) msg.obj;
+            this.view = view;
+            this.loadDataAndMeta();
+            break;
         case DataLoader.RELFIELDS_OK:
             this.callId = 0;
             Object[] ret = (Object[]) msg.obj;
@@ -309,6 +355,7 @@ public class ToManyEditor extends Activity
             this.updateList();
             this.hideLoadingDialog();
             break;
+        case DataLoader.VIEWS_NOK:
         case DataLoader.DATA_NOK:
         case DataLoader.RELFIELDS_NOK:
             this.hideLoadingDialog();

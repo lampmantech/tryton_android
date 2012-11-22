@@ -40,10 +40,12 @@ import java.util.List;
 import java.util.Set;
 
 import org.tryton.client.data.DataCache;
+import org.tryton.client.data.DataLoader;
 import org.tryton.client.models.MenuEntry;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
+import org.tryton.client.models.RelField;
 import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.tools.FormViewFactory;
 import org.tryton.client.tools.TrytonCall;
@@ -62,12 +64,23 @@ public class FormView extends Activity
     /** Use a static initializer to pass data to the activity on start.
      * Set the viewtype that hold the form view. The data to edit is
      * read from current Session. If null a new Model will be created. */
-    public static void setup(ModelViewTypes view) {
+    public static void setup(ModelView view) {
         viewInitializer = view;
+        viewIdInitializer = 0;
     }
-    private static ModelViewTypes viewInitializer;
+    /** Setup to load a particular view. If viewId is 0, the default one will
+     * be used. */
+    public static void setup(int viewId) {
+        viewIdInitializer = viewId;
+        viewInitializer = null;
+    }
 
-    private ModelViewTypes viewTypes;
+    private static ModelView viewInitializer;
+    private static int viewIdInitializer;
+
+    private int viewId;
+    private ModelView view;
+    private List<RelField> relFields; // in case of data reload
     private ProgressDialog loadingDialog;
     private int currentDialog;
     private int callId;
@@ -81,7 +94,8 @@ public class FormView extends Activity
         super.onCreate(state);
         // Init data
         if (state != null) {
-            this.viewTypes = (ModelViewTypes) state.getSerializable("viewTypes");
+            this.view = (ModelView) state.getSerializable("view");
+            this.viewId = state.getInt("viewId");
             this.callId = state.getInt("callId");
             this.currentLoadingMsg = state.getInt("currentLoadingMsg");
             if (this.callId != 0) {
@@ -89,18 +103,27 @@ public class FormView extends Activity
                 this.showLoadingDialog(this.currentLoadingMsg);
             }
         } else {
-            this.viewTypes = viewInitializer;
+            this.view = viewInitializer;
             viewInitializer = null;
+            this.viewId = viewIdInitializer;
+            viewIdInitializer = 0;
         }
         // Init view
         this.setContentView(R.layout.form);
         this.table = (TableLayout) this.findViewById(R.id.form_table);
-        ModelView modelView = this.viewTypes.getView("form");
+        if (this.view != null) {
+            this.initView();
+        } else {
+            this.loadViewAndData();
+        }
+    }
+
+    private void initView() {
         int x = 0; // X position of the widget
         TableRow row = null;
-        for (Model view : modelView.getStructure()) {
+        for (Model view : this.view.getStructure()) {
             Session s = Session.current;
-            View v = FormViewFactory.getView(view, modelView,
+            View v = FormViewFactory.getView(view, this.view,
                                              s.editedModel,
                                              s.prefs,
                                              this);
@@ -155,7 +178,8 @@ public class FormView extends Activity
     
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putSerializable("viewTypes", this.viewTypes);
+        outState.putSerializable("view", this.view);
+        outState.putInt("viewId", this.viewId);
         outState.putInt("callId", this.callId);
         outState.putInt("currentLoadingMsg", this.currentLoadingMsg);
     }
@@ -163,7 +187,9 @@ public class FormView extends Activity
     @Override
     public void onStart() {
         super.onStart();
-        this.refreshDisplay();
+        if (this.view != null) {
+            this.refreshDisplay();
+        }
     }
 
     @Override
@@ -248,7 +274,6 @@ public class FormView extends Activity
     private void refreshDisplay() {
         Session s = Session.current;
         Model tmp = s.tempModel;
-        ModelView modelView = this.viewTypes.getView("form");
         int structIndex = -1;
         for (int i = 0; i < this.table.getChildCount(); i++) {
             ViewGroup child = (ViewGroup) this.table.getChildAt(i);
@@ -257,7 +282,7 @@ public class FormView extends Activity
                 View v = child.getChildAt(j);
                 if (!FormViewFactory.isFieldView(v)) {
                     // Check if it is a x2many label
-                    Model field = modelView.getStructure().get(structIndex);
+                    Model field = this.view.getStructure().get(structIndex);
                     if (field.hasAttribute("type")) {
                         String type = field.getString("type");
                         if (type.equals("many2many")
@@ -272,8 +297,8 @@ public class FormView extends Activity
                     }
                     continue;
                 }
-                Model field = modelView.getStructure().get(structIndex);
-                FormViewFactory.setValue(v, field, modelView, tmp,
+                Model field = this.view.getStructure().get(structIndex);
+                FormViewFactory.setValue(v, field, this.view, tmp,
                                          s.editedModel, s.prefs, this);
             }
         }
@@ -319,7 +344,6 @@ public class FormView extends Activity
     /** Update temp model to current values */
     private void updateTempModel() {
         Model tmp = Session.current.tempModel;
-        ModelView modelView = this.viewTypes.getView("form");
         int structIndex = -1;
         for (int i = 0; i < this.table.getChildCount(); i++) {
             ViewGroup child = (ViewGroup) this.table.getChildAt(i);
@@ -328,7 +352,7 @@ public class FormView extends Activity
                 View v = child.getChildAt(j);
                 if (!FormViewFactory.isFieldView(v)) {
                     // Check if it is a x2many label
-                    Model field = modelView.getStructure().get(structIndex);
+                    Model field = this.view.getStructure().get(structIndex);
                     if (field.hasAttribute("type")) {
                         String type = field.getString("type");
                         if (type.equals("many2many")
@@ -344,7 +368,7 @@ public class FormView extends Activity
                     // Ignore
                     continue;
                 }
-                Model field = modelView.getStructure().get(structIndex);
+                Model field = this.view.getStructure().get(structIndex);
                 Object value = FormViewFactory.getValue(v, field,
                                                         Session.current.prefs);
                 if (value != FormViewFactory.NO_VALUE) {
@@ -354,6 +378,41 @@ public class FormView extends Activity
             }
         }
     }
+
+    /** Load views and all data when done (by cascading the calls in handler) */
+    private void loadViewAndData() {
+        if (this.callId == 0) {
+            this.showLoadingDialog(LOADING_DATA);
+            String className = Session.current.editedModel.getClassName();
+            this.callId = DataLoader.loadView(this, className,
+                                              this.viewId, "form",
+                                              new Handler(this), false);
+        }
+    }
+
+    /** Load data count and rel fields, required for data.
+     * Requires that views are loaded. */
+    private void loadDataAndMeta() {
+        if (this.callId == 0) {
+            this.showLoadingDialog(LOADING_DATA);
+            String className = Session.current.editedModel.getClassName();
+            this.callId = DataLoader.loadRelFields(this, className,
+                                                       new Handler(this),
+                                                       false);
+        }
+    }
+
+    private void loadData() {
+        if (this.callId == 0) {
+            String className = Session.current.editedModel.getClassName();
+            List<Integer> ids = new ArrayList<Integer>();
+            ids.add((Integer)Session.current.editedModel.get("id"));
+            this.callId = DataLoader.loadData(this, className, ids,
+                                              this.relFields, this.view,
+                                              new Handler(this), false);
+        }
+    }
+
 
     /** Handle TrytonCall feedback. */
     @SuppressWarnings("unchecked")
@@ -420,6 +479,7 @@ public class FormView extends Activity
             break;
         case TrytonCall.CALL_SAVE_NOK:
         case TrytonCall.CALL_DELETE_NOK:
+        case DataLoader.VIEWS_NOK:
             this.callId = 0;
             this.hideLoadingDialog();
             Exception e = (Exception) msg.obj;
@@ -431,6 +491,24 @@ public class FormView extends Activity
                 b.show();
                 ((Exception)msg.obj).printStackTrace();
             }
+            break;
+        case DataLoader.VIEWS_OK:
+            this.callId = 0;
+            this.view = (ModelView) msg.obj;
+            this.loadDataAndMeta();
+            break;
+        case DataLoader.RELFIELDS_OK:
+            this.callId = 0;
+            this.relFields = (List<RelField>)((Object[]) msg.obj)[1];
+            this.loadData();
+            break;
+        case DataLoader.DATA_OK:
+            this.callId = 0;
+            List<Model> dataList = (List<Model>)((Object[])msg.obj)[1];
+            Session.current.editedModel = dataList.get(0);
+            this.initView();
+            this.refreshDisplay();
+            this.hideLoadingDialog();
             break;
         case TrytonCall.NOT_LOGGED:
             // TODO: this is brutal

@@ -21,6 +21,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
@@ -42,7 +43,6 @@ public class ArchParser {
     private static final int TYPE_GRAPH = 3;
     
     private ModelView view;
-    private List<MissingView> toLoad;
 
     public ArchParser(ModelView view) {
         this.view = view;
@@ -63,46 +63,26 @@ public class ArchParser {
             xr.parse(new InputSource(new StringReader(view.getArch())));
             view.setTitle(handler.getTitle());
             view.build(handler.getResult());
-            this.toLoad = handler.getMissingViews();
+            // Merge subviews with discovered subviews
+            for (String fieldName : handler.getSubviews().keySet()) {
+                ModelViewTypes subviews = view.getSubview(fieldName);
+                ModelViewTypes newSubviews = handler.getSubviews().get(fieldName);
+                if (subviews == null) {
+                    view.setSubviews(fieldName, newSubviews);
+                } else {
+                    for (String type : newSubviews.getTypes()) {
+                        if (subviews.getViewId(type) == 0) {
+                            subviews.putViewId(type, newSubviews.getViewId(type));
+                        }
+                    }
+                }
+            }
         } catch (javax.xml.parsers.ParserConfigurationException e) {
             e.printStackTrace();
         } catch (org.xml.sax.SAXException e) {
             e.printStackTrace();
         } catch (java.io.IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    /** Get the type and id of views that where discovered during parsing. */
-    public List<MissingView> getDiscovered() {
-        return this.toLoad;
-    }
-
-    public static class MissingView {
-        private String className;
-        private String fieldName;
-        private String mode;
-        private Integer id;
-        public MissingView(String className, String fieldName,
-                           String mode, Integer id) {
-            this.className = className;
-            this.fieldName = fieldName;
-            this.mode = mode;
-            this.id = id;
-        }
-        public String getClassName() { return this.className; }
-        public String getFieldName() { return this.fieldName; }
-        public String getType() { return this.mode; }
-        public Integer getId() { return this.id; }
-        public boolean equals(Object o) {
-            if (o instanceof MissingView) {
-                MissingView v = (MissingView) o;
-                return v.className.equals(this.className)
-                    && v.fieldName.equals(this.fieldName)
-                    && v.mode.equals(this.mode)
-                    && v.id.equals(this.id);
-            }
-            return false;
         }
     }
 
@@ -113,13 +93,13 @@ public class ArchParser {
         private List<Model> builtFields;
         private int type;
         private String title;
-        private List<MissingView> missingViews;
+        private Map<String, ModelViewTypes> subviews;
 
         public ArchHandler(ModelView view) {
             this.view = view;
             this.fields = this.view.getFields();
             this.builtFields = new ArrayList<Model>();
-            this.missingViews = new ArrayList<MissingView>();
+            this.subviews = new TreeMap<String, ModelViewTypes>();
         }
 
         public String getTitle() {
@@ -130,8 +110,8 @@ public class ArchParser {
             return this.builtFields;
         }
 
-        public List<MissingView> getMissingViews() {
-            return this.missingViews;
+        public Map<String, ModelViewTypes> getSubviews() {
+            return this.subviews;
         }
 
         @Override
@@ -165,9 +145,9 @@ public class ArchParser {
             }
             // Field
             if (localName.equals("field")) {
-                String strName = atts.getValue("name");
-                if (strName != null) {
-                    Model fieldModel = this.fields.get(strName);
+                String fieldName = atts.getValue("name");
+                if (fieldName != null) {
+                    Model fieldModel = this.fields.get(fieldName);
                     if (fieldModel != null) {
                         this.builtFields.add(fieldModel);
                         // Check for subviews
@@ -185,15 +165,17 @@ public class ArchParser {
                                 Integer id = null;
                                 if (ids.length > i && !ids[i].equals("")) {
                                     id = new Integer(ids[i]);
+                                } else {
+                                    id = 0;
                                 }
-                                // Register to load
-                                MissingView m = new MissingView(modelName,
-                                                                strName,
-                                                                modes[i],
-                                                                id);
-                                if (!this.missingViews.contains(m)) {
-                                    this.missingViews.add(m);
+                                // Register subview id
+                                if (this.subviews.get(fieldName) == null) {
+                                    String className = fieldModel.getClassName();
+                                    ModelViewTypes vt = new ModelViewTypes(className);
+                                    this.subviews.put(fieldName, vt);
                                 }
+                                ModelViewTypes vt = this.subviews.get(fieldName);
+                                vt.putViewId(modes[i], id);
                             }
                         }
                     } else {
