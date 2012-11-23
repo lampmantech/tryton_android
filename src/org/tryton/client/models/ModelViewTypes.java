@@ -78,6 +78,8 @@ public class ModelViewTypes implements Serializable {
         return this.modelName;
     }
 
+    /** Get the list off all fields, used in any of the types. Expects each
+     * view to be loaded and built. */
     public List<String> getAllFieldNames() {
         List<String> fields = new ArrayList<String>();
         for (String type : this.getTypes()) {

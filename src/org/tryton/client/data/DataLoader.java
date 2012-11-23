@@ -277,7 +277,7 @@ public class DataLoader {
                 ModelView view = null;
                 DataCache db = new DataCache(ctx);
                 if (viewId != 0) {
-                    view = db.loadView(viewId);
+                    view = db.loadView(viewId, className);
                 } else {
                     view = db.loadDefaultView(className, type);
                 }
@@ -372,12 +372,12 @@ public class DataLoader {
 
     }
 
-    public static int loadData(final Context ctx, final String className,
-                               final int offset, final int count,
-                               final int expectedCount,
-                               final List<RelField> relFields,
-                               final ModelViewTypes views,
-                               final Handler h, final boolean forceRefresh) {
+    private static int loadData(final Context ctx, final String className,
+                                final int offset, final int count,
+                                final int expectedCount,
+                                final List<RelField> relFields,
+                                final ModelViewTypes views,
+                                final Handler h, final boolean forceRefresh) {
         final int callId = callSequence++;
         handlers.put(callId, h);
         final Handler fwdHandler = newHandler(callId, ctx);
@@ -568,7 +568,7 @@ public class DataLoader {
                             ModelView view = db.loadDefaultView(className, type);
                             this.loadedViewTypes.putView(type, view);
                         } else {
-                            ModelView view = db.loadView(id);
+                            ModelView view = db.loadView(id, className);
                             this.loadedViewTypes.putView(type, view);
                         }
                     }

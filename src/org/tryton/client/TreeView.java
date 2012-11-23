@@ -362,9 +362,10 @@ public class TreeView extends Activity
                                     count);
         String className = this.viewTypes.getModelName();
         this.showLoadingDialog(LOADING_DATA);
+        ModelView view = this.viewTypes.getView("tree");
         this.callDataId = DataLoader.loadData(this, className, this.dataOffset,
                                               count, expectedSize,
-                                              this.relFields, this.viewTypes,
+                                              this.relFields, view,
                                               new Handler(this),
                                               refresh);
     }

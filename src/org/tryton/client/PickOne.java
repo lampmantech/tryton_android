@@ -275,9 +275,8 @@ public class PickOne extends Activity
             int count = TreeView.PAGING_SUMMARY;
             int expectedSize = Math.min(this.totalDataCount - this.dataOffset,
                                         count);
-            ModelViewTypes views = this.parentView.getSubview(this.fieldName);
             DataLoader.loadData(this, this.className, this.dataOffset,
-                                count, expectedSize, this.relFields, views,
+                                count, expectedSize, this.relFields, this.view,
                                 new Handler(this), false);
         }
     }

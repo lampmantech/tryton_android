@@ -89,8 +89,9 @@ public class DataCache extends SQLiteOpenHelper {
                    + "PRIMARY KEY (className, field))");
         db.execSQL("CREATE TABLE " + MENUVIEWS_TABLE + " ("
                    + "menuId INTEGER NOT NULL, "
-                   + "type TEXT NOT NULL, "
                    + "viewId INTEGER NOT NULL, "
+                   + "className TEXT NOT NULL, "
+                   + "type TEXT NOT NULL, "
                    + "writeTime INTEGER, "
                    + "PRIMARY KEY (menuId, type))");
         db.execSQL("CREATE TABLE " + SUBVIEWS_TABLE + " ("
@@ -255,6 +256,7 @@ public class DataCache extends SQLiteOpenHelper {
         v.put("writeTime", time);
         for (String type : viewTypes.getTypes()) {
             // Insert link to view
+            v.put("className", viewTypes.getModelName());
             v.put("type", type);
             v.put("viewId", viewTypes.getViewId(type));
             // Try to update record
@@ -332,10 +334,11 @@ public class DataCache extends SQLiteOpenHelper {
         return view;
     }
 
-    private ModelView loadView(SQLiteDatabase db, int id) {
+    private ModelView loadView(SQLiteDatabase db, int id, String className) {
         Cursor c = null;
-        c = db.query(VIEW_TABLE, new String[]{"data"}, "id = ?",
-                     new String[]{String.valueOf(id)},
+        c = db.query(VIEW_TABLE, new String[]{"data"},
+                     "id = ? and className = ?",
+                     new String[]{String.valueOf(id), className},
                      null, null, null, null);
         ModelView v = null;
         if (c.moveToNext()) {
@@ -347,9 +350,9 @@ public class DataCache extends SQLiteOpenHelper {
     }
 
     /** Load a given view. If id is 0 use loadDefaultView instead. */
-    public ModelView loadView(int viewId) {
+    public ModelView loadView(int viewId, String className) {
         SQLiteDatabase db = this.getReadableDatabase();
-        ModelView v = loadView(db, viewId);
+        ModelView v = loadView(db, viewId, className);
         db.close();
         return v;
     }
@@ -357,7 +360,7 @@ public class DataCache extends SQLiteOpenHelper {
     public ModelViewTypes loadViews(int menuId) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor c = db.query(MENUVIEWS_TABLE,
-                            new String[]{"type", "viewId"},
+                            new String[]{"type", "viewId", "className"},
                             "menuId = ?",
                             new String[]{String.valueOf(menuId)},
                             null, null, null, null);
@@ -365,7 +368,8 @@ public class DataCache extends SQLiteOpenHelper {
         while (c.moveToNext()) {
             String type = c.getString(0);
             int viewId = c.getInt(1);
-            ModelView v = loadView(db, viewId);
+            String className = c.getString(2);
+            ModelView v = loadView(db, viewId, className);
             if (ret == null && v != null) {
                 ret = new ModelViewTypes(v.getModelName());
             }
@@ -392,13 +396,13 @@ public class DataCache extends SQLiteOpenHelper {
             }
             String type = c.getString(0);
             int subviewId = c.getInt(1);
+            Model field = parent.getField(fieldName);
+            String subclassName = field.getClassName();
             ModelView subview = null;
             if (subviewId == 0) {
-                Model field = parent.getField(fieldName);
-                String subclassName = field.getClassName();
                 subview = loadDefaultView(db, subclassName, type);
             } else {
-                subview = loadView(db, subviewId);
+                subview = loadView(db, subviewId, subclassName);
             }
             viewTypes.putView(type, subview);
         }
