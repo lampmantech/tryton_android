@@ -113,24 +113,16 @@ public class ToManyEditor extends Activity
                     }
                 });
         }
-        // Load model subview
-        String viewType = null;
-        int viewId = 0;
+        // Get the view if not set
         if (this.view == null) {
             ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
-            if (viewTypes.getViewId("tree") != 0) {
+            if (viewTypes != null && viewTypes.getView("tree") != null) {
                 this.view = viewTypes.getView("tree");
-                viewId = viewTypes.getViewId("tree");
-                viewType = "tree";
-            } else if (viewTypes.getViewId("form") != 0 && viewType == null) {
-                this.view = this.parentView.getSubview(this.fieldName).getView("form");
-                viewId = viewTypes.getViewId("form");
-                viewType = "form";
+                this.loadDataAndMeta();
+            } else {
+                // View not loaded
+                this.loadViewsAndData();
             }
-        }
-        if (this.view == null) {
-            // Must load the view
-            this.loadViewsAndData(viewType, viewId);
         } else {
             // Load data
             this.loadDataAndMeta();
@@ -192,11 +184,17 @@ public class ToManyEditor extends Activity
     }
 
     /** Load views and all data when done (by cascading the calls in handler) */
-    private void loadViewsAndData(String type, int id) {
+    private void loadViewsAndData() {
         if (this.callId == 0) {
             this.showLoadingDialog();
+            // Load tree view.
+            ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
+            int viewId = 0;
+            if (viewTypes != null) {
+                viewId = viewTypes.getViewId("tree");
+            }
             this.callId = DataLoader.loadView(this, this.className,
-                                              id, type,
+                                              viewId, "tree",
                                               new Handler(this), false);
         }
     }

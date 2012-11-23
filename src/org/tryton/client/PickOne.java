@@ -116,30 +116,15 @@ public class PickOne extends Activity
         this.pagination = (TextView) this.findViewById(R.id.pickone_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.pickone_next_btn);
         this.previousPage = (ImageButton) this.findViewById(R.id.pickone_prev_btn);
-        ModelView subview = null;
-
-        String viewType = null;
-        int viewId = 0;
+        // Get the view if not set
         if (this.view == null) {
             ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
-            if (viewTypes.getViewId("tree") != 0) {
+            if (viewTypes != null && viewTypes.getView("tree") != null) {
                 this.view = viewTypes.getView("tree");
-                viewId = viewTypes.getViewId("tree");
-                viewType = "tree";
-            } else if (viewTypes.getViewId("form") != 0 && viewType == null) {
-                this.view = this.parentView.getSubview(this.fieldName).getView("form");
-                viewId = viewTypes.getViewId("form");
-                viewType = "form";
-            }
-        }
-        if (this.view == null) {
-            if (viewType == null) {
-                // No view, will use default rec_name listing
-                // without being enabled to create new records
-                this.findViewById(R.id.pick_create).setVisibility(View.GONE);
+                this.loadDataAndMeta();
             } else {
-                // Must load the view
-                this.loadViewsAndData(viewType, viewId);
+                // View not loaded
+                this.loadViewsAndData();
             }
         } else {
             // Load data
@@ -253,11 +238,17 @@ public class PickOne extends Activity
     }
 
     /** Load views and all data when done (by cascading the calls in handler) */
-    private void loadViewsAndData(String type, int id) {
+    private void loadViewsAndData() {
         if (this.callDataId == 0) {
             this.showLoadingDialog();
+            // Load tree view.
+            ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
+            int viewId = 0;
+            if (viewTypes != null) {
+                viewId = viewTypes.getViewId("tree");
+            }
             this.callDataId = DataLoader.loadView(this, this.className,
-                                                  id, type,
+                                                  viewId, "tree",
                                                   new Handler(this), false);
         }
     }
