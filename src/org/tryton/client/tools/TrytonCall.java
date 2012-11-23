@@ -571,7 +571,12 @@ public class TrytonCall {
         if (oView instanceof JSONObject) {
             try {
                 JSONObject jsFields = (JSONObject) oView;
-                ModelView mView = new ModelView(jsFields, id == null);
+                boolean defaultView = (id == null);
+                ModelView mView = new ModelView(jsFields, defaultView);
+                if (id != null && id.intValue() != mView.getId()) {
+                    // Replace inherited id by real id
+                    mView.forceId(id);
+                }
                 // Build the view
                 ArchParser parser = new ArchParser(mView);
                 parser.buildTree();
@@ -580,8 +585,10 @@ public class TrytonCall {
                     ModelViewTypes t = mView.getSubviews().get(extView);
                     for (String vt : t.getTypes()) {
                         ModelView sub = t.getView(vt);
-                        ArchParser p = new ArchParser(sub);
-                        p.buildTree();
+                        if (sub != null) {
+                            ArchParser p = new ArchParser(sub);
+                            p.buildTree();
+                        }
                     }
                 }
                 return mView;
@@ -612,7 +619,7 @@ public class TrytonCall {
                                        model, null, type);
                     }
                     m.what = CALL_VIEW_OK;
-                    Object ret = view;
+                    Object[] ret = new Object[]{type, view};
                     m.obj = ret;
                 } catch (JSONRPCException e) {
                     m.what = CALL_VIEW_NOK;
@@ -674,8 +681,10 @@ public class TrytonCall {
                                     ModelViewTypes t = mView.getSubviews().get(extView);
                                     for (String vt : t.getTypes()) {
                                         ModelView sub = t.getView(vt);
-                                        ArchParser p = new ArchParser(sub);
-                                        p.buildTree();
+                                        if (sub != null) {
+                                            ArchParser p = new ArchParser(sub);
+                                            p.buildTree();
+                                        }
                                     }
                                 }
                                 // Register the views

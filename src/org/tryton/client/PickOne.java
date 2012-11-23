@@ -391,7 +391,7 @@ public class PickOne extends Activity
             break;
         case DataLoader.VIEWS_OK:
             this.callDataId = 0;
-            ModelView view = (ModelView) msg.obj;
+            ModelView view = (ModelView)((Object[])msg.obj)[1];
             this.view = view;
             this.loadDataAndMeta();
             break;

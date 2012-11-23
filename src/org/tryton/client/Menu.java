@@ -307,6 +307,7 @@ public class Menu extends Activity
         }
         if (this.entriesToCache.size() > 0) {
             this.showCachingDialog(0);
+            DataLoader.initEntriesLoading();
             this.callId = DataLoader.loadFullEntry(this,
                                                    this.entriesToCache.get(0),
                                                    new Handler(this), true);

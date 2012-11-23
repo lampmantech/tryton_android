@@ -54,6 +54,7 @@ public class DataCache extends SQLiteOpenHelper {
     private static final String MENUVIEWS_TABLE = "menuviews";
     private static final String VIEW_TABLE = "view";
     private static final String SUBVIEWS_TABLE = "subviews";
+    private static final String DEFAULTVIEWS_TABLE = "defaultviews";
 
     public DataCache (Context ctx) {
         super(ctx, "Tryton", null, DB_VERSION);
@@ -103,10 +104,15 @@ public class DataCache extends SQLiteOpenHelper {
                    + "id INTEGER NOT NULL, "
                    + "className TEXT NOT NULL, "
                    + "type TEXT NOT NULL, "
-                   + "defaultView INTEGER, "     // 1 if default for className
                    + "writeTime INTEGER, "
                    + "data BLOB, "
-                   + "PRIMARY KEY (id))");
+                   + "PRIMARY KEY (id, className, type))");
+        db.execSQL("CREATE TABLE " + DEFAULTVIEWS_TABLE + " ("
+                   + "className TEXT NOT NULL, "
+                   + "type TEXT NOT NULL, "
+                   + "viewId INTEGER NOT NULL, "
+                   + "writeTime INTEGER, "
+                   + "PRIMARY KEY (className, type))");
     }
 
     /** Upgrade procedure from oldVersion (the one installed)
@@ -173,7 +179,6 @@ public class DataCache extends SQLiteOpenHelper {
         cv.put("className", v.getModelName());
         cv.put("type", v.getType());
         cv.put("writeTime", writeTime);
-        cv.put("defaultView", v.isDefault());
         try {
             cv.put("data", v.toByteArray());
         } catch (IOException e) {
@@ -187,6 +192,18 @@ public class DataCache extends SQLiteOpenHelper {
                       ) == 0) {
             // Record is not present, insert it
             db.insert(VIEW_TABLE, null, cv);
+        }
+        // Register default if it is the case
+        if (v.isDefault()) {
+            ContentValues dcv = new ContentValues();
+            dcv.put("className", v.getModelName());
+            dcv.put("type", v.getType());
+            dcv.put("viewId", v.getId());
+            dcv.put("writeTime", writeTime);
+            if (db.update(DEFAULTVIEWS_TABLE, dcv, "className = ? and type = ?",
+                          new String[]{v.getModelName(), v.getType()}) == 0) {
+                db.insert(DEFAULTVIEWS_TABLE, null, dcv);
+            }
         }
         // Register subviews
         for (String field : v.getSubviews().keySet()) {
@@ -269,8 +286,10 @@ public class DataCache extends SQLiteOpenHelper {
                 ModelViewTypes viewTypes = view.getSubviews().get(extView);
                 for (String type : viewTypes.getTypes()) {
                     ModelView subview = viewTypes.getView(type);
+                    if (subview != null) {
                         ArchParser parser = new ArchParser(subview);
                         parser.buildTree();
+                    }
                 }
             }
         } catch (IOException e) {
@@ -281,18 +300,29 @@ public class DataCache extends SQLiteOpenHelper {
 
     private ModelView loadDefaultView(SQLiteDatabase db,
                                       String className, String type) {
-        Cursor c = null;
-        c = db.query(VIEW_TABLE, new String[]{"data"},
-                     "className = ? and type = ? and defaultView = 1",
-                     new String[]{className, type},
-                     null, null, null, null);
-        ModelView v = null;
-        if (c.moveToNext()) {
-            byte[] data = c.getBlob(0);
-            v = buildView(data);
+        Cursor idC = db.query(DEFAULTVIEWS_TABLE, new String[]{"viewId"},
+                              "className = ? and type = ?",
+                              new String[]{className, type},
+                              null, null, null, null);
+        int id = 0;
+        if (idC.moveToNext()) {
+            id = idC.getInt(0);
         }
-        c.close();
-        return v;
+        idC.close();
+        if (id != 0) {
+            Cursor c = null;
+            c = db.query(VIEW_TABLE, new String[]{"data"},
+                         "id = ?", new String[]{String.valueOf(id)},
+                         null, null, null, null);
+            ModelView v = null;
+            if (c.moveToNext()) {
+                byte[] data = c.getBlob(0);
+                v = buildView(data);
+            }
+            c.close();
+            return v;
+        }
+        return null;
     }
 
     public ModelView loadDefaultView(String className, String type) {

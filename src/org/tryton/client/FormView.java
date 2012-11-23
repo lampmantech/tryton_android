@@ -494,7 +494,7 @@ public class FormView extends Activity
             break;
         case DataLoader.VIEWS_OK:
             this.callId = 0;
-            this.view = (ModelView) msg.obj;
+            this.view = (ModelView)((Object[])msg.obj)[1];
             this.loadDataAndMeta();
             break;
         case DataLoader.RELFIELDS_OK:

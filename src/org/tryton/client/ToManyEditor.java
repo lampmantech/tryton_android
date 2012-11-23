@@ -337,7 +337,7 @@ public class ToManyEditor extends Activity
         switch (msg.what) {
         case DataLoader.VIEWS_OK:
             this.callId = 0;
-            ModelView view = (ModelView) msg.obj;
+            ModelView view = (ModelView)((Object[])msg.obj)[1];
             this.view = view;
             this.loadDataAndMeta();
             break;

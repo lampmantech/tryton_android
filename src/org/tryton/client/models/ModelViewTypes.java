@@ -64,7 +64,7 @@ public class ModelViewTypes implements Serializable {
     }
 
     public Set<String> getTypes() {
-        return this.views.keySet();
+        return this.viewIds.keySet();
     }
 
     public String getModelName() {
@@ -82,5 +82,14 @@ public class ModelViewTypes implements Serializable {
             }
         }
         return fields;
+    }
+
+    public ModelViewTypes copy() {
+        ModelViewTypes copy = new ModelViewTypes(this.modelName);
+        for (String type : this.viewIds.keySet()) {
+            copy.viewIds.put(type, this.viewIds.get(type));
+            copy.views.put(type, this.views.get(type));
+        }
+        return copy;
     }
 }

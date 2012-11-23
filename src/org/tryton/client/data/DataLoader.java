@@ -98,7 +98,7 @@ public class DataLoader {
             what = MENUS_OK;
             break;
         case TrytonCall.CALL_VIEW_OK:
-            ModelView view = (ModelView) m.obj;
+            ModelView view = (ModelView)((Object[])m.obj)[1];
             DataCache db = new DataCache(ctx);
             db.storeView(view);
             what = VIEWS_OK;
@@ -284,7 +284,7 @@ public class DataLoader {
                 if (view != null) {
                     Message m = fwdHandler.obtainMessage();
                     m.what = VIEWS_OK;
-                    m.obj = view;
+                    m.obj = new Object[]{type, view};
                     m.sendToTarget();
                     return;
                 } else {
@@ -450,18 +450,28 @@ public class DataLoader {
         return callId;
     }
 
-    private static Set<String> loadedModels;
+    ///////////////////////////
+    // Precaching operations //
+    ///////////////////////////
 
+    /** List of view id already loaded. */
+    private static Set<String> loadedViews;
+
+    private static void addLoadedView(String className, String type,
+                                      int viewId) {
+        loadedViews.add(className + "_" + type + "_" + viewId);
+    }
+    private static boolean isLoaded(String className, String type, int viewId) {
+        return loadedViews.contains(className + "_" + type + "_" + viewId);
+    }
+
+    /** First level handler that waits for entry to be loaded and send back
+     * the result message. */
     private static class EntryHandler extends Handler {
         private int callId;
-        private int subcallId;
         private Context ctx;
         private MenuEntry menu;
         private boolean forceRefresh;
-        private String className;
-        private int count;
-        private int offset;
-        private List<RelField> relFields;
         public EntryHandler(int callId, Looper loop, Context ctx,
                             MenuEntry menu, boolean forceRefresh) {
             super(loop);
@@ -470,18 +480,16 @@ public class DataLoader {
             this.menu = menu;
             this.forceRefresh = forceRefresh;
         }
-        public void setFirstCallId(int callId) {
-            this.subcallId = callId;
+        public int start() {
+            final int callId = callSequence++;
+            handlers.put(callId, this);
+            new ModelLoader(callId, this, this.ctx, this.menu,
+                            this.forceRefresh).load();
+            return callId;
         }
         @Override
         public void handleMessage(Message m) {
             switch (m.what) {
-            case VIEWS_OK:
-                ModelViewTypes vt = (ModelViewTypes) ((Object[])m.obj)[1];
-                this.className = vt.getModelName();
-                new ModelLoader(this.callId, this, this.ctx,
-                                this.className, vt, this.forceRefresh).load();
-                break;
             case MODELDATA_OK:
                 Message msg = this.obtainMessage();
                 msg.what = MENUDATA_OK;
@@ -490,41 +498,123 @@ public class DataLoader {
             }
         }
     }
+
+    /** Second and below level handler that receives loading messages and 
+     * send back to upper level when all loading steps are done.
+     * It is recursive on relationnal fields. */
     private static class ModelLoader extends Handler {
+        /** CallId of EntryHandler */
+        private int superCallId;
         private int callId;
-        private int subcallId;
         private Context ctx;
-        private MenuEntry menu;
+        private MenuEntry entry; // For top level only
         private boolean forceRefresh;
         private String className;
-        private ModelViewTypes views;
+        private ModelViewTypes viewTypes;
+        private ModelViewTypes loadedViewTypes;
+        private List<String> pendingViewTypes; // For sublevels only
         private List<String> fields;
         private int count;
         private int offset;
         private List<RelField> relFields;
         private Handler parent;
         private int subloadIndex;
-        public ModelLoader(int callId, Handler parent, Context ctx,
-                           String className, ModelViewTypes views,
-                           boolean forceRefresh) {
+
+        /** Constructor for top level load */
+        public ModelLoader(int superCallId, Handler parent, Context ctx,
+                           MenuEntry entry, boolean forceRefresh) {
             super(parent.getLooper());
-            this.callId = callId;
+            this.superCallId = superCallId;
             this.ctx = ctx;
-            this.menu = menu;
+            this.entry = entry;
             this.forceRefresh = forceRefresh;
             this.parent = parent;
-            this.className = className;
-            this.views = views;
         }
+        /** Constructor for below levels */
+        public ModelLoader(int superCallId, Handler parent, Context ctx,
+                           String className, ModelViewTypes viewTypes,
+                           boolean forceRefresh) {
+            super(parent.getLooper());
+            this.superCallId = superCallId;
+            this.ctx = ctx;
+            this.className = className;
+            this.viewTypes = viewTypes;
+            this.loadedViewTypes = viewTypes.copy();
+            this.forceRefresh = forceRefresh;
+            this.parent = parent;
+            this.pendingViewTypes = new ArrayList<String>();
+            for (String type : this.viewTypes.getTypes()) {
+                if (this.viewTypes.getView(type) == null) {
+                    this.pendingViewTypes.add(type);
+                }
+            }
+        }
+
         public void load() {
-            this.subcallId = loadDataCount(this.ctx, this.className, this,
-                                           this.forceRefresh);
+            if (this.entry != null) {
+                this.callId = loadViews(this.ctx, this.entry, this,
+                                        this.forceRefresh);
+            } else {
+                // Check if all is not already loaded
+                for (String type : this.viewTypes.getTypes()) {
+                    int id = this.viewTypes.getViewId(type);
+                    if (isLoaded(this.className, type, id)) {
+                        // The view is already loaded
+                        this.pendingViewTypes.remove(type);
+                        DataCache db = new DataCache(this.ctx);
+                        if (id == 0) {
+                            ModelView view = db.loadDefaultView(className, type);
+                            this.loadedViewTypes.putView(type, view);
+                        } else {
+                            ModelView view = db.loadView(id);
+                            this.loadedViewTypes.putView(type, view);
+                        }
+                    }
+                }
+                if (this.pendingViewTypes.size() == 0) {
+                    // Continue
+                    Message msg = this.parent.obtainMessage();
+                    msg.what = MODELDATA_OK;
+                    msg.sendToTarget();
+                } else {
+                    // Load views
+                    String type = this.pendingViewTypes.get(0);
+                    int id = this.viewTypes.getViewId(type);
+                    this.pendingViewTypes.remove(0);
+                    this.callId = loadView(this.ctx, this.className, id, type,
+                                           this, this.forceRefresh);
+                }
+            }
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void handleMessage(Message m) {
             switch (m.what) {
+            case VIEWS_OK:
+                if (this.pendingViewTypes == null) {
+                    // Menu views ok
+                    this.loadedViewTypes = (ModelViewTypes)((Object[])m.obj)[1];
+                    this.className = this.loadedViewTypes.getModelName();
+                } else {
+                    // View loaded, check if other are pending
+                    ModelView loadedView = (ModelView)((Object[])m.obj)[1];
+                    String loadedType = (String)((Object[])m.obj)[0];
+                    this.loadedViewTypes.putView(loadedType, loadedView);
+                    if (this.pendingViewTypes.size() > 0) {
+                        String type = this.pendingViewTypes.get(0);
+                        int id = this.viewTypes.getViewId(type);
+                        this.pendingViewTypes.remove(0);
+                        this.callId = loadView(this.ctx, this.className, id,
+                                               type, this, this.forceRefresh);
+                        // Wait until this one is loaded
+                        return;
+                    }
+                }
+                // All done, load data
+                this.callId = loadDataCount(this.ctx, this.className, this,
+                                            this.forceRefresh);
+                break;
             case DATACOUNT_OK:
                 this.count = (Integer) ((Object[])m.obj)[1];
                 loadRelFields(this.ctx, this.className, this,
@@ -535,7 +625,7 @@ public class DataLoader {
                 int expected = Math.min(TrytonCall.CHUNK_SIZE,
                                         this.count);
                 loadData(this.ctx, this.className, 0, TrytonCall.CHUNK_SIZE,
-                         expected, this.relFields, this.views, this,
+                         expected, this.relFields, this.loadedViewTypes, this,
                          this.forceRefresh);
                 break;
             case DATA_OK:
@@ -545,10 +635,18 @@ public class DataLoader {
                 if (this.offset < this.count) {
                     loadData(this.ctx, this.className, this.offset,
                              TrytonCall.CHUNK_SIZE, expected,
-                             this.relFields, this.views, this,
+                             this.relFields, this.loadedViewTypes, this,
                              this.forceRefresh);
                 } else {
-                    loadedModels.add(this.className);
+                    for (String type : this.loadedViewTypes.getTypes()) {
+                        // Mark view as loaded (id and 0 if it was loaded)
+                        int id = this.loadedViewTypes.getViewId(type);
+                        addLoadedView(this.className, type, id);
+                        if (this.viewTypes != null) {
+                            int oldId = this.viewTypes.getViewId(type);
+                            addLoadedView(this.className, type, oldId);
+                        }
+                    }
                     loadRec();
                 }
                 break;
@@ -565,34 +663,34 @@ public class DataLoader {
                 String subclassName = rel.getRelModel();
                 // Get required fields from views
                 List<String> fields = null;;
-                if (views != null) {
-                    fields = views.getAllFieldNames();
+                if (this.loadedViewTypes != null) {
+                    fields = this.loadedViewTypes.getAllFieldNames();
                 } else {
                     fields = new ArrayList<String>();
                 }
                 if (!fields.contains("id")) { fields.add("id"); }
                 if (!fields.contains("rec_name")) { fields.add("rec_name"); }
+                // Load the rel field only if it is used in the views
                 if (fields.contains(fieldName)) {
-                    ModelViewTypes vt = null;
-                    if (this.views != null) {
-                        ModelView form = this.views.getView("form");
+                    ModelViewTypes subviewTypes = null;
+                    // Subviews are used only from form views, pick it
+                    if (this.loadedViewTypes != null) {
+                        ModelView form = this.loadedViewTypes.getView("form");
                         if (form != null) {
-                            vt = form.getSubview(fieldName);
+                            subviewTypes = form.getSubview(fieldName);
                         }
-                    }
-                    if (!loadedModels.contains(subclassName)) {
-                        new ModelLoader(this.callId, this, this.ctx,
-                                        subclassName, vt,
-                                        this.forceRefresh).load();
-                    } else {
-                        // For subfields that are already loaded don't
-                        // force refresh (will merge with current data
-                        // if required)
-                        new ModelLoader(this.callId, this, this.ctx,
-                                        subclassName, vt, false).load();
                     }
                     // Prepare for next and wait model loader
                     this.subloadIndex++;
+                    if (subviewTypes != null) {
+                        // Load next subview and submodels
+                        new ModelLoader(this.superCallId, this, this.ctx,
+                                        subclassName, subviewTypes,
+                                        this.forceRefresh).load();
+                    } else {
+                        // No view att all, don't need
+                        this.loadRec();
+                    }
                 } else {
                     // Continue with next
                     this.subloadIndex++;
@@ -617,9 +715,12 @@ public class DataLoader {
                                 menu, forceRefresh);
     }
 
+    public static void initEntriesLoading() {
+        loadedViews = new HashSet<String>();
+    }
+
     public static int loadFullEntry(final Context ctx, final MenuEntry entry,
                                     final Handler h, boolean forceRefresh) {
-        loadedModels = new HashSet<String>();
         final int callId = callSequence++;
         handlers.put(callId, h);
         String action = entry.getActionType();
@@ -632,8 +733,7 @@ public class DataLoader {
         } else {
             final EntryHandler entryHandler = newEntryHandler(callId, ctx, entry,
                                                               forceRefresh);
-            int subcallId = loadViews(ctx, entry, entryHandler, forceRefresh);
-            entryHandler.setFirstCallId(subcallId);
+            entryHandler.start();
             return callId;
         }
     }

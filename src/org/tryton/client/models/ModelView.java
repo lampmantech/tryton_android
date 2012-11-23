@@ -98,6 +98,10 @@ public class ModelView implements Serializable {
         return this.id;
     }
 
+    public void forceId(int id) {
+        this.id = id;
+    }
+
     public String getModelName() {
         return this.modelName;
     }
