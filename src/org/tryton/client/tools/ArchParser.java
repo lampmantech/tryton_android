@@ -114,6 +114,17 @@ public class ArchParser {
             return this.subviews;
         }
 
+        private void registerSubview(String fieldName, Model fieldModel,
+                                     String type, int id) {
+            if (this.subviews.get(fieldName) == null) {
+                String className = fieldModel.getClassName();
+                ModelViewTypes vt = new ModelViewTypes(className);
+                this.subviews.put(fieldName, vt);
+            }
+            ModelViewTypes vt = this.subviews.get(fieldName);
+            vt.putViewId(type, id);
+        }
+
         @Override
         public void startDocument() throws SAXException {
             // Set up prior to parsing a doc
@@ -151,31 +162,34 @@ public class ArchParser {
                     if (fieldModel != null) {
                         this.builtFields.add(fieldModel);
                         // Check for subviews
-                        String view_ids = atts.getValue("view_ids");
+                        String viewIds = atts.getValue("view_ids");
                         String mode = atts.getValue("mode");
                         String modelName = fieldModel.getString("relation");
-                        if (view_ids != null && mode != null) {
-                            String[] ids = view_ids.split(",");
-                            String[] modes = mode.split(",");
-                            for (int i = 0; i < modes.length; i++) {
-                                if (modes[i].equals("")) {
-                                    // empty modes
-                                    break;
-                                }
-                                Integer id = null;
-                                if (ids.length > i && !ids[i].equals("")) {
-                                    id = new Integer(ids[i]);
-                                } else {
-                                    id = 0;
-                                }
+                        if (mode == null || mode.equals("")) {
+                            // No mode, use id as tree view
+                            if (viewIds != null && !viewIds.equals("")) {
+                                String[] ids = viewIds.split(",");
+                                int id = new Integer(ids[0]);
                                 // Register subview id
-                                if (this.subviews.get(fieldName) == null) {
-                                    String className = fieldModel.getClassName();
-                                    ModelViewTypes vt = new ModelViewTypes(className);
-                                    this.subviews.put(fieldName, vt);
+                                this.registerSubview(fieldName, fieldModel,
+                                                     "tree", id);
+                                
+                            }
+                        } else {
+                            // One2Many field with modes
+                            if (viewIds != null && !viewIds.equals("")) {
+                                String[] ids = viewIds.split(",");
+                                String[] modes = mode.split(",");
+                                for (int i = 0; i < modes.length; i++) {
+                                    String type = modes[i];
+                                    int id = 0;
+                                    if (ids.length > i && !ids[i].equals("")) {
+                                        id = new Integer(ids[i]);
+                                    }
+                                    // Register subview id
+                                    this.registerSubview(fieldName, fieldModel,
+                                                         type, id);
                                 }
-                                ModelViewTypes vt = this.subviews.get(fieldName);
-                                vt.putViewId(modes[i], id);
                             }
                         }
                     } else {
