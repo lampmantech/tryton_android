@@ -383,7 +383,7 @@ public class FormView extends Activity
     private void loadViewAndData() {
         if (this.callId == 0) {
             this.showLoadingDialog(LOADING_DATA);
-            String className = Session.current.editedModel.getClassName();
+            String className = Session.current.tempModel.getClassName();
             this.callId = DataLoader.loadView(this, className,
                                               this.viewId, "form",
                                               new Handler(this), false);
@@ -395,7 +395,7 @@ public class FormView extends Activity
     private void loadDataAndMeta() {
         if (this.callId == 0) {
             this.showLoadingDialog(LOADING_DATA);
-            String className = Session.current.editedModel.getClassName();
+            String className = Session.current.tempModel.getClassName();
             this.callId = DataLoader.loadRelFields(this, className,
                                                        new Handler(this),
                                                        false);
@@ -404,9 +404,14 @@ public class FormView extends Activity
 
     private void loadData() {
         if (this.callId == 0) {
-            String className = Session.current.editedModel.getClassName();
+            String className = Session.current.tempModel.getClassName();
+            Integer id = (Integer) Session.current.tempModel.get("id");
+            // Add id to list to load for edit
             List<Integer> ids = new ArrayList<Integer>();
-            ids.add((Integer)Session.current.editedModel.get("id"));
+            if (id != null) {
+                ids.add((Integer)Session.current.tempModel.get("id"));
+            }
+            // Call (relies on DataLoader returning well with no id)
             this.callId = DataLoader.loadData(this, className, ids,
                                               this.relFields, this.view,
                                               new Handler(this), false);
@@ -505,7 +510,10 @@ public class FormView extends Activity
         case DataLoader.DATA_OK:
             this.callId = 0;
             List<Model> dataList = (List<Model>)((Object[])msg.obj)[1];
-            Session.current.editedModel = dataList.get(0);
+            if (dataList.size() > 0) {
+                // Refresh edited model (not done when creating)
+                Session.current.editedModel = dataList.get(0);
+            }
             this.initView();
             this.refreshDisplay();
             this.hideLoadingDialog();

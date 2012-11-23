@@ -39,8 +39,12 @@ public class Session {
     public String cookie;
     public Preferences prefs;
     
-    /** Model currently edited in form view. Use editModel to set its value */
+    /** Model currently edited in form view. Use editModel to set its value.
+     * EditedModel is null when creating a new record.*/
     public Model editedModel;
+    /** Model with edited values. Never null except when nothing
+     * is beeing edited. TempModel always has the id of the original model
+     * when editing and does not have an id when creating. */
     public Model tempModel;
     public String linkToParent;
     public String linkToSelf;
