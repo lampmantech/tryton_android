@@ -530,7 +530,9 @@ public class DataLoader {
             this.forceRefresh = forceRefresh;
             this.parent = parent;
         }
-        /** Constructor for below levels */
+        /** Constructor for below levels. It uses viewTypes dumbly, make sure
+         * viewTypes contains the types to load. I.e if tree is not defined,
+         * it won't be loaded at all. */
         public ModelLoader(int superCallId, Handler parent, Context ctx,
                            String className, ModelViewTypes viewTypes,
                            boolean forceRefresh) {
@@ -680,17 +682,27 @@ public class DataLoader {
                             subviewTypes = form.getSubview(fieldName);
                         }
                     }
+                    // Ensure that the subviews has always tree and form
+                    if (subviewTypes == null) {
+                        // No view set, use tree and form
+                        subviewTypes = new ModelViewTypes(subclassName);
+                        subviewTypes.putViewId("tree", 0);
+                        subviewTypes.putViewId("form", 0);
+                    } else {
+                        // 0 can means the type is not there, force it
+                        if (subviewTypes.getViewId("tree") == 0) {
+                            subviewTypes.putViewId("tree", 0);
+                        }
+                        if (subviewTypes.getViewId("form") == 0) {
+                            subviewTypes.putViewId("form", 0);
+                        }
+                    }
                     // Prepare for next and wait model loader
                     this.subloadIndex++;
-                    if (subviewTypes != null) {
-                        // Load next subview and submodels
-                        new ModelLoader(this.superCallId, this, this.ctx,
-                                        subclassName, subviewTypes,
-                                        this.forceRefresh).load();
-                    } else {
-                        // No view att all, don't need
-                        this.loadRec();
-                    }
+                    // Load next subview and submodels
+                    new ModelLoader(this.superCallId, this, this.ctx,
+                                    subclassName, subviewTypes,
+                                    this.forceRefresh).load();
                 } else {
                     // Continue with next
                     this.subloadIndex++;
