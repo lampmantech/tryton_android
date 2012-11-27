@@ -55,7 +55,9 @@ public class DataLoader {
     public static final int DATA_OK = 1008;
     public static final int DATA_NOK = 1009;
     public static final int MENUDATA_OK = 1010;
-    private static final int MODELDATA_OK = 1011;
+    public static final int MENUDATA_NOK = 1011;
+    private static final int MODELDATA_OK = 1012;
+    private static final int MODELDATA_NOK = 1013;
 
     private static int callSequence = 1;
     private static Map<Integer, Handler> handlers = new HashMap<Integer, Handler>();
@@ -496,6 +498,11 @@ public class DataLoader {
                 msg.what = MENUDATA_OK;
                 forwardMessage(this.callId, msg, this.ctx);
                 break;
+            case MODELDATA_NOK:
+                msg = this.obtainMessage();
+                msg.what = MENUDATA_NOK;
+                forwardMessage(this.callId, msg, this.ctx);
+                break;
             }
         }
     }
@@ -547,7 +554,8 @@ public class DataLoader {
             this.parent = parent;
             this.pendingViewTypes = new ArrayList<String>();
             for (String type : this.viewTypes.getTypes()) {
-                if (this.viewTypes.getView(type) == null) {
+                if (this.viewTypes.getView(type) == null
+                    || this.viewTypes.getViewId(type) == 0) {
                     this.pendingViewTypes.add(type);
                 }
             }
@@ -646,6 +654,7 @@ public class DataLoader {
                         int id = this.loadedViewTypes.getViewId(type);
                         addLoadedView(this.className, type, id);
                         if (this.viewTypes != null) {
+                            // In case it was 0 before loading
                             int oldId = this.viewTypes.getViewId(type);
                             addLoadedView(this.className, type, oldId);
                         }
@@ -655,6 +664,14 @@ public class DataLoader {
                 break;
             case MODELDATA_OK:
                 loadRec();
+                break;
+            case VIEWS_NOK:
+            case DATACOUNT_NOK:
+            case RELFIELDS_NOK:
+            case DATA_NOK:
+                Message msg = this.parent.obtainMessage();
+                msg.what = MODELDATA_NOK;
+                msg.sendToTarget();
                 break;
             }
         }

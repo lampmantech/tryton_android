@@ -84,8 +84,12 @@ public class ModelView implements Serializable {
                     ModelViewTypes mvt = new ModelViewTypes(field.getString("relation"));
                     for (int j = 0; j < names.length(); j++) {
                         String type = names.getString(j);
-                        ModelView subview = new ModelView(jsSubviews.getJSONObject(type), false);
-                        mvt.putView(type, subview);
+                        JSONObject jsSubview = jsSubviews.getJSONObject(type);
+                        if (jsSubview.getInt("view_id") != 0) {
+                            // Consider the view useable only if it has an id
+                            ModelView subview = new ModelView(jsSubviews.getJSONObject(type), false);
+                            mvt.putView(type, subview);
+                        }
                     }
                     this.subviews.put(fieldName, mvt);
                 }

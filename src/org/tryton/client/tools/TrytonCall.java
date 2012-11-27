@@ -571,9 +571,9 @@ public class TrytonCall {
         if (oView instanceof JSONObject) {
             try {
                 JSONObject jsFields = (JSONObject) oView;
-                boolean defaultView = (id == null);
+                boolean defaultView = (id == null || id.intValue() == 0);
                 ModelView mView = new ModelView(jsFields, defaultView);
-                if (id != null && id.intValue() != mView.getId()) {
+                if (id != null && id != 0 && id.intValue() != mView.getId()) {
                     // Replace inherited id by real id
                     mView.forceId(id);
                 }
@@ -611,13 +611,8 @@ public class TrytonCall {
                 Message m = h.obtainMessage();
                 try {
                     ModelView view = null;
-                    if (id != 0) {
-                        view = getView(userId, cookie, prefs,
-                                       model, id, type);
-                    } else {
-                        view = getView(userId, cookie, prefs,
-                                       model, null, type);
-                    }
+                    view = getView(userId, cookie, prefs,
+                                   model, id, type);
                     m.what = CALL_VIEW_OK;
                     Object[] ret = new Object[]{type, view};
                     m.obj = ret;
