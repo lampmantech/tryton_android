@@ -80,7 +80,6 @@ public class TreeViewFactory {
             int intNum = -1;
             int decNum = -1;
             if (digits != null) {
-                System.out.println(digits);
                 digits = digits.substring(1, digits.length() - 1);
                 String[] split = digits.split(",");
                 intNum = Integer.parseInt(split[0].trim());
