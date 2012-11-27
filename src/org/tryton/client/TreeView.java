@@ -202,16 +202,18 @@ public class TreeView extends Activity
             this.nextPage.setVisibility(View.INVISIBLE);
         }
         // Update data
+        ModelView view = this.viewTypes.getView("tree");
         switch (this.mode) {
         case MODE_EXTENDED:
-            TreeFullAdapter adapt = new TreeFullAdapter(this.viewTypes.getView("tree"),
+            TreeFullAdapter adapt = new TreeFullAdapter(view,
                                                         this.data);
             this.tree.setAdapter(adapt);
             this.sumtree.setVisibility(View.GONE);
             this.tree.setVisibility(View.VISIBLE);
             break;
         case MODE_SUMMARY:
-            TreeSummaryAdapter sumadapt = new TreeSummaryAdapter(this.viewTypes.getView("tree"), this.data);
+            TreeSummaryAdapter sumadapt = new TreeSummaryAdapter(view,
+                                                                 this.data);
             this.sumtree.setAdapter(sumadapt);
             this.sumtree.setVisibility(View.VISIBLE);
             this.tree.setVisibility(View.GONE);
