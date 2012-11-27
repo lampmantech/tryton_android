@@ -455,6 +455,7 @@ public class FormView extends Activity
                 }
                 db.storeData(className, base);
             }
+            TreeView.setDirty();
             // Update session and local data count if required
             if (Session.current.editedModel == null) {
                 // Creation: add one to data count and
@@ -489,6 +490,7 @@ public class FormView extends Activity
             // Update local db
             db = new DataCache(this);
             db.deleteData(Session.current.editedModel);
+            TreeView.setDirty();
             this.kill = true;
             this.finish();
             break;

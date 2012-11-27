@@ -53,6 +53,9 @@ import org.tryton.client.views.TreeFullAdapter;
 import org.tryton.client.views.TreeSummaryAdapter;
 import org.tryton.client.views.TreeSummaryItem;
 
+/** Main tree view. Used for top level listing. Other trees are shown with
+ * PickOne or ToManyEditor. 
+ * TreeView must be unique in order for the dirty check to work. */
 public class TreeView extends Activity
     implements Handler.Callback, ListView.OnItemClickListener,
                ExpandableListView.OnChildClickListener,
@@ -71,6 +74,8 @@ public class TreeView extends Activity
     static final int PAGING_SUMMARY = 40; // package scope, used by PickOne
     private static final int PAGING_EXTENDED = 10;
     
+    private static boolean dirty;
+
     private MenuEntry origin;
     private ModelViewTypes viewTypes;
     private int totalDataCount = -1;
@@ -144,7 +149,7 @@ public class TreeView extends Activity
         // or update existing data
         if (this.data == null && this.viewTypes == null) {
             this.loadViewsAndData();
-        } else {
+        } else if (this.data == null || dirty) {
             this.loadDataAndMeta();
         }
     }
@@ -175,6 +180,10 @@ public class TreeView extends Activity
     public void onDestroy() {
         super.onDestroy();
         this.hideLoadingDialog();
+    }
+
+    public static void setDirty() {
+        dirty = true;
     }
 
     /** Update the display list and header with loaded data.
@@ -435,6 +444,7 @@ public class TreeView extends Activity
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
             this.data = data;
+            dirty = false;
             this.hideLoadingDialog();
             this.updateList();
             break;
