@@ -549,15 +549,17 @@ public class DataCache extends SQLiteOpenHelper {
     public List<RelField> getRelFields(String className) {
         SQLiteDatabase db = this.getReadableDatabase();
         List<RelField> ret = new ArrayList<RelField>();
-        Cursor c = db.query(REL_TABLE, new String[]{"type", "relModel"},
+        Cursor c = db.query(REL_TABLE, new String[]{"field", "type",
+                                                    "relModel"},
                             "className = ?", new String[]{className},
                             null, null, null, null);
         boolean noFields = false;
         while (c.moveToNext()) {
-            String type = c.getString(0);
-            String relModel = c.getString(1);
+            String field = c.getString(0);
+            String type = c.getString(1);
+            String relModel = c.getString(2);
             if (type != null) {
-                RelField rel = new RelField(className, type, relModel);
+                RelField rel = new RelField(field, type, relModel);
                 ret.add(rel);
             } else {
                 noFields = true;
