@@ -324,12 +324,10 @@ public class FormViewFactory {
                             oval = fallbackData.get(name);
                         }
                         if (oval != null) {
-                            double dval = 0;
+                            Double dval = null;
                             if (oval instanceof Map) {
                                 // decimal
-                                @SuppressWarnings("unchecked")
-                                Map<String, Object> mVal = (Map<String, Object>) oval;
-                                dval = Double.parseDouble((String)mVal.get("decimal"));
+                                dval = FieldsConvertion.numericToDouble((Map)oval);
                             } else {
                                 // float
                                 dval = (Double)oval;
