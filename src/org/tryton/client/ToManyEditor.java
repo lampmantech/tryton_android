@@ -252,6 +252,27 @@ public class ToManyEditor extends Activity
         this.startActivity(i);
     }
 
+    /** Open form view to edit or create a model
+     * (make sure to configure session before calling it) */
+    private void openForm() {
+        ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
+        if (viewTypes == null) {
+            // Use default form view
+            FormView.setup(0);
+        } else {
+            // Check for view or id
+            ModelView form = viewTypes.getView("form");
+            if (form != null) {
+                FormView.setup(form);
+            } else {
+                int viewId = viewTypes.getViewId("form");
+                FormView.setup(viewId);
+            }
+        }
+        Intent i = new Intent(this, FormView.class);
+        this.startActivity(i);
+    }
+
     /** Action called on create button. Replaces add for one2many field. */
     public void create() {
         // Open a new form to create the relation
@@ -263,16 +284,7 @@ public class ToManyEditor extends Activity
         } else {
             Session.current.editNewModel(this.className);
         }
-        ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
-        ModelView form = viewTypes.getView("form");
-        if (form != null) {
-            FormView.setup(form);
-        } else {
-            int viewId = viewTypes.getViewId("form");
-            FormView.setup(viewId);
-        }
-        Intent i = new Intent(this, FormView.class);
-        this.startActivity(i);
+        this.openForm();
     }
 
     private void edit(Model model) {
@@ -283,16 +295,7 @@ public class ToManyEditor extends Activity
         } else {
             Session.current.editModel(model);
         }
-        ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
-        ModelView form = viewTypes.getView("form");
-        if (form != null) {
-            FormView.setup(form);
-        } else {
-            int viewId = viewTypes.getViewId("form");
-            FormView.setup(viewId);
-        }
-        Intent i = new Intent(this, FormView.class);
-        this.startActivity(i);        
+        this.openForm();
     }
 
     public void onItemClick(AdapterView parent, View v, int position,
