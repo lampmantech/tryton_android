@@ -93,6 +93,7 @@ public class FormView extends Activity
     public void onCreate(Bundle state) {
         super.onCreate(state);
         boolean loadData = false;
+        boolean loadView = false;
         // Init data
         if (state != null) {
             this.view = (ModelView) state.getSerializable("view");
@@ -109,15 +110,20 @@ public class FormView extends Activity
             this.viewId = viewIdInitializer;
             viewIdInitializer = 0;
             // This is the first call, need to update data for new fields
+            loadView = (this.view == null);
             loadData = true;
         }
         // Init view
         this.setContentView(R.layout.form);
         this.table = (TableLayout) this.findViewById(R.id.form_table);
-        if (this.view != null && !loadData) {
+        if (!loadView && !loadData) {
             this.initView();
         } else {
-            this.loadViewAndData();
+            if (loadView) {
+                this.loadViewAndData();
+            } else {
+                this.loadDataAndMeta();
+            }
         }
     }
 
