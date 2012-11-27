@@ -27,6 +27,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -159,6 +160,20 @@ public class Menu extends Activity
             }
         }
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+            // Cancel caching
+            if (this.mode == MODE_CACHE && this.callId == 0) {
+                this.cancelCache(null);
+                return true;
+            }
+        }
+        // Use default behaviour
+        return super.onKeyDown(keyCode, event);
+    }
+
 
     public void showLoadingDialog() {
         if (this.loadingDialog == null) {
