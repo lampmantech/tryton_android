@@ -29,7 +29,7 @@
   <color name="header_gradient_end">#888</color>
   <color name="header_text_color">#000</color>
 
-  <color name="required_color">#7D7DFF</color>
+  <color name="required_color">#9999FF</color>
 
   <integer name="login_text_size_em">10</integer>
 
@@ -37,10 +37,10 @@
   <color name="about_separator_color">#999</color>
   
   <style name="main_container">
-    <item name="android:background">#D1CFCE</item>
-    <item name="android:cacheColorHint">#D1CFCE</item>
+    <item name="android:background">#000</item>
+    <item name="android:cacheColorHint">#000</item>
   </style>
 
-  <style name="TrytonTheme" parent="android:Theme.Light.NoTitleBar">
+  <style name="TrytonTheme" parent="android:Theme.NoTitleBar">
   </style>
 </resources>
