@@ -73,6 +73,21 @@
             android:textColor="#EEE"
             android:layout_marginLeft="@dimen/content_margin"
             android:layout_marginBottom="@dimen/content_margin" />
-
+  <TextView android:id="@+id/server_database"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_above="@id/server_version"
+            android:textColor="#EEE"
+            android:layout_marginLeft="@dimen/content_margin"
+            android:layout_marginBottom="@dimen/content_margin" />
+  <TextView android:id="@+id/server_host"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_above="@id/server_database"
+            android:textColor="#EEE"
+            android:layout_marginLeft="@dimen/content_margin"
+            android:layout_marginBottom="@dimen/content_margin" />
 </RelativeLayout>
 

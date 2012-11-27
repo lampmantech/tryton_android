@@ -54,6 +54,8 @@ public class Start extends Activity implements Handler.Callback {
     private String serverVersion;
 
     private TextView versionLabel;
+    private TextView hostLabel;
+    private TextView databaseLabel;
     private EditText login;
     private EditText password;
     private Button loginBtn;
@@ -79,6 +81,8 @@ public class Start extends Activity implements Handler.Callback {
         // Load views from xml resource
         setContentView(R.layout.main);
         this.versionLabel = (TextView) this.findViewById(R.id.server_version);
+        this.hostLabel = (TextView) this.findViewById(R.id.server_host);
+        this.databaseLabel = (TextView) this.findViewById(R.id.server_database);
         this.login = (EditText) this.findViewById(R.id.login);
         this.password = (EditText) this.findViewById(R.id.password);
         this.loginBtn = (Button) this.findViewById(R.id.login_btn);
@@ -136,6 +140,8 @@ public class Start extends Activity implements Handler.Callback {
 
     /** Update display according to stored version */
     public void updateVersionLabel() {
+        this.hostLabel.setText(Configure.getHost(this));
+        this.databaseLabel.setText(Configure.getDatabase(this));
         if (this.serverVersion == null) {
             // Unknown version, server is unavailable
             this.findViewById(R.id.server_ssl).setVisibility(View.GONE);
