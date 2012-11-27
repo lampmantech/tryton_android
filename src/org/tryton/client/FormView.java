@@ -195,6 +195,7 @@ public class FormView extends Activity
     @Override
     public void onPause() {
         super.onPause();
+        this.updateTempModel();
         if (this.kill) {
             Session.current.finishEditing();
         }
