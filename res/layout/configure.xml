@@ -25,7 +25,8 @@
   <EditTextPreference
       android:key="host"
       android:title="@string/config_host_title"
-      android:summary="@string/config_host_desc" />
+      android:summary="@string/config_host_desc"
+      android:defaultValue="demo2.6.tryton.org" />
   <EditTextPreference
       android:key="port"
       android:title="@string/config_port_title"
@@ -34,11 +35,13 @@
   <CheckBoxPreference
       android:key="ssl"
       android:title="@string/config_ssl_title"
-      android:summary="@string/config_ssl_desc" />
+      android:summary="@string/config_ssl_desc"
+      android:defaultValue="true" />
   <EditTextPreference
       android:key="database"
       android:title="@string/config_database_title"
-      android:summary="@string/config_database_desc" />
+      android:summary="@string/config_database_desc"
+      android:defaultValue="demo2.6" />
   <PreferenceScreen android:title="@string/config_user_preferences">
     <CheckBoxPreference
         android:key="autologout"

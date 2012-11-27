@@ -36,7 +36,11 @@ import org.tryton.client.tools.TrytonCall;
  */
 public class Configure extends PreferenceActivity {
 
+    // Default values, check that they match in configure.xml
+    private static final String DEFAULT_HOST = "demo2.6.tryton.org";
     private static final String DEFAULT_PORT = "8000";
+    private static final String DEFAULT_DATABASE = "demo2.6";
+    private static final boolean DEFAULT_SSL = true;
 
     /** Called when the activity is first created. */
     @Override
@@ -68,7 +72,7 @@ public class Configure extends PreferenceActivity {
      */
     public static String getHost(Context ctx) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        return prefs.getString("host", "");
+        return prefs.getString("host", DEFAULT_HOST);
     }
 
     public static String getPort(Context ctx) {
@@ -78,7 +82,7 @@ public class Configure extends PreferenceActivity {
 
     public static boolean getSSL(Context ctx) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        return prefs.getBoolean("ssl", false);
+        return prefs.getBoolean("ssl", DEFAULT_SSL);
     }
 
     /** Get database value
@@ -86,7 +90,7 @@ public class Configure extends PreferenceActivity {
      */
     public static String getDatabase(Context ctx) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        return prefs.getString("database", "");
+        return prefs.getString("database", DEFAULT_DATABASE);
     }
 
     /** Get a code to uniquely identify the targeted database. */
