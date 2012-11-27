@@ -367,6 +367,7 @@ public class DataLoader {
                                final ModelView view,
                                final Handler h, final boolean forceRefresh) {
         ModelViewTypes dummy = new ModelViewTypes(view.getModelName());
+        dummy.putView(view.getType(), view);
         return loadData(ctx, className, offset, count, expectedCount, relFields,
                        dummy, h, forceRefresh);
 
@@ -412,7 +413,7 @@ public class DataLoader {
                                final ModelView view,
                                final Handler h, final boolean forceRefresh) {
         ModelViewTypes dummy = new ModelViewTypes(view.getModelName());
-        dummy.putView("dummy", view);
+        dummy.putView(view.getType(), view);
         return loadData(ctx, className, ids, relFields, dummy, h, forceRefresh);
     }
 

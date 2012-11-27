@@ -910,6 +910,7 @@ public class TrytonCall {
                               final ModelView view,
                               final Handler h) {
         ModelViewTypes dummy = new ModelViewTypes(view.getModelName());
+        dummy.putView(view.getType(), view);
         return getData(userId, cookie, prefs, modelName, offset, count,
                        relFields, dummy, h);
     }
