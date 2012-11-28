@@ -40,8 +40,14 @@ public class FieldsConvertion {
                 || decimal.get("decimal").equals("")) {
                 return null;
             }
-            Double val = Double.parseDouble((String)decimal.get("decimal"));
-            return val.doubleValue();
+            try {
+                Double val = Double.parseDouble((String)decimal.get("decimal"));
+                return val.doubleValue();
+            } catch (NumberFormatException e) {
+                Log.w("Tryton", "Ignoring numeric " + decimal.get("decimal")
+                      + " value", e);
+                return null;
+            }
         } else {
             Log.e("Tryton", "Converting an invalid map to double");
             return null;
