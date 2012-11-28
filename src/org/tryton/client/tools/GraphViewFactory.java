@@ -18,6 +18,7 @@
 package org.tryton.client.tools;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,14 @@ import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 
 public class GraphViewFactory {
+
+    private static final int[] DEFAULT_COLORS = new int[] {
+        Color.argb(255, 34, 69, 101),
+        Color.argb(255, 54, 89, 121),
+        Color.argb(255, 74, 109, 141),
+        Color.argb(255, 94, 130, 162),
+        Color.argb(255, 115, 150, 182)
+    };
 
     private static double getYValue(Model data, Model yAxis) {
         String fieldName = yAxis.getString("name");
@@ -122,6 +131,7 @@ public class GraphViewFactory {
             } else {
                 renderers.setXTitle(xAxis.getString("name"));
             }
+            int defaultColorIndex = 0;
             for (Model y : yAxis) {
                 // Set series name
                 String seriesName = null;
@@ -132,6 +142,9 @@ public class GraphViewFactory {
                 }
                 XYSeries series = new XYSeries(seriesName);
                 XYSeriesRenderer renderer = new XYSeriesRenderer();
+                renderer.setColor(DEFAULT_COLORS[defaultColorIndex]);
+                defaultColorIndex++;
+                defaultColorIndex %= DEFAULT_COLORS.length;
                 Map<Object, Double> plots = getValues(data, xAxis, y);
                 // Set series values
                 int i = 0;
@@ -165,9 +178,13 @@ public class GraphViewFactory {
             CategorySeries series = new CategorySeries("");
             for (Model y : yAxis) {
                 Map<Object, Double> plots = getValues(data, xAxis, y);
+                int defaultColorIndex = 0;
                 for (Object o : plots.keySet()) {
                     series.add(o.toString(), plots.get(o));
                     SimpleSeriesRenderer renderer = new SimpleSeriesRenderer();
+                    renderer.setColor(DEFAULT_COLORS[defaultColorIndex]);
+                    defaultColorIndex++;
+                    defaultColorIndex %= DEFAULT_COLORS.length;
                     renderers.addSeriesRenderer(renderer);
                 }
                 break;
