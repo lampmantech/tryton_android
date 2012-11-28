@@ -142,9 +142,22 @@ public class GraphViewFactory {
                 }
                 XYSeries series = new XYSeries(seriesName);
                 XYSeriesRenderer renderer = new XYSeriesRenderer();
-                renderer.setColor(DEFAULT_COLORS[defaultColorIndex]);
-                defaultColorIndex++;
-                defaultColorIndex %= DEFAULT_COLORS.length;
+                if (y.hasAttribute("color")) {
+                    try {
+                    int color = Color.parseColor(y.getString("color"));
+                    renderer.setColor(color);
+                    } catch (IllegalArgumentException e) {
+                        Log.e("Tryton", "Unable to read color "
+                              + y.getString("color"), e);
+                        renderer.setColor(DEFAULT_COLORS[defaultColorIndex]);
+                        defaultColorIndex++;
+                        defaultColorIndex %= DEFAULT_COLORS.length;
+                    }
+                } else {
+                    renderer.setColor(DEFAULT_COLORS[defaultColorIndex]);
+                    defaultColorIndex++;
+                    defaultColorIndex %= DEFAULT_COLORS.length;
+                }
                 Map<Object, Double> plots = getValues(data, xAxis, y);
                 // Set series values
                 int i = 0;
