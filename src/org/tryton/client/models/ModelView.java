@@ -45,6 +45,7 @@ public class ModelView implements Serializable {
     protected String modelName;
     protected boolean defaultView;
     protected String type;
+    protected String subtype;
     protected String arch;
     /** The fields given by the server, indexed by name */
     protected Map<String, Model> fields;
@@ -117,6 +118,14 @@ public class ModelView implements Serializable {
 
     public String getType() {
         return this.type;
+    }
+
+    public String getSubtype() {
+        return this.subtype;
+    }
+    
+    public void setSubtype(String subtype) {
+        this.subtype = subtype;
     }
 
     /** Get the view title. Is valid only once the view is built. */

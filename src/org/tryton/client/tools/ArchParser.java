@@ -62,6 +62,7 @@ public class ArchParser {
             // Parse and set result
             xr.parse(new InputSource(new StringReader(view.getArch())));
             view.setTitle(handler.getTitle());
+            view.setSubtype(handler.getSubtype());
             view.build(handler.getResult());
             // Merge subviews with discovered subviews
             for (String fieldName : handler.getSubviews().keySet()) {
@@ -88,24 +89,45 @@ public class ArchParser {
 
     private static class ArchHandler extends DefaultHandler {
 
+        private static final int STATE_DONTCARE = 0;
+        private static final int STATE_AXIS = 1;
+
         private ModelView view;
         private Map<String, Model> fields;
         private List<Model> builtFields;
         private int type;
+        private String subtype;
         private String title;
         private Map<String, ModelViewTypes> subviews;
+        private List<Model> buildStack;
+        private int state;
+
+        private Model stackTop() {
+            return this.buildStack.get(this.buildStack.size() - 1);
+        }
+        private void stackPush(Model m) {
+            this.buildStack.add(m);
+        }
+        private void stackPop() {
+            this.buildStack.remove(this.buildStack.size() - 1);
+        }
 
         public ArchHandler(ModelView view) {
             this.view = view;
             this.fields = this.view.getFields();
             this.builtFields = new ArrayList<Model>();
             this.subviews = new TreeMap<String, ModelViewTypes>();
+            this.buildStack = new ArrayList<Model>();
         }
 
         public String getTitle() {
             return this.title;
         }
 
+        public String getSubtype() {
+            return this.subtype;
+        }
+        
         public List<Model> getResult() {
             return this.builtFields;
         }
@@ -153,45 +175,57 @@ public class ArchParser {
                        && this.type == TYPE_UNDEFINED) {
                 this.type = TYPE_GRAPH;
                 this.title = atts.getValue("string");
+                this.subtype = atts.getValue("type");
             }
             // Field
             if (localName.equals("field")) {
                 String fieldName = atts.getValue("name");
                 if (fieldName != null) {
-                    Model fieldModel = this.fields.get(fieldName);
-                    if (fieldModel != null) {
-                        this.builtFields.add(fieldModel);
-                        // Check for subviews
-                        String viewIds = atts.getValue("view_ids");
-                        String mode = atts.getValue("mode");
-                        String modelName = fieldModel.getString("relation");
-                        if (mode == null || mode.equals("")) {
-                            // No mode, use id as tree view
-                            if (viewIds != null && !viewIds.equals("")) {
-                                String[] ids = viewIds.split(",");
-                                int id = new Integer(ids[0]);
-                                // Register subview id
-                                this.registerSubview(fieldName, fieldModel,
-                                                     "tree", id);
-                                
-                            }
-                        } else {
-                            // One2Many field with modes
-                            if (viewIds != null && !viewIds.equals("")) {
-                                String[] ids = viewIds.split(",");
-                                String[] modes = mode.split(",");
-                                for (int i = 0; i < modes.length; i++) {
-                                    String type = modes[i];
-                                    int id = 0;
-                                    if (ids.length > i && !ids[i].equals("")) {
-                                        id = new Integer(ids[i]);
-                                    }
+                    if (this.state == STATE_DONTCARE) {
+                        Model fieldModel = this.fields.get(fieldName);
+                        if (fieldModel != null) {
+                            this.builtFields.add(fieldModel);
+                            // Check for subviews
+                            String viewIds = atts.getValue("view_ids");
+                            String mode = atts.getValue("mode");
+                            String modelName = fieldModel.getString("relation");
+                            if (mode == null || mode.equals("")) {
+                                // No mode, use id as tree view
+                                if (viewIds != null && !viewIds.equals("")) {
+                                    String[] ids = viewIds.split(",");
+                                    int id = new Integer(ids[0]);
                                     // Register subview id
                                     this.registerSubview(fieldName, fieldModel,
-                                                         type, id);
+                                                         "tree", id);
+                                
+                                }
+                            } else {
+                                // One2Many field with modes
+                                if (viewIds != null && !viewIds.equals("")) {
+                                    String[] ids = viewIds.split(",");
+                                    String[] modes = mode.split(",");
+                                    for (int i = 0; i < modes.length; i++) {
+                                        String type = modes[i];
+                                        int id = 0;
+                                        if (ids.length > i && !ids[i].equals("")) {
+                                            id = new Integer(ids[i]);
+                                        }
+                                        // Register subview id
+                                        this.registerSubview(fieldName, fieldModel,
+                                                             type, id);
+                                    }
                                 }
                             }
                         }
+                    } else if (this.state == STATE_AXIS) {
+                        Model fieldModel = this.fields.get(fieldName);
+                        if (atts.getValue("fill") != null) {
+                            fieldModel.set("fill", atts.getValue("fill"));
+                        }
+                        if (atts.getValue("color") != null) {
+                            fieldModel.set("color", atts.getValue("color"));
+                        }
+                        ((List<Model>)this.stackTop().get("axis")).add(fieldModel);
                     } else {
                         // TODO: parse error
                     }
@@ -207,6 +241,16 @@ public class ArchParser {
                     labelModel.set("string", string);
                 }
                 this.builtFields.add(labelModel);
+            } else if (localName.equals("x")) {
+                Model axis = new Model("graph.axis.x");
+                axis.set("axis", new ArrayList<Model>());
+                this.stackPush(axis);
+                this.state = STATE_AXIS;
+            } else if (localName.equals("y")) {
+                Model axis = new Model("graph.axis.y");
+                axis.set("axis", new ArrayList<Model>());
+                this.stackPush(axis);
+                this.state = STATE_AXIS;
             } else {
                 // TODO: parse error
             }
@@ -221,6 +265,10 @@ public class ArchParser {
         public void endElement(String namespaceURI, String localName,
                                String qName)
             throws SAXException {
+            if (localName.equals("x") || localName.equals("y")) {
+                this.builtFields.add(this.stackTop());
+                this.stackPop();
+            }
         }
     }
 }

@@ -540,6 +540,17 @@ public class TreeView extends Activity
         case MENU_REFRESH_ID:
             this.loadData(true);
             break;
+        case MENU_GRAPH_ID:
+            ModelView graphView = this.viewTypes.getView("graph");
+            if (graphView != null) {
+                GraphView.setup(graphView);
+            } else {
+                GraphView.setup(this.viewTypes.getViewId("graph"),
+                                this.viewTypes.getModelName());
+            }
+            i = new Intent(this, GraphView.class);
+            this.startActivity(i);
+            break;
         }
         return true;
     }
