@@ -193,6 +193,7 @@ public class Menu extends Activity
             this.loadingDialog.setMax(this.entriesToCache.size());
             this.loadingDialog.setMessage(""); // Required to update it later
             this.loadingDialog.setProgress(progress);
+            this.loadingDialog.setOnCancelListener(this);
             this.loadingDialog.show();
         }
     }
@@ -208,7 +209,13 @@ public class Menu extends Activity
         DataLoader.cancel(this.callId);
         this.callId = 0;
         this.loadingDialog = null;
-        this.finish();
+        if (this.entriesToCache == null) {
+            // Cancel menu loading
+            this.finish();
+        } else {
+            // Cancel cache loading            
+            this.cancelCache(null);
+        }
     }
 
     /** Hide the loading dialog if shown. */
@@ -342,6 +349,7 @@ public class Menu extends Activity
 
     public void cancelCache(View v) {
         this.mode = MODE_NAV;
+        this.entriesToCache = null;
         this.updateMenus(this.entries);
     }
 

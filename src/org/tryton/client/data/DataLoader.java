@@ -58,6 +58,7 @@ public class DataLoader {
     public static final int MENUDATA_NOK = 1011;
     private static final int MODELDATA_OK = 1012;
     private static final int MODELDATA_NOK = 1013;
+    private static final int MODELDATA_CANCELED = 1014;
 
     private static int callSequence = 1;
     private static Map<Integer, Handler> handlers = new HashMap<Integer, Handler>();
@@ -483,12 +484,9 @@ public class DataLoader {
             this.menu = menu;
             this.forceRefresh = forceRefresh;
         }
-        public int start() {
-            final int callId = callSequence++;
-            handlers.put(callId, this);
-            new ModelLoader(callId, this, this.ctx, this.menu,
+        public void start() {
+            new ModelLoader(this.callId, this, this.ctx, this.menu,
                             this.forceRefresh).load();
-            return callId;
         }
         @Override
         public void handleMessage(Message m) {
@@ -623,31 +621,50 @@ public class DataLoader {
                     }
                 }
                 // All done, load data
+                if (isCanceled(this.superCallId)) {
+                    this.cancel();
+                    return;
+                }
                 this.callId = loadDataCount(this.ctx, this.className, this,
                                             this.forceRefresh);
                 break;
             case DATACOUNT_OK:
                 this.count = (Integer) ((Object[])m.obj)[1];
-                loadRelFields(this.ctx, this.className, this,
+                if (isCanceled(this.superCallId)) {
+                    this.cancel();
+                    return;
+                }
+                this.callId = loadRelFields(this.ctx, this.className, this,
                               this.forceRefresh);
                 break;
             case RELFIELDS_OK:
                 this.relFields = (List<RelField>) ((Object[])m.obj)[1];
                 int expected = Math.min(TrytonCall.CHUNK_SIZE,
                                         this.count);
-                loadData(this.ctx, this.className, 0, TrytonCall.CHUNK_SIZE,
-                         expected, this.relFields, this.loadedViewTypes, this,
-                         this.forceRefresh);
+                if (isCanceled(this.superCallId)) {
+                    this.cancel();
+                    return;
+                }
+                this.callId = loadData(this.ctx, this.className, 0,
+                                       TrytonCall.CHUNK_SIZE,
+                                       expected, this.relFields,
+                                       this.loadedViewTypes, this,
+                                       this.forceRefresh);
                 break;
             case DATA_OK:
                 this.offset += TrytonCall.CHUNK_SIZE;
                 expected = Math.min(TrytonCall.CHUNK_SIZE,
                                     this.count - this.offset);
+                if (isCanceled(this.superCallId)) {
+                    this.cancel();
+                    return;
+                }
                 if (this.offset < this.count) {
-                    loadData(this.ctx, this.className, this.offset,
-                             TrytonCall.CHUNK_SIZE, expected,
-                             this.relFields, this.loadedViewTypes, this,
-                             this.forceRefresh);
+                    this.callId = loadData(this.ctx, this.className,
+                                           this.offset, TrytonCall.CHUNK_SIZE,
+                                           expected,
+                                           this.relFields, this.loadedViewTypes,
+                                           this, this.forceRefresh);
                 } else {
                     for (String type : this.loadedViewTypes.getTypes()) {
                         // Mark view as loaded (id and 0 if it was loaded)
@@ -663,7 +680,15 @@ public class DataLoader {
                 }
                 break;
             case MODELDATA_OK:
+                if (isCanceled(this.superCallId)) {
+                    this.cancel();
+                    return;
+                }
                 loadRec();
+                break;
+            case MODELDATA_CANCELED:
+                // Child canceled, propagate to parent
+                this.cancel();
                 break;
             case VIEWS_NOK:
             case DATACOUNT_NOK:
@@ -732,6 +757,13 @@ public class DataLoader {
                 msg.what = MODELDATA_OK;
                 msg.sendToTarget();
             }
+        }
+        private void cancel() {
+            // Cancel the call and send cancel to parent
+            DataLoader.cancel(this.callId);
+            Message msg = this.parent.obtainMessage();
+            msg.what = MODELDATA_CANCELED;
+            msg.sendToTarget();
         }
     }
 
