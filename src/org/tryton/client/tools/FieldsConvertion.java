@@ -22,6 +22,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -66,6 +67,15 @@ public class FieldsConvertion {
             Log.e("Tryton", "Converting an invalid date to int[]");
             return new int[]{0, 0, 0};
         }
+    }
+
+    public static Map<String, Object> intAToDate(int[] intA) {
+        Map<String, Object> date = new TreeMap<String, Object>();
+        date.put("year", intA[0]);
+        date.put("month", intA[1]);
+        date.put("day", intA[2]);
+        date.put("__class__", "date");
+        return date;
     }
 
     /** Convert a server received or client-generated time to an int array

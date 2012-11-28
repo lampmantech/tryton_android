@@ -21,6 +21,8 @@ import android.content.Context;
 import android.graphics.Color;
 import android.util.Log;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -103,6 +105,118 @@ public class GraphViewFactory {
         return plots;
     }
 
+    private static List<Integer> fillIntKeys(Map<Object, Double> values,
+                                             boolean addEmpty) {
+        List<Integer> ret = new ArrayList<Integer>();
+        if (addEmpty) {
+            int min = 1;
+            int max = 0;
+            for (Object o : values.keySet()) {
+                int val = (Integer) o;
+                if (min > max) {
+                    min = val;
+                    max = val;
+                } else {
+                    if (val > max) {
+                        max = val;
+                    }
+                    if (val < min) {
+                        min = val;
+                    }
+                }
+            }
+            for (int i = min; i < max; i++) {
+                ret.add(i);
+                if (!values.containsKey(i)) {
+                    values.put(i, 0.0);
+                }
+            }
+        } else {
+            for (Object o : values.keySet()) {
+                int val = (Integer) o;
+                ret.add(val);
+            }
+            Collections.sort(ret);
+        }
+        return ret;
+    }
+
+    private static List<Double> sortDoubleKeys(Map<Object, Double> values) {
+        List<Double> ret = new ArrayList<Double>();
+        for (Object o : values.keySet()) {
+            Double val = null;
+            if (o instanceof Map) {
+                val = FieldsConvertion.numericToDouble((Map) o);
+            } else {
+                val = (Double) o;
+            }
+            ret.add(val);
+        }
+        Collections.sort(ret);
+        return ret;
+    }
+
+    private static List<String> sortStringKeys(Map<Object, Double> values) {
+        List<String> ret = new ArrayList<String>();
+        for (Object o : values.keySet()) {
+            String val = (String) o;
+            ret.add(val);
+        }
+        Collections.sort(ret);
+        return ret;
+    }
+
+    private static List<Map> fillDateKeys(Map<Object, Double> values,
+                                            boolean addEmpty) {
+        List<int[]> retInt = new ArrayList<int[]>();
+        List<Map> ret = new ArrayList<Map>();
+        for (Object o : values.keySet()) {
+            int[] date = FieldsConvertion.dateToIntA((Map) o);
+            retInt.add(date);
+        }
+        Comparator<int[]> c = new Comparator<int[]>() {
+            public int compare (int[] a, int[] b) {
+                int aa = a[0] * 10000 + a[1] * 100 + a[2];
+                int bb = b[0] * 10000 + b[1] * 100 + b[2];
+                return aa - bb;
+            }
+            public boolean equals(int[] a, int[] b) {
+                return a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
+            }
+        };
+        Collections.sort(retInt, c);
+        for (int[] intA : retInt) {
+            Map date = FieldsConvertion.intAToDate(intA);
+            ret.add(date);
+        }
+        // TODO: fill
+        return ret;
+    }
+
+    /** Order the keys from a value map and add missing ones.
+     * AddEmty is the empty attribute (add 0 values) */
+    private static List fillKeys(Map<Object, Double> values,
+                                         boolean addEmpty) {
+        // Get one key to check type
+        Object key = null;
+        for (Object o : values.keySet()) {
+            key = o;
+            break;
+        }
+        if (key instanceof Integer) {
+            return fillIntKeys(values, addEmpty);
+        } else if (key instanceof String) {
+            return sortStringKeys(values);
+        } else if (key instanceof Map) {
+            if (((Map)key).containsKey("decimal")) {
+                return sortDoubleKeys(values);
+            } else if (((Map)key).containsKey("year")) {
+                return fillDateKeys(values, addEmpty);
+            }
+        }
+        return null;
+    }
+
     public static GraphicalView getGraphView(Context ctx,
                                              ModelView view, List<Model> data) {
         String graphType = view.getSubtype();
@@ -112,7 +226,7 @@ public class GraphViewFactory {
             String className = m.getClassName();
             if (className.equals("graph.axis.x")) {
                 @SuppressWarnings("unchecked")
-                List<Model> axis = (List<Model>) m.get("axis");
+                    List<Model> axis = (List<Model>) m.get("axis");
                 xAxis = axis.get(0);
             } else if (className.equals("graph.axis.y")) {
                 @SuppressWarnings("unchecked")
@@ -173,7 +287,7 @@ public class GraphViewFactory {
                 Map<Object, Double> plots = getValues(data, xAxis, y);
                 // Set series values
                 int i = 0;
-                for (Object o : plots.keySet()) {
+                for (Object o : fillKeys(plots, false)) {
                     series.add(i, plots.get(o));
                     renderers.addXTextLabel((double)i, o.toString());
                     i++;
@@ -204,7 +318,7 @@ public class GraphViewFactory {
             for (Model y : yAxis) {
                 Map<Object, Double> plots = getValues(data, xAxis, y);
                 int defaultColorIndex = 0;
-                for (Object o : plots.keySet()) {
+                for (Object o : fillKeys(plots, false)) {
                     series.add(o.toString(), plots.get(o));
                     SimpleSeriesRenderer renderer = new SimpleSeriesRenderer();
                     renderer.setColor(DEFAULT_COLORS[defaultColorIndex]);
