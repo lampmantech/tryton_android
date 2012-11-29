@@ -471,12 +471,15 @@ public class FormView extends Activity
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
                 b.setTitle(R.string.error);
                 b.setMessage(R.string.network_error);
-                b.show();
                 ((Exception)msg.obj).printStackTrace();
                 // Generic error, queue call
                 Model edit = Session.current.tempModel;
                 if (msg.what == TrytonCall.CALL_DELETE_NOK) {
                     DelayedRequester.current.queueDelete(edit, this);
+                    // Delete from local anyway
+                    db = new DataCache(this);
+                    db.deleteData(Session.current.editedModel);
+                    TreeView.setDirty();
                 } else if (msg.what == TrytonCall.CALL_SAVE_NOK) {
                     Model oldModel = Session.current.editedModel;
                     Model queuedModel = new Model(edit.getClassName());
@@ -484,12 +487,17 @@ public class FormView extends Activity
                         queuedModel.merge(oldModel);
                     }
                     queuedModel.merge(edit);
-                    if (edit.get("id") == null) {
+                    if (Session.current.editedModel == null) {
                         DelayedRequester.current.queueCreate(queuedModel, this);
                     } else {
                         DelayedRequester.current.queueUpdate(queuedModel, this);
                     }
+                    // Save locally
+                    db = new DataCache(this);
+                    db.storeData(queuedModel.getClassName(), queuedModel);
+                    TreeView.setDirty();
                 }
+                b.show();
             }
             break;
         case DataLoader.VIEWS_OK:
