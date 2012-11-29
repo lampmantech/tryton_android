@@ -25,12 +25,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.tryton.client.data.DataCache;
@@ -90,8 +92,11 @@ public class Start extends Activity implements Handler.Callback {
                     DelayedRequester.current = new DelayedRequester();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
-                DelayedRequester.current = new DelayedRequester();
+                if (!(e instanceof FileNotFoundException)) {
+                    // Ignore no cache exception
+                    Log.w("Tryton", "Unable to load menu cache", e);
+                    DelayedRequester.current = new DelayedRequester();
+                }
             }
         }
         // Load views from xml resource
