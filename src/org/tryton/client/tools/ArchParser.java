@@ -225,7 +225,9 @@ public class ArchParser {
                         if (atts.getValue("color") != null) {
                             fieldModel.set("color", atts.getValue("color"));
                         }
-                        ((List<Model>)this.stackTop().get("axis")).add(fieldModel);
+                        @SuppressWarnings("unchecked")
+                        List<Model> axis = (List<Model>) this.stackTop().get("axis");
+                        axis.add(fieldModel);
                     } else {
                         // TODO: parse error
                     }
