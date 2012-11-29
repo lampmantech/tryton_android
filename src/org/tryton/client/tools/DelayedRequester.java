@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.tryton.client.Configure;
+import org.tryton.client.PendingRequests;
 import org.tryton.client.R;
 import org.tryton.client.models.Model;
 
@@ -42,13 +43,13 @@ import org.tryton.client.models.Model;
 public class DelayedRequester {
 
     private static final int NOTIFY_ID = 1337;
-    private static final int CMD_CREATE = 0;
-    private static final int CMD_UPDATE = 1;
-    private static final int CMD_DELETE = 2;
+    public static final int CMD_CREATE = 0;
+    public static final int CMD_UPDATE = 1;
+    public static final int CMD_DELETE = 2;
 
     private static final String CACHE_ID = "QUEUE_CACHE_ID";
 
-    private static class Command {
+    public static class Command {
         private int cmd;
         private Model data;
 
@@ -113,6 +114,10 @@ public class DelayedRequester {
         return this.queue.size();
     }
 
+    public Command getCommand(int index) {
+        return this.queue.get(index);
+    }
+
     public void sendQueue() {
         
     }
@@ -129,7 +134,7 @@ public class DelayedRequester {
                                        this.queue.size());
         }
         String message = ctx.getString(R.string.requester_message);
-        Intent i = new Intent(ctx, org.tryton.client.Start.class);
+        Intent i = new Intent(ctx, PendingRequests.class);
         PendingIntent pi = PendingIntent.getActivity(ctx, 0, i, PendingIntent.FLAG_CANCEL_CURRENT);
         n.icon = R.drawable.tryton_notification;
         n.setLatestEventInfo(ctx, tickerText, message, pi);

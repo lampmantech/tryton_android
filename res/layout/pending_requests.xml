@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tryton Android
+    Copyright (C) 2012 SARL SCOP Scil (contact@scil.coop)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    This is the pending requests screen layout definition.
+    It is loaded from the org.tryton.client.PendingRequests activity.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="fill_parent"
+             android:layout_height="fill_parent"
+             android:orientation="vertical"
+             style="@style/main_container">
+  <TextView android:id="@+id/pending_remaining"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:layout_margin="@dimen/content_margin"
+            android:gravity="center" />
+  <ProgressBar android:id="@+id/pending_progress"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:layout_margin="@dimen/content_margin"
+               style="@android:style/Widget.ProgressBar.Horizontal" />
+  <View android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1" />
+</LinearLayout>

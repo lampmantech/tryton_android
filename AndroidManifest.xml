@@ -24,7 +24,8 @@
     <activity android:name="FormView" />
     <activity android:name="ToManyEditor" />
     <activity android:name="PickOne" />
-    <activity android:name="GraphView" />    
+    <activity android:name="GraphView" />
+    <activity android:name="PendingRequests" />
   </application>
   <!-- Request permissions -->
   <uses-permission android:name="android.permission.INTERNET" />
