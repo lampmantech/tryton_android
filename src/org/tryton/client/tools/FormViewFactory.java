@@ -801,7 +801,7 @@ public class FormViewFactory {
                 this.day = day;
             }
             this.caller.setText(Formatter.formatDate(this.format, this.year,
-                                                     this.month + 1,
+                                                     this.month,
                                                      this.day));
         }
         
