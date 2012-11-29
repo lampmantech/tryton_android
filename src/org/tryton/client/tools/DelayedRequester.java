@@ -22,11 +22,19 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
+import java.io.IOException;
+import java.io.EOFException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.tryton.client.Configure;
 import org.tryton.client.R;
 import org.tryton.client.models.Model;
 
@@ -38,7 +46,9 @@ public class DelayedRequester {
     private static final int CMD_UPDATE = 1;
     private static final int CMD_DELETE = 2;
 
-    private class Command {
+    private static final String CACHE_ID = "QUEUE_CACHE_ID";
+
+    private static class Command {
         private int cmd;
         private Model data;
 
@@ -50,11 +60,9 @@ public class DelayedRequester {
         public Model getData() { return this.data; }
     }
 
-    public static DelayedRequester current = new DelayedRequester();
+    public static DelayedRequester current;
 
     private List<Command> queue;
-    /** Map temporary ids to models */
-    private Map<Integer, Model> createdIds;
     /** Temporary negative id for new models waiting for read id
      * from the server. The temporary id is saved in local database
      * and updated when the definitive one is received. The temp id can
@@ -63,7 +71,6 @@ public class DelayedRequester {
 
     public DelayedRequester() {
         this.queue = new ArrayList<Command>();
-        this.createdIds = new TreeMap<Integer, Model>();
         this.tempId = -1;
     }
 
@@ -74,16 +81,31 @@ public class DelayedRequester {
         tempId--;
         this.queue.add(new Command(CMD_CREATE, newModel));
         this.updateNotification(ctx);
+        try {
+            this.save(ctx);
+        } catch (IOException e) {
+            Log.w("Tryton", "Unable to save DelayedRequester", e);
+        }
     }
 
     public void queueUpdate(Model updatedModel, Context ctx) {
         this.queue.add(new Command(CMD_UPDATE, updatedModel));
         this.updateNotification(ctx);
+        try {
+            this.save(ctx);
+        } catch (IOException e) {
+            Log.w("Tryton", "Unable to save DelayedRequester", e);
+        }
     }
 
     public void queueDelete(Model deletedModel, Context ctx) {
         this.queue.add(new Command(CMD_DELETE, deletedModel));
         this.updateNotification(ctx);
+        try {
+            this.save(ctx);
+        } catch (IOException e) {
+            Log.w("Tryton", "Unable to save DelayedRequester", e);
+        }
     }
 
     /** Get the number of pending requests. */
@@ -113,6 +135,60 @@ public class DelayedRequester {
         n.setLatestEventInfo(ctx, tickerText, message, pi);
         NotificationManager m = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         m.notify(NOTIFY_ID, n);
-        System.out.println("notified");
     }
+
+    /** Save the queue on file system */
+    public void save(Context ctx)
+        throws IOException {
+        String db = Configure.getDatabaseCode(ctx);
+        FileOutputStream fos = ctx.openFileOutput(CACHE_ID, ctx.MODE_PRIVATE);
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(db);
+        oos.writeInt(this.tempId);
+        oos.writeInt(this.queue.size());
+        for (Command cmd : this.queue) {
+            oos.writeInt(cmd.getCmd());
+            oos.writeObject(cmd.getData().toByteArray());
+        }
+        oos.close();
+    }
+
+    /** Load the cached menu entries.
+     * If the cache is not set it will return null
+     * (beware of NullPointerExceptions)
+     */
+    @SuppressWarnings("unchecked")
+    public static DelayedRequester load(Context ctx)
+        throws IOException {
+        FileInputStream fis = ctx.openFileInput(CACHE_ID);
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        DelayedRequester req = new DelayedRequester();
+        try {
+            String db = (String) ois.readObject();
+            if (!db.equals(Configure.getDatabaseCode(ctx))) {
+                // The record is not for the current database
+                ois.close();
+                return null;
+            }
+            int tempId = ois.readInt();
+            int size = ois.readInt();
+            
+            for (int i = 0; i < size; i++) {
+                int cmdCode = ois.readInt();
+                byte[] byteData = (byte[]) ois.readObject();
+                Model data = Model.fromByteArray(byteData);
+                Command cmd = new Command(cmdCode, data);
+                req.queue.add(cmd);
+            }
+            req.updateNotification(ctx);
+        } catch (ClassNotFoundException cnfe) {
+            // Should never happen
+        } catch (ClassCastException cce) {
+            // Cache structure altered
+            req = null;
+        }
+        ois.close();
+        return req;
+    }
+
 }

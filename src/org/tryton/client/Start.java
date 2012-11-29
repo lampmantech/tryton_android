@@ -31,11 +31,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import java.io.IOException;
 
 import org.tryton.client.data.DataCache;
 import org.tryton.client.data.Session;
 import org.tryton.client.models.Preferences;
 import org.tryton.client.tools.AlertBuilder;
+import org.tryton.client.tools.DelayedRequester;
 import org.tryton.client.tools.TrytonCall;
 
 /** Start activity. Shows login form. */
@@ -78,6 +80,20 @@ public class Start extends Activity implements Handler.Callback {
         // Load configuration for TrytonCall
         TrytonCall.setup(Configure.getSSL(this), Configure.getHost(this),
                          Configure.getPort(this), Configure.getDatabase(this));
+        // Load DelayedRequester
+        if (DelayedRequester.current == null) {
+            try {
+                DelayedRequester req = DelayedRequester.load(this);
+                if (req != null) {
+                    DelayedRequester.current = req;
+                } else {
+                    DelayedRequester.current = new DelayedRequester();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                DelayedRequester.current = new DelayedRequester();
+            }
+        }
         // Load views from xml resource
         setContentView(R.layout.main);
         this.versionLabel = (TextView) this.findViewById(R.id.server_version);

@@ -479,13 +479,15 @@ public class FormView extends Activity
                     DelayedRequester.current.queueDelete(edit, this);
                 } else if (msg.what == TrytonCall.CALL_SAVE_NOK) {
                     Model oldModel = Session.current.editedModel;
-                    Model sendModel = FieldsConvertion.modelToSend(edit,
-                                                                   oldModel,
-                                                                   this);
+                    Model queuedModel = new Model(edit.getClassName());
+                    if (oldModel != null) {
+                        queuedModel.merge(oldModel);
+                    }
+                    queuedModel.merge(edit);
                     if (edit.get("id") == null) {
-                        DelayedRequester.current.queueCreate(sendModel, this);
+                        DelayedRequester.current.queueCreate(queuedModel, this);
                     } else {
-                        DelayedRequester.current.queueUpdate(sendModel, this);
+                        DelayedRequester.current.queueUpdate(queuedModel, this);
                     }
                 }
             }
