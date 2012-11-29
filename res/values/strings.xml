@@ -16,7 +16,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<!-- This is the default locale (english) translation file -->
 <!-- Labels are picked to match the python desktop client, labels marked with a NEW
 are not used in the desktop client and should be translated directly.
 Those with a AND are present but differs because of size or other reason. In this case
