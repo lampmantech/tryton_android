@@ -27,6 +27,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.ProgressBar;
 
+import org.tryton.client.data.DataCache;
 import org.tryton.client.data.Session;
 import org.tryton.client.models.Model;
 import org.tryton.client.tools.AlertBuilder;
@@ -154,6 +155,20 @@ public class PendingRequests extends Activity implements Handler.Callback {
         switch (msg.what) {
         case TrytonCall.CALL_SAVE_OK:
             this.callId = 0;
+            Model m = (Model) msg.obj;
+            // Remove temporary id from the database and replace it with
+            // the new value
+            DataCache db = new DataCache(this);
+            Model old = new Model(m.getClassName());
+            old.set("id", this.currentTempId);
+            db.deleteData(old);
+            db.storeData(m.getClassName(), m);
+            db.addOne(m.getClassName());
+            // Check in other create or edit for the temporary item and
+            // replace with the real id
+            int newId = (Integer) m.get("id");
+            DelayedRequester.current.updateTempId(this.currentTempId, newId);
+            // Launch next call
             this.next();
             break;
         case TrytonCall.CALL_DELETE_OK:

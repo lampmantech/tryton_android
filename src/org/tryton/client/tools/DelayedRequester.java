@@ -79,6 +79,17 @@ public class DelayedRequester {
      * model to affect it a temporary negative one. */
     public void queueCreate(Model newModel, Context ctx) {
         newModel.set("id", tempId);
+        // Add a rec_name, because there must be one
+        if (newModel.hasAttribute("name")) {
+            newModel.set("rec_name", newModel.get("name"));
+        } else {
+            for (String key : newModel.getAttributeNames()) {
+                if (newModel.get(key) instanceof String) {
+                    newModel.set("rec_name", newModel.get(key));
+                    break;
+                }
+            }
+        }
         tempId--;
         this.queue.add(new Command(CMD_CREATE, newModel));
         this.updateNotification(ctx);
@@ -124,6 +135,30 @@ public class DelayedRequester {
             this.save(ctx);
         } catch (IOException e) {
             Log.w("Tryton", "Unable to save DelayedRequester", e);
+        }
+    }
+
+    /** Replace a temporary id with a real one in data in the queue. */
+    @SuppressWarnings("unchecked")
+    public void updateTempId(int tempId, int realId) {
+        for (Command cmd : this.queue) {
+            // As tempId is unique, make it brutal
+            Model data = cmd.getData();
+            Integer tempIdInt = new Integer(tempId); // just for equality
+            for (String key : data.getAttributeNames()) {
+                Object val = data.get(key);
+                if (tempIdInt.equals(val)) {
+                    data.set(key, realId);
+                } else if (val instanceof List) {
+                    List ids = (List) data.get(key);
+                    for (int i = 0; i < ids.size(); i++) {
+                        if (tempIdInt.equals(ids.get(i))) {
+                            ids.remove(i);
+                            ids.add(i, realId);
+                        }
+                    }
+                }
+            }
         }
     }
 

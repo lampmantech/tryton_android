@@ -474,27 +474,29 @@ public class FormView extends Activity
                 b.setMessage(R.string.network_error);
                 ((Exception)msg.obj).printStackTrace();
                 // Generic error, queue call
-                Model edit = Session.current.tempModel;
+                Model newModel = Session.current.tempModel;
                 if (msg.what == TrytonCall.CALL_DELETE_NOK) {
-                    DelayedRequester.current.queueDelete(edit, this);
+                    DelayedRequester.current.queueDelete(newModel, this);
                     // Delete from local anyway
                     db = new DataCache(this);
                     db.deleteData(Session.current.editedModel);
                     TreeView.setDirty();
                 } else if (msg.what == TrytonCall.CALL_SAVE_NOK) {
                     Model oldModel = Session.current.editedModel;
-                    Model queuedModel = new Model(edit.getClassName());
+                    Model queuedModel = new Model(newModel.getClassName());
                     if (oldModel != null) {
                         queuedModel.merge(oldModel);
                     }
-                    queuedModel.merge(edit);
-                    if (Session.current.editedModel == null) {
+                    queuedModel.merge(newModel);
+                    db = new DataCache(this);
+                    // Make it pending (also sets temp id for create)
+                    if (oldModel == null) {
                         DelayedRequester.current.queueCreate(queuedModel, this);
+                        db.addOne(queuedModel.getClassName());
                     } else {
                         DelayedRequester.current.queueUpdate(queuedModel, this);
                     }
                     // Save locally
-                    db = new DataCache(this);
                     db.storeData(queuedModel.getClassName(), queuedModel);
                     TreeView.setDirty();
                 }
