@@ -85,6 +85,11 @@ the original label is set after the tag -->
   <string name="config_autologout_title">Déconnexion automatique</string> <!-- NEW -->
   <string name="config_autologout_desc">Se déconnecter automatiquement en quittant l\'application avec le bouton retour</string> <!-- NEW -->
 
+  <!-- Delayed requester labels -->
+  <string name="requester_pending_one">1 operation en attente</string>
+  <string name="requester_pending">%d operations en attente</string>
+  <string name="requester_message">Toucher pour envoyer</string>
+
   <!-- About labels -->
   <string name="about_author">Realisé par Scil (http://scil.coop), financé par Bio Eco Forests (http://bioecoforests.com)</string> <!-- NEW -->
   <string name="about_licence">Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le modifier selon les termes de la licence GNU General Public Licence publiée par la Free Software Foundation, soit la version 3 de la licence, ou (à votre discretion) toute version postérieure. Voir http://www.gnu.org/licenses/.</string> <!-- NEW -->

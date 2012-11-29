@@ -46,7 +46,9 @@ import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
 import org.tryton.client.tools.AlertBuilder;
+import org.tryton.client.tools.DelayedRequester;
 import org.tryton.client.tools.FormViewFactory;
+import org.tryton.client.tools.FieldsConvertion;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.Session;
 
@@ -471,6 +473,21 @@ public class FormView extends Activity
                 b.setMessage(R.string.network_error);
                 b.show();
                 ((Exception)msg.obj).printStackTrace();
+                // Generic error, queue call
+                Model edit = Session.current.tempModel;
+                if (msg.what == TrytonCall.CALL_DELETE_NOK) {
+                    DelayedRequester.current.queueDelete(edit, this);
+                } else if (msg.what == TrytonCall.CALL_SAVE_NOK) {
+                    Model oldModel = Session.current.editedModel;
+                    Model sendModel = FieldsConvertion.modelToSend(edit,
+                                                                   oldModel,
+                                                                   this);
+                    if (edit.get("id") == null) {
+                        DelayedRequester.current.queueCreate(sendModel, this);
+                    } else {
+                        DelayedRequester.current.queueUpdate(sendModel, this);
+                    }
+                }
             }
             break;
         case DataLoader.VIEWS_OK:

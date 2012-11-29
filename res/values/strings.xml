@@ -84,6 +84,11 @@ the original label is set after the tag -->
   <string name="config_autologout_title">Auto logout</string> <!-- NEW -->
   <string name="config_autologout_desc">Automatically logout when quitting with back button</string> <!-- NEW -->
 
+  <!-- Delayed requester labels -->
+  <string name="requester_pending_one">1 request pending</string>
+  <string name="requester_pending">%d requests pending</string>
+  <string name="requester_message">Click to send</string>
+
   <!-- About labels -->
   <string name="about_author">Realized by Scil (http://scil.coop), financed by Bio Eco Forests (http://bioecoforests.com)</string> <!-- NEW -->
   <string name="about_licence">This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See http://www.gnu.org/licenses/.</string> <!-- NEW -->
