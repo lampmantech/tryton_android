@@ -92,10 +92,10 @@ public class Start extends Activity implements Handler.Callback {
                     DelayedRequester.current = new DelayedRequester();
                 }
             } catch (IOException e) {
+                DelayedRequester.current = new DelayedRequester();
                 if (!(e instanceof FileNotFoundException)) {
                     // Ignore no cache exception
                     Log.w("Tryton", "Unable to load menu cache", e);
-                    DelayedRequester.current = new DelayedRequester();
                 }
             }
         }

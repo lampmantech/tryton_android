@@ -114,17 +114,27 @@ public class DelayedRequester {
         return this.queue.size();
     }
 
-    public Command getCommand(int index) {
-        return this.queue.get(index);
+    public Command getNextCommand() {
+        return this.queue.get(0);
     }
 
-    public void sendQueue() {
-        
+    public void commandDone(Context ctx) {
+        this.queue.remove(0);
+        try {
+            this.save(ctx);
+        } catch (IOException e) {
+            Log.w("Tryton", "Unable to save DelayedRequester", e);
+        }
     }
 
     /** Update the notfication in the status bar with the number of
      * pending requests. */
-    private void updateNotification(Context ctx) {
+    public void updateNotification(Context ctx) {
+        NotificationManager m = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (this.queue.size() == 0) {
+            m.cancel(NOTIFY_ID);
+            return;
+        }
         Notification n = new Notification();
         String tickerText = null;
         if (this.queue.size() == 1) {
@@ -138,7 +148,6 @@ public class DelayedRequester {
         PendingIntent pi = PendingIntent.getActivity(ctx, 0, i, PendingIntent.FLAG_CANCEL_CURRENT);
         n.icon = R.drawable.tryton_notification;
         n.setLatestEventInfo(ctx, tickerText, message, pi);
-        NotificationManager m = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         m.notify(NOTIFY_ID, n);
     }
 
