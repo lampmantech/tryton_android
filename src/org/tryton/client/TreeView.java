@@ -86,6 +86,7 @@ public class TreeView extends Activity
     private int callCountId; // Id for parallel count call
     private int callDataId; // Id for the other call chain
     private int currentLoadingMsg;
+    private boolean refreshing;
 
     private TextView pagination;
     private ImageButton nextPage, previousPage;
@@ -103,6 +104,7 @@ public class TreeView extends Activity
             this.callCountId = state.getInt("callCountId");
             this.callDataId = state.getInt("callDataId");
             this.currentLoadingMsg = state.getInt("currentLoadingMsg");
+            this.refreshing = state.getBoolean("refreshing");
             if (this.callCountId != 0) {
                 DataLoader.update(this.callCountId, new Handler(this));
                 this.showLoadingDialog(this.currentLoadingMsg);
@@ -150,7 +152,7 @@ public class TreeView extends Activity
         if (this.data == null && this.viewTypes == null) {
             this.loadViewsAndData();
         } else if (this.data == null || dirty) {
-            this.loadDataAndMeta();
+            this.loadDataAndMeta(this.refreshing);
         }
     }
     
@@ -159,6 +161,7 @@ public class TreeView extends Activity
         outState.putSerializable("origin", this.origin);
         outState.putSerializable("viewTypes", this.viewTypes);
         outState.putInt("totalDataCount", this.totalDataCount);
+        outState.putBoolean("refreshing", this.refreshing);
         if (this.data != null) {
             outState.putSerializable("data_count", this.data.size());
             for (int i = 0; i < this.data.size(); i++) {
@@ -315,6 +318,7 @@ public class TreeView extends Activity
         DataLoader.cancel(this.callDataId);
         this.callDataId = 0;
         this.callCountId = 0;
+        this.refreshing = false;
         this.loadingDialog = null;
         this.finish();
     }
@@ -338,19 +342,21 @@ public class TreeView extends Activity
     
     /** Load data count and rel fields, required for data.
      * Requires that views are loaded. */
-    private void loadDataAndMeta() {
+    private void loadDataAndMeta(boolean refresh) {
         String className = this.viewTypes.getModelName();
         if (this.callCountId == 0) {
+            this.totalDataCount = -1;
             this.showLoadingDialog(LOADING_DATA);
             this.callCountId = DataLoader.loadDataCount(this, className,
                                                         new Handler(this),
-                                                        false);
+                                                        refresh);
         }
         if (this.callDataId == 0) {
+            this.relFields = null;
             this.showLoadingDialog(LOADING_DATA);
             this.callDataId = DataLoader.loadRelFields(this, className,
                                                        new Handler(this),
-                                                       false);
+                                                       refresh);
         }
     }
 
@@ -393,13 +399,14 @@ public class TreeView extends Activity
             @SuppressWarnings("unchecked")
             Object[] ret = (Object[]) msg.obj;
             this.viewTypes = (ModelViewTypes) ret[1];
-            this.loadDataAndMeta();
+            this.loadDataAndMeta(this.refreshing);
             break;
         case DataLoader.VIEWS_NOK:
         case DataLoader.DATA_NOK:
         case DataLoader.DATACOUNT_NOK:
             // Close the loading dialog if present
             this.hideLoadingDialog();
+            this.refreshing = false;
             if (msg.what == DataLoader.DATACOUNT_NOK) {
                 this.callCountId = 0;
             } else {
@@ -425,7 +432,7 @@ public class TreeView extends Activity
                 // Wait for relfields callback
             } else {
                 // Load data
-                this.loadData(false);
+                this.loadData(this.refreshing);
             }
             break;
         case DataLoader.RELFIELDS_OK:
@@ -436,11 +443,12 @@ public class TreeView extends Activity
                 // Wait for data count callback
             } else {
                 // Load data
-                this.loadData(false);
+                this.loadData(this.refreshing);
             }
             break;
         case DataLoader.DATA_OK:
             this.callDataId = 0;
+            this.refreshing = false;
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
             this.data = data;
@@ -538,7 +546,8 @@ public class TreeView extends Activity
             this.startActivity(i);
             break;
         case MENU_REFRESH_ID:
-            this.loadData(true);
+            this.refreshing = true;
+            this.loadDataAndMeta(this.refreshing);
             break;
         case MENU_GRAPH_ID:
             ModelView graphView = this.viewTypes.getView("graph");
