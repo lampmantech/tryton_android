@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tryton Android french translation
+    Copyright (C) 2008 B2CK (cedric.krier@b2ck.com)
+                  2012 SARL SCOP Scil (contact@scil.coop)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!-- This is the default locale (english) translation file -->
+<!-- Labels are picked to match the python desktop client, labels marked with a NEW
+are not used in the desktop client and should be translated directly.
+Those with a AND are present but differs because of size or other reason. In this case
+the original label is set after the tag -->
+<resources>
+  <string name="app_name">Tryton</string>
+
+  <!-- General strings -->
+  <string name="general_yes">Oui</string>
+  <string name="general_no">Non</string>
+  <string name="general_ok">OK</string>
+  <string name="general_cancel">Annuler</string>
+  <string name="general_config">Configurer</string> <!-- NEW -->
+  <string name="general_preferences">Préférences...</string>
+  <string name="general_logout">Déconnecter</string>
+  <string name="general_about">À Propos...</string>
+  <string name="general_true">Oui</string> <!-- NEW -->
+  <string name="general_false">Non</string> <!-- NEW -->
+  <string name="general_new_record">Créer un nouvel enregistrement</string>
+  <string name="general_graph">Vue graphique</string> <!-- NEW -->
+  <string name="general_reload">Recharger</string>
+  
+  <!-- Login labels -->
+  <string name="login_user">Nom d\'utilisateur</string>
+  <string name="login_password">Mot de passe</string>
+  <string name="login_send">Connecter</string>
+  <string name="login_server_unavailable">Impossible de se connecter au serveur !</string>
+  <string name="login_bad_login">Erreur de connexion !\nMauvais nom d\'utilisateur ou mot de passe !</string>
+  <string name="login_logging_in">Connexion</string> <!-- NEW -->
+
+  <!-- Menu labels -->
+  <string name="menu_loading">Chargement du menu</string> <!-- NEW -->
+  <string name="menu_cache">Chargement des données</string> <!-- NEW -->
+  <string name="menu_caching">Mise en cache de %s...</string> <!-- NEW -->
+
+  <!-- View labels -->
+  <string name="view_loading">Chargement des vues</string> <!-- NEW -->
+  <string name="data_loading">Chargement des données</string> <!-- NEW -->
+  <string name="tree_switch_mode_summary">Mode sommaire</string> <!-- NEW -->
+  <string name="tree_switch_mode_extended">Mode étendu</string> <!-- NEW -->
+  <string name="tree_pagination">%1$d - %2$d sur %3$d</string> <!-- NEW -->
+  <string name="form_save">Sauver</string>
+  <string name="form_delete">Supprimer...</string>
+  <string name="form_delete_title">Confirmation</string>
+  <string name="form_delete_message">Êtes-vous sûr de vouloir supprimer cet enregistrement ?</string>
+  <string name="form_dirty_title">Confirmation</string>
+  <string name="form_dirty_message">Cet enregistrement a été modifié\nVoulez-vous le sauvegarder ?</string>
+  <string name="tomany_add">Ajouter</string>
+  <string name="tomany_remove">Enlever</string>
+  <string name="tomany_add_new">Créer un nouvel enregistrement</string>
+  <string name="tomany_delete">Supprimer</string> <!-- AND: Delete selected record -->
+  <string name="data_send">Envoi des données</string> <!-- NEW -->
+  <string name="data_send_done">Enregistrement sauvé !</string>
+  
+  <!-- Configuration labels -->
+  <string name="config_host_title">Hôte</string> <!-- AND: Host: -->
+  <string name="config_host_desc">L\'adresse de votre serveur Tryton</string> <!-- NEW -->
+  <string name="config_port_title">Port</string> <!-- AND Port: -->
+  <string name="config_port_desc">Le port de votre serveur Tryton</string> <!-- NEW -->
+  <string name="config_ssl_title">Utiliser SSL</string> <!-- NEW -->
+  <string name="config_ssl_desc">Cocher si votre serveur utilise SSL</string> <!-- NEW -->
+  <string name="config_database_title">Base de données</string> <!-- AND: Database: -->
+  <string name="config_database_desc">La base de donnée du serveur à utiliser</string> <!-- NEW -->
+  <string name="config_user_preferences">Préférences utilisateur</string> <!-- NEW -->
+  <string name="config_autologout_title">Déconnexion automatique</string> <!-- NEW -->
+  <string name="config_autologout_desc">Se déconnecter automatiquement en quittant l\'application avec le bouton retour</string> <!-- NEW -->
+
+  <!-- About labels -->
+  <string name="about_author">Realisé par Scil (http://scil.coop), financé par Bio Eco Forests (http://bioecoforests.com)</string> <!-- NEW -->
+  <string name="about_licence">Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le modifier selon les termes de la licence GNU General Public Licence publiée par la Free Software Foundation, soit la version 3 de la licence, ou (à votre discretion) toute version postérieure. Voir http://www.gnu.org/licenses/.</string> <!-- NEW -->
+  <string name="about_source">Récupérez le code source de l\'application sur http://trac.scil.coop/tryton_android</string> <!-- NEW -->
+  <string name="about_svg_android">Cette application utilise svg-android, sous la Licence Apache version 2.0. Voir http://www.apache.org/licenses/LICENSE-2.0.</string> <!-- NEW -->
+  <string name="about_jsonrpc">Cette application utilise android-json-rpc, sous Licence MIT.</string> <!-- NEW -->
+</resources>
