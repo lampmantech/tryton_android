@@ -462,6 +462,7 @@ public class FormView extends Activity
             break;
         case TrytonCall.CALL_SAVE_NOK:
         case TrytonCall.CALL_DELETE_NOK:
+        case DataLoader.DATA_NOK:
         case DataLoader.VIEWS_NOK:
             this.callId = 0;
             this.hideLoadingDialog();
