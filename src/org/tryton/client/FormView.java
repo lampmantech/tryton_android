@@ -30,8 +30,7 @@ import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TableLayout;
-import android.widget.TableRow;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
@@ -87,7 +86,7 @@ public class FormView extends Activity
     private int currentLoadingMsg;
     private boolean kill; // Check if edit is finished when destroying activity
 
-    private TableLayout table;
+    private LinearLayout table;
 
     @Override
     public void onCreate(Bundle state) {
@@ -115,7 +114,7 @@ public class FormView extends Activity
         }
         // Init view
         this.setContentView(R.layout.form);
-        this.table = (TableLayout) this.findViewById(R.id.form_table);
+        this.table = (LinearLayout) this.findViewById(R.id.form_table);
         if (!loadView && !loadData) {
             this.initView();
         } else {
@@ -128,19 +127,8 @@ public class FormView extends Activity
     }
 
     private void initView() {
-        int x = 0; // X position of the widget
-        TableRow row = null;
         for (Model view : this.view.getStructure()) {
             Session s = Session.current;
-            View v = FormViewFactory.getView(view, this.view,
-                                             s.editedModel,
-                                             s.prefs,
-                                             this);
-            if (view.hasAttribute("name")
-                && view.getString("name").equals(Session.current.linkToSelf)) {
-                // Hide many2one parent field
-                v.setVisibility(View.GONE);
-            }
             if (view.hasAttribute("type")
                 && (view.getString("type").equals("many2many")
                     || view.getString("type").equals("one2many"))) {
@@ -152,37 +140,19 @@ public class FormView extends Activity
                 } else {
                     label.setText(view.getString("name"));
                 }
-                if (row != null) {
-                    this.table.addView(row);
-                }
-                row = new TableRow(this);
-                row.addView(label);
-                row.addView(v);
-                x = 0;
-            } else {
-                if (x == 0) {
-                    if (row != null) {
-                        this.table.addView(row);
-                    }
-                    row = new TableRow(this);
-                    row.addView(v);
-                    // Trick, make the first columnt 1/3 of table width
-                    if (v instanceof TextView) {
-                        TableRow.LayoutParams lp = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT, 0.3f);
-                        v.setLayoutParams(lp);
-                        ((TextView)v).setWidth(100);
-                    }
-                } else {
-                    row.addView(v);
-                    TableRow.LayoutParams lp = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT, 0.7f);
-                    v.setLayoutParams(lp);
-
-                }
-                x++;
-                x %= 2;
+                this.table.addView(label);
             }
+            View v = FormViewFactory.getView(view, this.view,
+                                             s.editedModel,
+                                             s.prefs,
+                                             this);
+            if (view.hasAttribute("name")
+                && view.getString("name").equals(Session.current.linkToSelf)) {
+                // Hide many2one parent field
+                v.setVisibility(View.GONE);
+            }
+            this.table.addView(v);
         }
-        this.table.addView(row);
     }
     
     public void onSaveInstanceState(Bundle outState) {
@@ -285,32 +255,29 @@ public class FormView extends Activity
         Session s = Session.current;
         Model tmp = s.tempModel;
         int structIndex = -1;
-        for (int i = 0; i < this.table.getChildCount(); i++) {
-            ViewGroup child = (ViewGroup) this.table.getChildAt(i);
-            for (int j = 0; j < child.getChildCount(); j++) {
-                structIndex++;
-                View v = child.getChildAt(j);
-                if (!FormViewFactory.isFieldView(v)) {
-                    // Check if it is a x2many label
-                    Model field = this.view.getStructure().get(structIndex);
-                    if (field.hasAttribute("type")) {
-                        String type = field.getString("type");
-                        if (type.equals("many2many")
-                            || type.equals("one2many")) {
-                            // This is the label of a x2many field
-                            // It is not present in structure and next
-                            // will be the true widget.
-                            // Get back in structure for next pass
-                            // to point on the x2many field (and not next one)
-                            structIndex--;
-                        }
-                    }
-                    continue;
-                }
+        for (int j = 0; j < this.table.getChildCount(); j++) {
+            structIndex++;
+            View v = this.table.getChildAt(j);
+            if (!FormViewFactory.isFieldView(v)) {
+                // Check if it is a x2many label
                 Model field = this.view.getStructure().get(structIndex);
-                FormViewFactory.setValue(v, field, this.view, tmp,
-                                         s.editedModel, s.prefs, this);
+                if (field.hasAttribute("type")) {
+                    String type = field.getString("type");
+                    if (type.equals("many2many")
+                        || type.equals("one2many")) {
+                        // This is the label of a x2many field
+                        // It is not present in structure and next
+                        // will be the true widget.
+                        // Get back in structure for next pass
+                        // to point on the x2many field (and not next one)
+                        structIndex--;
+                    }
+                }
+                continue;
             }
+            Model field = this.view.getStructure().get(structIndex);
+            FormViewFactory.setValue(v, field, this.view, tmp,
+                                     s.editedModel, s.prefs, this);
         }
     }
 
@@ -355,36 +322,33 @@ public class FormView extends Activity
     private void updateTempModel() {
         Model tmp = Session.current.tempModel;
         int structIndex = -1;
-        for (int i = 0; i < this.table.getChildCount(); i++) {
-            ViewGroup child = (ViewGroup) this.table.getChildAt(i);
-            for (int j = 0; j < child.getChildCount(); j++) {
-                structIndex++;
-                View v = child.getChildAt(j);
-                if (!FormViewFactory.isFieldView(v)) {
-                    // Check if it is a x2many label
-                    Model field = this.view.getStructure().get(structIndex);
-                    if (field.hasAttribute("type")) {
-                        String type = field.getString("type");
-                        if (type.equals("many2many")
-                            || type.equals("one2many")) {
-                            // This is the label of a x2many field
-                            // It is not present in structure and next
-                            // will be the true widget.
-                            // Get back in structure for next pass
-                            // to point on the x2many field (and not next one)
-                            structIndex--;
-                        }
-                    }
-                    // Ignore
-                    continue;
-                }
+        for (int j = 0; j < this.table.getChildCount(); j++) {
+            structIndex++;
+            View v = this.table.getChildAt(j);
+            if (!FormViewFactory.isFieldView(v)) {
+                // Check if it is a x2many label
                 Model field = this.view.getStructure().get(structIndex);
-                Object value = FormViewFactory.getValue(v, field,
-                                                        Session.current.prefs);
-                if (value != FormViewFactory.NO_VALUE) {
-                    // If NO_VALUE (not null) the value is ignored
-                    tmp.set(field.getString("name"), value);
+                if (field.hasAttribute("type")) {
+                    String type = field.getString("type");
+                    if (type.equals("many2many")
+                        || type.equals("one2many")) {
+                        // This is the label of a x2many field
+                        // It is not present in structure and next
+                        // will be the true widget.
+                        // Get back in structure for next pass
+                        // to point on the x2many field (and not next one)
+                        structIndex--;
+                    }
                 }
+                // Ignore
+                continue;
+            }
+            Model field = this.view.getStructure().get(structIndex);
+            Object value = FormViewFactory.getValue(v, field,
+                                                    Session.current.prefs);
+            if (value != FormViewFactory.NO_VALUE) {
+                // If NO_VALUE (not null) the value is ignored
+                tmp.set(field.getString("name"), value);
             }
         }
     }
