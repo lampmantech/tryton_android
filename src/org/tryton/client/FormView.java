@@ -516,40 +516,71 @@ public class FormView extends Activity
             Exception e = (Exception) msg.obj;
             if (!AlertBuilder.showUserError(e, this)
                 && !AlertBuilder.showUserError(e, this)) {
-                AlertDialog.Builder b = new AlertDialog.Builder(this);
-                b.setTitle(R.string.error);
-                b.setMessage(R.string.network_error);
-                ((Exception)msg.obj).printStackTrace();
-                // Generic error, queue call
-                Model newModel = Session.current.tempModel;
-                if (msg.what == TrytonCall.CALL_DELETE_NOK) {
-                    DelayedRequester.current.queueDelete(newModel, this);
-                    // Delete from local anyway
-                    db = new DataCache(this);
-                    db.deleteData(Session.current.editedModel);
-                    TreeView.setDirty();
-                } else if (msg.what == TrytonCall.CALL_SAVE_NOK) {
-                    Model oldModel = Session.current.editedModel;
-                    Model queuedModel = new Model(newModel.getClassName());
-                    if (oldModel != null) {
-                        queuedModel.merge(oldModel);
+                if (Configure.getOfflineUse(this)) {
+                    // Generic error, queue call and continue
+                    t = Toast.makeText(this, R.string.data_send_queued,
+                                       Toast.LENGTH_SHORT);
+                    t.show();
+                    Model newModel = Session.current.tempModel;
+                    if (msg.what == TrytonCall.CALL_DELETE_NOK) {
+                        DelayedRequester.current.queueDelete(newModel, this);
+                        // Delete from local anyway and go back
+                        db = new DataCache(this);
+                        db.deleteData(Session.current.editedModel);
+                        TreeView.setDirty();
+                        this.kill = true;
+                        this.finish();
+                    } else if (msg.what == TrytonCall.CALL_SAVE_NOK) {
+                        Model oldModel = Session.current.editedModel;
+                        Model queuedModel = new Model(newModel.getClassName());
+                        if (oldModel != null) {
+                            queuedModel.merge(oldModel);
+                        }
+                        queuedModel.merge(newModel);
+                        db = new DataCache(this);
+                        // Make it pending (also sets temp id for create)
+                        if (oldModel == null) {
+                            DelayedRequester.current.queueCreate(queuedModel,
+                                                                 this.view, this);
+                            db.addOne(queuedModel.getClassName());
+                        } else {
+                            DelayedRequester.current.queueUpdate(queuedModel,
+                                                                 this.view, this);
+                        }
+                        // Save locally and continue
+                        db.storeData(queuedModel.getClassName(), queuedModel);
+                        TreeView.setDirty();
+                        if (Session.current.editedModel == null) {
+                            if (Session.current.linkToParent != null) {
+                                String linkToParent = Session.current.linkToParent;
+                                String linkToSelf = Session.current.linkToSelf;
+                                // Add the id to parent
+                                int id = (Integer) queuedModel.get("id");
+                                Session.current.addToParent(id);
+                                // Create new record
+                                Session.current.finishEditing();
+                                Session.current.editNewModel(queuedModel.getClassName(),
+                                                             linkToParent,
+                                                             linkToSelf);
+                            } else {
+                                Session.current.finishEditing();
+                                Session.current.editNewModel(queuedModel.getClassName());
+                            }
+                            this.refreshDisplay();
+                        } else {
+                            // Edition: clear edition and return back to tree
+                            this.kill = true;
+                            this.finish();
+                        }
                     }
-                    queuedModel.merge(newModel);
-                    db = new DataCache(this);
-                    // Make it pending (also sets temp id for create)
-                    if (oldModel == null) {
-                        DelayedRequester.current.queueCreate(queuedModel,
-                                                             this.view, this);
-                        db.addOne(queuedModel.getClassName());
-                    } else {
-                        DelayedRequester.current.queueUpdate(queuedModel,
-                                                             this.view, this);
-                    }
-                    // Save locally
-                    db.storeData(queuedModel.getClassName(), queuedModel);
-                    TreeView.setDirty();
+                } else {
+                    // Show the error
+                    AlertDialog.Builder b = new AlertDialog.Builder(this);
+                    b.setTitle(R.string.error);
+                    b.setMessage(R.string.network_error);
+                    ((Exception)msg.obj).printStackTrace();
+                    b.show();
                 }
-                b.show();
             }
             break;
         case DataLoader.VIEWS_OK:

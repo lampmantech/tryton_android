@@ -103,6 +103,11 @@ public class Configure extends PreferenceActivity {
         return prefs.getBoolean("autologout", false);
     }
 
+    public static boolean getOfflineUse(Context ctx) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        return prefs.getBoolean("offlineuse", true);
+    }
+
     public static String getLastUser(Context ctx) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         return prefs.getString("lastuser", null);

@@ -69,6 +69,7 @@ the original label is set after the tag -->
   <string name="tomany_delete">Delete</string> <!-- AND: Delete selected record -->
   <string name="data_send">Sending data</string> <!-- NEW -->
   <string name="data_send_done">Record saved!</string>
+  <string name="data_send_queued">Operation queued</string> <!-- NEW -->
   
   <!-- Configuration labels -->
   <string name="config_host_title">Host</string> <!-- AND: Host: -->
@@ -82,6 +83,8 @@ the original label is set after the tag -->
   <string name="config_user_preferences">User preferences</string> <!-- NEW -->
   <string name="config_autologout_title">Auto logout</string> <!-- NEW -->
   <string name="config_autologout_desc">Automatically logout when quitting with back button</string> <!-- NEW -->
+  <string name="config_offlineuse_title">Offline use</string> <!-- NEW -->
+  <string name="config_offlineuse_desc">Save modifications and send them manually when the server is unavailable</string> <!-- NEW -->
 
   <!-- Delayed requester labels -->
   <string name="requester_pending_one">1 request pending</string>

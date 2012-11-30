@@ -71,6 +71,7 @@ the original label is set after the tag -->
   <string name="tomany_delete">Supprimer</string> <!-- AND: Delete selected record -->
   <string name="data_send">Envoi des données</string> <!-- NEW -->
   <string name="data_send_done">Enregistrement sauvé !</string>
+  <string name="data_send_queued">Operation mise en attente</string> <!-- NEW -->
   
   <!-- Configuration labels -->
   <string name="config_host_title">Hôte</string> <!-- AND: Host: -->
@@ -84,6 +85,8 @@ the original label is set after the tag -->
   <string name="config_user_preferences">Préférences utilisateur</string> <!-- NEW -->
   <string name="config_autologout_title">Déconnexion automatique</string> <!-- NEW -->
   <string name="config_autologout_desc">Se déconnecter automatiquement en quittant l\'application avec le bouton retour</string> <!-- NEW -->
+  <string name="config_offlineuse_title">Usage hors ligne</string> <!-- NEW -->
+  <string name="config_offlineuse_desc">Enregistrer les modification et les envoyer manuellement lorsque le serveur est indisponible</string> <!-- NEW -->
 
   <!-- Delayed requester labels -->
   <string name="requester_pending_one">1 operation en attente</string>
