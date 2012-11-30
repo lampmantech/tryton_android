@@ -97,6 +97,7 @@ public class ModelViewTypes implements Serializable {
                     @SuppressWarnings("unchecked")
                     List<Model> axisFields = (List<Model>) field.get("axis");
                     for (Model axisModel : axisFields) {
+                        fieldName = axisModel.getString("name");
                         if (!fields.contains(fieldName)) {
                             fields.add(fieldName);
                         }
