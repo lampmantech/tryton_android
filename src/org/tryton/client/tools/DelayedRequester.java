@@ -38,6 +38,7 @@ import org.tryton.client.Configure;
 import org.tryton.client.PendingRequests;
 import org.tryton.client.R;
 import org.tryton.client.models.Model;
+import org.tryton.client.models.ModelView;
 
 /** Hold requests to the server to send the queue later */
 public class DelayedRequester {
@@ -52,13 +53,16 @@ public class DelayedRequester {
     public static class Command {
         private int cmd;
         private Model data;
+        private ModelView view;
 
-        public Command(int cmd, Model data) {
+        public Command(int cmd, Model data, ModelView view) {
             this.cmd = cmd;
             this.data = data;
+            this.view = view;
         }
         public int getCmd() { return this.cmd; }
         public Model getData() { return this.data; }
+        public ModelView getView() { return this.view; }
     }
 
     public static DelayedRequester current;
@@ -77,7 +81,7 @@ public class DelayedRequester {
 
     /** Add a create call in the queue. It edits the id of the
      * model to affect it a temporary negative one. */
-    public void queueCreate(Model newModel, Context ctx) {
+    public void queueCreate(Model newModel, ModelView editView, Context ctx) {
         newModel.set("id", tempId);
         // Add a rec_name, because there must be one
         if (newModel.hasAttribute("name")) {
@@ -91,7 +95,7 @@ public class DelayedRequester {
             }
         }
         tempId--;
-        this.queue.add(new Command(CMD_CREATE, newModel));
+        this.queue.add(new Command(CMD_CREATE, newModel, editView));
         this.updateNotification(ctx);
         try {
             this.save(ctx);
@@ -100,8 +104,9 @@ public class DelayedRequester {
         }
     }
 
-    public void queueUpdate(Model updatedModel, Context ctx) {
-        this.queue.add(new Command(CMD_UPDATE, updatedModel));
+    public void queueUpdate(Model updatedModel, ModelView editView,
+                            Context ctx) {
+        this.queue.add(new Command(CMD_UPDATE, updatedModel, editView));
         this.updateNotification(ctx);
         try {
             this.save(ctx);
@@ -111,7 +116,7 @@ public class DelayedRequester {
     }
 
     public void queueDelete(Model deletedModel, Context ctx) {
-        this.queue.add(new Command(CMD_DELETE, deletedModel));
+        this.queue.add(new Command(CMD_DELETE, deletedModel, null));
         this.updateNotification(ctx);
         try {
             this.save(ctx);
@@ -198,6 +203,10 @@ public class DelayedRequester {
         for (Command cmd : this.queue) {
             oos.writeInt(cmd.getCmd());
             oos.writeObject(cmd.getData().toByteArray());
+            oos.writeBoolean(cmd.getView() != null);
+            if (cmd.getView() != null) {
+                oos.writeObject(cmd.getView().toByteArray());
+            }
         }
         oos.close();
     }
@@ -226,7 +235,13 @@ public class DelayedRequester {
                 int cmdCode = ois.readInt();
                 byte[] byteData = (byte[]) ois.readObject();
                 Model data = Model.fromByteArray(byteData);
-                Command cmd = new Command(cmdCode, data);
+                boolean hasView = ois.readBoolean();
+                ModelView view = null;
+                if (hasView) {
+                    byteData = (byte[]) ois.readObject();
+                    view = ModelView.fromByteArray(byteData);
+                }
+                Command cmd = new Command(cmdCode, data, view);
                 req.queue.add(cmd);
             }
             req.updateNotification(ctx);

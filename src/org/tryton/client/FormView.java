@@ -491,10 +491,12 @@ public class FormView extends Activity
                     db = new DataCache(this);
                     // Make it pending (also sets temp id for create)
                     if (oldModel == null) {
-                        DelayedRequester.current.queueCreate(queuedModel, this);
+                        DelayedRequester.current.queueCreate(queuedModel,
+                                                             this.view, this);
                         db.addOne(queuedModel.getClassName());
                     } else {
-                        DelayedRequester.current.queueUpdate(queuedModel, this);
+                        DelayedRequester.current.queueUpdate(queuedModel,
+                                                             this.view, this);
                     }
                     // Save locally
                     db.storeData(queuedModel.getClassName(), queuedModel);
