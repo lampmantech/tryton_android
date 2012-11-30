@@ -195,6 +195,7 @@ public class PendingRequests extends Activity implements Handler.Callback {
                             currentTempId = 0;
                             // Edit the command
                             FormView.setup(cmd);
+                            Session.current.editModel(cmd.getData());
                             Intent i = new Intent(PendingRequests.this,
                                                   FormView.class);
                             PendingRequests.this.startActivity(i);

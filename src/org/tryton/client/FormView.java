@@ -93,7 +93,6 @@ public class FormView extends Activity
     private ModelView view;
     private List<RelField> relFields; // in case of data reload
     private DelayedRequester.Command command; // only on command edit
-    private Model cmdTempModel;
     private ProgressDialog loadingDialog;
     private int currentDialog;
     private int callId;
@@ -118,7 +117,6 @@ public class FormView extends Activity
                 this.showLoadingDialog(this.currentLoadingMsg);
             }
             this.command = (DelayedRequester.Command) state.getSerializable("command");
-            this.cmdTempModel = (Model) state.getSerializable("cmdTempModel");
         } else {
             this.view = viewInitializer;
             viewInitializer = null;
@@ -127,7 +125,6 @@ public class FormView extends Activity
             this.command = commandInitializer;
             if (this.command != null) {
                 this.view = this.command.getView();
-                this.cmdTempModel = new Model(this.command.getData().getClassName());
             }
             // This is the first call, need to update data for new fields
             loadView = (this.view == null);
@@ -183,7 +180,6 @@ public class FormView extends Activity
         outState.putInt("callId", this.callId);
         outState.putInt("currentLoadingMsg", this.currentLoadingMsg);
         outState.putSerializable("command", this.command);
-        outState.putSerializable("cmdTempModel", this.cmdTempModel);
     }
 
     @Override
@@ -235,7 +231,7 @@ public class FormView extends Activity
             } else {
                 // Update command and get back
                 this.updateTempModel();
-                this.command.getData().merge(this.cmdTempModel);
+                this.command.getData().merge(Session.current.tempModel);
                 DataCache db = new DataCache(this);
                 db.storeData(this.command.getData().getClassName(),
                              this.command.getData());
@@ -310,13 +306,8 @@ public class FormView extends Activity
                 continue;
             }
             Model field = this.view.getStructure().get(structIndex);
-            if (this.command == null) {
-                FormViewFactory.setValue(v, field, this.view, tmp,
-                                         s.editedModel, s.prefs, this);
-            } else {
-                FormViewFactory.setValue(v, field, this.view, this.cmdTempModel,
-                                         this.command.getData(), s.prefs, this);
-            }
+            FormViewFactory.setValue(v, field, this.view, tmp,
+                                     s.editedModel, s.prefs, this);
         }
     }
 
@@ -361,13 +352,8 @@ public class FormView extends Activity
     private void updateTempModel() {
         Model tmp;
         Model origin;
-        if (this.command == null) {
-            tmp = Session.current.tempModel;
-            origin = Session.current.editedModel;
-        } else {
-            tmp = this.cmdTempModel;
-            origin = this.command.getData();
-        }
+        tmp = Session.current.tempModel;
+        origin = Session.current.editedModel;
         int structIndex = -1;
         for (int j = 0; j < this.table.getChildCount(); j++) {
             structIndex++;
@@ -430,11 +416,7 @@ public class FormView extends Activity
         if (this.callId == 0) {
             this.showLoadingDialog(LOADING_DATA);
             String className;
-            if (this.command == null) {
-                className = Session.current.tempModel.getClassName();
-            } else {
-                className = this.command.getData().getClassName();
-            }
+            className = Session.current.tempModel.getClassName();
             this.callId = DataLoader.loadRelFields(this, className,
                                                        new Handler(this),
                                                        false);
@@ -445,13 +427,8 @@ public class FormView extends Activity
         if (this.callId == 0) {
             String className;
             Integer id;
-            if (this.command == null) {
-                className = Session.current.tempModel.getClassName();
-                id = (Integer) Session.current.tempModel.get("id");
-            } else {
-                className = this.command.getData().getClassName();
-                id = (Integer) this.command.getData().get("id");
-            }
+            className = Session.current.tempModel.getClassName();
+            id = (Integer) Session.current.tempModel.get("id");
             // Add id to list to load for edit
             List<Integer> ids = new ArrayList<Integer>();
             if (id != null) {
@@ -588,11 +565,10 @@ public class FormView extends Activity
         case DataLoader.DATA_OK:
             this.callId = 0;
             List<Model> dataList = (List<Model>)((Object[])msg.obj)[1];
-            if (this.command == null) {
-                if (dataList.size() > 0) {
-                    // Refresh edited model (not done when creating)
-                    Session.current.editedModel = dataList.get(0);
-                }
+            if (dataList.size() > 0) {
+                // Refresh edited model (not done when creating
+                // as data is not loaded)
+                Session.current.editedModel = dataList.get(0);
             }
             this.initView();
             this.refreshDisplay();
@@ -675,7 +651,7 @@ public class FormView extends Activity
                 this.sendSave();
             } else {
                 // Update command and get back to pending requests
-                this.command.getData().merge(this.cmdTempModel);
+                this.command.getData().merge(Session.current.tempModel);
                 DataCache db = new DataCache(this);
                 db.storeData(this.command.getData().getClassName(),
                              this.command.getData());
