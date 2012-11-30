@@ -360,10 +360,13 @@ public class FormView extends Activity
     /** Update temp model to current values */
     private void updateTempModel() {
         Model tmp;
+        Model origin;
         if (this.command == null) {
             tmp = Session.current.tempModel;
+            origin = Session.current.editedModel;
         } else {
             tmp = this.cmdTempModel;
+            origin = this.command.getData();
         }
         int structIndex = -1;
         for (int j = 0; j < this.table.getChildCount(); j++) {
@@ -391,8 +394,21 @@ public class FormView extends Activity
             Object value = FormViewFactory.getValue(v, field,
                                                     Session.current.prefs);
             if (value != FormViewFactory.NO_VALUE) {
-                // If NO_VALUE (not null) the value is ignored
+
                 tmp.set(field.getString("name"), value);
+            } else {
+                // If NO_VALUE (not null) the value is ignored
+                // but still set null to create the field if necessary
+                String fieldName = field.getString("name");
+                if (origin != null) {
+                    // Origin always has a value, it will be merged
+                } else {
+                    // Origin doesn't have a value, set explicit null
+                    if (!tmp.hasAttribute(fieldName)) {
+                        tmp.set(fieldName, null);
+                    }
+                }
+
             }
         }
     }
