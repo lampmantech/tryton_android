@@ -267,12 +267,7 @@ public class FormView extends Activity
             case DialogInterface.BUTTON_POSITIVE:
                 dialog.dismiss();
                 // Show loading dialog and send delete call
-                this.showLoadingDialog(LOADING_SEND);
-                Session s = Session.current;
-                this.callId = TrytonCall.deleteData(s.userId, s.cookie, s.prefs,
-                                                    (Integer) s.editedModel.get("id"),
-                                                    s.editedModel.getClassName(),
-                                                    new Handler(this));
+                this.sendDelete();
                 break;
                 // There is no listener bound to negative: default is dismiss.
             }
@@ -572,17 +567,50 @@ public class FormView extends Activity
         return true;
     }
 
-    ////////////////////////
-    // Save/Queue section //
-    ////////////////////////
+    ///////////////////////////////
+    // Save/Delete/Queue section //
+    ///////////////////////////////
 
     /** Show dialog and send save call to the server. Callback is in handler. */
     private void sendSave() {
-        this.showLoadingDialog(LOADING_SEND);
-        Session s = Session.current;
-        this.callId = TrytonCall.saveData(s.userId, s.cookie, s.prefs,
-                                          s.tempModel, s.editedModel, this,
-                                          new Handler(this));
+        if (DelayedRequester.current.getQueueSize() > 0) {
+            // There is a queue waiting, don't mess command order by sending
+            // a new command before the other
+            Toast t = Toast.makeText(this, R.string.data_send_queued,
+                                     Toast.LENGTH_SHORT);
+            t.show();
+            if (Session.current.editedModel != null) {
+                this.queueUpdate();
+            } else {
+                this.queueCreate();
+            }
+        } else {
+            // Standard connected behaviour: send to server
+            this.showLoadingDialog(LOADING_SEND);
+            Session s = Session.current;
+            this.callId = TrytonCall.saveData(s.userId, s.cookie, s.prefs,
+                                              s.tempModel, s.editedModel, this,
+                                              new Handler(this));
+        }
+    }
+
+    private void sendDelete() {
+        if (DelayedRequester.current.getQueueSize() > 0) {
+            // There is a queue waiting, don't mess command order by sending
+            // a new command before the other
+            Toast t = Toast.makeText(this, R.string.data_send_queued,
+                                     Toast.LENGTH_SHORT);
+            t.show();
+            this.queueDelete();
+        } else {
+            // Standard connected behaviour: send to server
+            this.showLoadingDialog(LOADING_SEND);
+            Session s = Session.current;
+            this.callId = TrytonCall.deleteData(s.userId, s.cookie, s.prefs,
+                                                (Integer) s.editedModel.get("id"),
+                                                s.editedModel.getClassName(),
+                                                new Handler(this));
+        }
     }
 
     /** Add a create call to the queue, update db and start a new record */
