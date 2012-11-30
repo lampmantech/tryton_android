@@ -521,56 +521,13 @@ public class FormView extends Activity
                     t = Toast.makeText(this, R.string.data_send_queued,
                                        Toast.LENGTH_SHORT);
                     t.show();
-                    Model newModel = Session.current.tempModel;
                     if (msg.what == TrytonCall.CALL_DELETE_NOK) {
-                        DelayedRequester.current.queueDelete(newModel, this);
-                        // Delete from local anyway and go back
-                        db = new DataCache(this);
-                        db.deleteData(Session.current.editedModel);
-                        TreeView.setDirty();
-                        this.kill = true;
-                        this.finish();
-                    } else if (msg.what == TrytonCall.CALL_SAVE_NOK) {
-                        Model oldModel = Session.current.editedModel;
-                        Model queuedModel = new Model(newModel.getClassName());
-                        if (oldModel != null) {
-                            queuedModel.merge(oldModel);
-                        }
-                        queuedModel.merge(newModel);
-                        db = new DataCache(this);
-                        // Make it pending (also sets temp id for create)
-                        if (oldModel == null) {
-                            DelayedRequester.current.queueCreate(queuedModel,
-                                                                 this.view, this);
-                            db.addOne(queuedModel.getClassName());
+                        this.queueDelete();
+                    } else {
+                        if (Session.current.editedModel != null) {
+                            this.queueUpdate();
                         } else {
-                            DelayedRequester.current.queueUpdate(queuedModel,
-                                                                 this.view, this);
-                        }
-                        // Save locally and continue
-                        db.storeData(queuedModel.getClassName(), queuedModel);
-                        TreeView.setDirty();
-                        if (Session.current.editedModel == null) {
-                            if (Session.current.linkToParent != null) {
-                                String linkToParent = Session.current.linkToParent;
-                                String linkToSelf = Session.current.linkToSelf;
-                                // Add the id to parent
-                                int id = (Integer) queuedModel.get("id");
-                                Session.current.addToParent(id);
-                                // Create new record
-                                Session.current.finishEditing();
-                                Session.current.editNewModel(queuedModel.getClassName(),
-                                                             linkToParent,
-                                                             linkToSelf);
-                            } else {
-                                Session.current.finishEditing();
-                                Session.current.editNewModel(queuedModel.getClassName());
-                            }
-                            this.refreshDisplay();
-                        } else {
-                            // Edition: clear edition and return back to tree
-                            this.kill = true;
-                            this.finish();
+                            this.queueCreate();
                         }
                     }
                 } else {
@@ -615,6 +572,10 @@ public class FormView extends Activity
         return true;
     }
 
+    ////////////////////////
+    // Save/Queue section //
+    ////////////////////////
+
     /** Show dialog and send save call to the server. Callback is in handler. */
     private void sendSave() {
         this.showLoadingDialog(LOADING_SEND);
@@ -622,6 +583,70 @@ public class FormView extends Activity
         this.callId = TrytonCall.saveData(s.userId, s.cookie, s.prefs,
                                           s.tempModel, s.editedModel, this,
                                           new Handler(this));
+    }
+
+    /** Add a create call to the queue, update db and start a new record */
+    private void queueCreate() {
+        Model newModel = Session.current.tempModel;
+        Model queuedModel = new Model(newModel.getClassName());
+        queuedModel.merge(newModel);
+        // Make it pending (also sets temp id for create)
+        DelayedRequester.current.queueCreate(queuedModel,
+                                             this.view, this);
+        // Save locally
+        DataCache db = new DataCache(this);
+        db.addOne(queuedModel.getClassName());
+        db.storeData(queuedModel.getClassName(), queuedModel);
+        // Update parent if necessary
+        if (Session.current.linkToParent != null) {
+            // Add the id to parent
+            int id = (Integer) queuedModel.get("id");
+            Session.current.addToParent(id);
+            // Create new record
+            Session.current.finishEditing();
+            String linkToParent = Session.current.linkToParent;
+            String linkToSelf = Session.current.linkToSelf;
+            Session.current.editNewModel(queuedModel.getClassName(),
+                                         linkToParent,
+                                         linkToSelf);
+        } else {
+            // Just create a new record
+            Session.current.finishEditing();
+            Session.current.editNewModel(queuedModel.getClassName());
+        }
+        TreeView.setDirty();
+        this.refreshDisplay();
+    }
+    
+    /** Add a update call to the queue, update db and return */
+    private void queueUpdate() {
+        Model newModel = Session.current.tempModel;
+        Model oldModel = Session.current.editedModel;
+        Model queuedModel = new Model(newModel.getClassName());
+        queuedModel.merge(oldModel);
+        queuedModel.merge(newModel);
+        // Make it pending
+        DelayedRequester.current.queueUpdate(queuedModel,
+                                             this.view, this);
+        // Save locally and continue
+        DataCache db = new DataCache(this);
+        db.storeData(queuedModel.getClassName(), queuedModel);
+        // Clear edition and return back to tree
+        this.kill = true;
+        TreeView.setDirty();
+        this.finish();
+    }
+
+    /** Add a delete call to the queue, update db and return */
+    private void queueDelete() {
+        Model newModel = Session.current.tempModel;
+        DelayedRequester.current.queueDelete(newModel, this);
+        // Delete from local cache and go back
+        DataCache db = new DataCache(this);
+        db.deleteData(Session.current.editedModel);
+        TreeView.setDirty();
+        this.kill = true;
+        this.finish();
     }
 
     //////////////////
