@@ -36,6 +36,7 @@ import org.achartengine.renderer.SimpleSeriesRenderer;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
+import org.tryton.client.data.Session;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 
@@ -217,6 +218,20 @@ public class GraphViewFactory {
         return null;
     }
 
+    /** Format a label for axis according to its type and preferences */
+    private static String formatLabel(Object label) {
+        if ((label instanceof Map) && ((Map)label).containsKey("year")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> mDate = (Map<String, Object>) label;
+            int year = (Integer) mDate.get("year");
+            int month = (Integer) mDate.get("month");
+            int day = (Integer) mDate.get("day");
+            String format = Session.current.prefs.getDateFormat();
+            return Formatter.formatDate(format, year, month, day);
+        }
+        return label.toString();
+    }
+
     public static GraphicalView getGraphView(Context ctx,
                                              ModelView view, List<Model> data) {
         String graphType = view.getSubtype();
@@ -289,7 +304,7 @@ public class GraphViewFactory {
                 int i = 0;
                 for (Object o : fillKeys(plots, false)) {
                     series.add(i, plots.get(o));
-                    renderers.addXTextLabel((double)i, o.toString());
+                    renderers.addXTextLabel((double)i, formatLabel(o));
                     i++;
                 }
                 renderers.setXLabels(0);
@@ -319,7 +334,7 @@ public class GraphViewFactory {
                 Map<Object, Double> plots = getValues(data, xAxis, y);
                 int defaultColorIndex = 0;
                 for (Object o : fillKeys(plots, false)) {
-                    series.add(o.toString(), plots.get(o));
+                    series.add(formatLabel(o), plots.get(o));
                     SimpleSeriesRenderer renderer = new SimpleSeriesRenderer();
                     renderer.setColor(DEFAULT_COLORS[defaultColorIndex]);
                     defaultColorIndex++;
