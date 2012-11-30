@@ -83,22 +83,26 @@ public class DelayedRequester {
         this.tempId = -1;
     }
 
+    /** Update rec_name locally as it is computed on the server side. */
+    private void updateRecName(Model model) {
+        if (model.hasAttribute("name")) {
+            model.set("rec_name", model.get("name"));
+        } else {
+            for (String key : model.getAttributeNames()) {
+                if (model.get(key) instanceof String) {
+                    model.set("rec_name", model.get(key));
+                    break;
+                }
+            }
+        }
+    }
+
     /** Add a create call in the queue. It edits the id of the
      * model to affect it a temporary negative one. */
     public void queueCreate(Model newModel, ModelView editView, Context ctx) {
         newModel.set("id", tempId);
         tempId--;
-        // Add a rec_name, because there must be one
-        if (newModel.hasAttribute("name")) {
-            newModel.set("rec_name", newModel.get("name"));
-        } else {
-            for (String key : newModel.getAttributeNames()) {
-                if (newModel.get(key) instanceof String) {
-                    newModel.set("rec_name", newModel.get(key));
-                    break;
-                }
-            }
-        }
+        this.updateRecName(newModel); // There must be a rec_name
         this.queue.add(new Command(CMD_CREATE, newModel, editView));
         this.updateNotification(ctx);
         try {
@@ -110,17 +114,7 @@ public class DelayedRequester {
 
     public void queueUpdate(Model updatedModel, ModelView editView,
                             Context ctx) {
-        // Update rec_name as it may be confusing if it does not change
-        if (updatedModel.hasAttribute("name")) {
-            updatedModel.set("rec_name", updatedModel.get("name"));
-        } else {
-            for (String key : updatedModel.getAttributeNames()) {
-                if (updatedModel.get(key) instanceof String) {
-                    updatedModel.set("rec_name", updatedModel.get(key));
-                    break;
-                }
-            }
-        }
+        this.updateRecName(updatedModel); // makes things change on edit
         this.queue.add(new Command(CMD_UPDATE, updatedModel, editView));
         this.updateNotification(ctx);
         try {
