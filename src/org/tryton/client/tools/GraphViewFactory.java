@@ -261,6 +261,7 @@ public class GraphViewFactory {
                 renderers.setXTitle(xAxis.getString("name"));
             }
             int defaultColorIndex = 0;
+            double minVal = 1.0, maxVal = 0.0, maxX = 0.0;
             for (Model y : yAxis) {
                 // Set series name
                 String seriesName = null;
@@ -302,22 +303,41 @@ public class GraphViewFactory {
                 Map<Object, Double> plots = getValues(data, xAxis, y);
                 // Set series values
                 int i = 0;
-                for (Object o : fillKeys(plots, false)) {
+                List keys = fillKeys(plots, false);
+                if (maxX < keys.size()) {
+                    maxX = (double) keys.size();
+                }
+                for (Object o : keys) {
+                    Double val = plots.get(o);
+                    if (minVal > maxVal) {
+                        minVal = val;
+                        maxVal = val;
+                    } else {
+                        if (minVal > val) {
+                            minVal = val;
+                        }
+                        if (maxVal < val) {
+                            maxVal = val;
+                        }
+                    }
                     series.add(i, plots.get(o));
                     renderers.addXTextLabel((double)i, formatLabel(o));
                     i++;
                 }
+                
                 renderers.setXLabels(0);
                 dataset.addSeries(series);
                 renderers.addSeriesRenderer(renderer);
             }
-
             if (graphType.equals("hbar")) {
                 renderers.setOrientation(XYMultipleSeriesRenderer.Orientation.VERTICAL);
-            } else {
+                renderers.setPanLimits(new double[]{-0.5, maxX - 0.5, minVal, maxVal});
+            } else if (graphType.equals("vbar")) {
                 renderers.setOrientation(XYMultipleSeriesRenderer.Orientation.HORIZONTAL);
+                renderers.setPanLimits(new double[]{-0.5, maxX - 0.5, minVal, maxVal});
             }
             if (graphType.equals("line")) {
+                renderers.setPanLimits(new double[]{0.0, maxX - 1, minVal, maxVal});
                 GraphicalView g = ChartFactory.getLineChartView(ctx, dataset, 
                                                                 renderers);
                 return g;
