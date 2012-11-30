@@ -110,6 +110,17 @@ public class DelayedRequester {
 
     public void queueUpdate(Model updatedModel, ModelView editView,
                             Context ctx) {
+        // Update rec_name as it may be confusing if it does not change
+        if (updatedModel.hasAttribute("name")) {
+            updatedModel.set("rec_name", updatedModel.get("name"));
+        } else {
+            for (String key : updatedModel.getAttributeNames()) {
+                if (updatedModel.get(key) instanceof String) {
+                    updatedModel.set("rec_name", updatedModel.get(key));
+                    break;
+                }
+            }
+        }
         this.queue.add(new Command(CMD_UPDATE, updatedModel, editView));
         this.updateNotification(ctx);
         try {
