@@ -68,20 +68,32 @@ public class FormView extends Activity
     public static void setup(ModelView view) {
         viewInitializer = view;
         viewIdInitializer = 0;
+        commandInitializer = null;
     }
     /** Setup to load a particular view. If viewId is 0, the default one will
      * be used. */
     public static void setup(int viewId) {
         viewIdInitializer = viewId;
         viewInitializer = null;
+        commandInitializer = null;
+    }
+
+    /** Setup to edit a delayed command. */
+    public static void setup(DelayedRequester.Command cmd) {
+        commandInitializer = cmd;
+        viewIdInitializer = 0;
+        viewInitializer = null;
     }
 
     private static ModelView viewInitializer;
     private static int viewIdInitializer;
+    private static DelayedRequester.Command commandInitializer;
 
     private int viewId;
     private ModelView view;
     private List<RelField> relFields; // in case of data reload
+    private DelayedRequester.Command command; // only on command edit
+    private Model cmdTempModel;
     private ProgressDialog loadingDialog;
     private int currentDialog;
     private int callId;
@@ -105,11 +117,18 @@ public class FormView extends Activity
                 TrytonCall.update(this.callId, new Handler(this));
                 this.showLoadingDialog(this.currentLoadingMsg);
             }
+            this.command = (DelayedRequester.Command) state.getSerializable("command");
+            this.cmdTempModel = (Model) state.getSerializable("cmdTempModel");
         } else {
             this.view = viewInitializer;
             viewInitializer = null;
             this.viewId = viewIdInitializer;
             viewIdInitializer = 0;
+            this.command = commandInitializer;
+            if (this.command != null) {
+                this.view = this.command.getView();
+                this.cmdTempModel = new Model(this.command.getData().getClassName());
+            }
             // This is the first call, need to update data for new fields
             loadView = (this.view == null);
             loadData = true;
@@ -163,6 +182,8 @@ public class FormView extends Activity
         outState.putInt("viewId", this.viewId);
         outState.putInt("callId", this.callId);
         outState.putInt("currentLoadingMsg", this.currentLoadingMsg);
+        outState.putSerializable("command", this.command);
+        outState.putSerializable("cmdTempModel", this.cmdTempModel);
     }
 
     @Override
@@ -191,24 +212,35 @@ public class FormView extends Activity
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)  {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-            // Check if dirty and alert
-            this.updateTempModel();
-            if (Session.current.editedIsDirty()) {
-                // Ask for save
-                this.currentDialog = DIALOG_DIRTY;
-                AlertDialog.Builder b = new AlertDialog.Builder(this);
-                b.setTitle(R.string.form_dirty_title);
-                b.setMessage(R.string.form_dirty_message);
-                b.setPositiveButton(R.string.general_yes, this);
-                b.setNegativeButton(R.string.general_no, this);
-                b.setNeutralButton(R.string.general_cancel, this);
-                b.show();
-                // Skip standard behaviour
-                return true;
-            } else {
-                if (this.loadingDialog == null) {
-                    this.kill = true;
+            if (this.command == null) {
+                // Check if dirty and alert
+                this.updateTempModel();
+                if (Session.current.editedIsDirty()) {
+                    // Ask for save
+                    this.currentDialog = DIALOG_DIRTY;
+                    AlertDialog.Builder b = new AlertDialog.Builder(this);
+                    b.setTitle(R.string.form_dirty_title);
+                    b.setMessage(R.string.form_dirty_message);
+                    b.setPositiveButton(R.string.general_yes, this);
+                    b.setNegativeButton(R.string.general_no, this);
+                    b.setNeutralButton(R.string.general_cancel, this);
+                    b.show();
+                    // Skip standard behaviour
+                    return true;
+                } else {
+                    if (this.loadingDialog == null) {
+                        this.kill = true;
+                    }
                 }
+            } else {
+                // Update command and get back
+                this.updateTempModel();
+                this.command.getData().merge(this.cmdTempModel);
+                DataCache db = new DataCache(this);
+                db.storeData(this.command.getData().getClassName(),
+                             this.command.getData());
+                this.finish();
+                return true;
             }
         }
         // Use default behaviour
@@ -278,8 +310,13 @@ public class FormView extends Activity
                 continue;
             }
             Model field = this.view.getStructure().get(structIndex);
-            FormViewFactory.setValue(v, field, this.view, tmp,
-                                     s.editedModel, s.prefs, this);
+            if (this.command == null) {
+                FormViewFactory.setValue(v, field, this.view, tmp,
+                                         s.editedModel, s.prefs, this);
+            } else {
+                FormViewFactory.setValue(v, field, this.view, this.cmdTempModel,
+                                         this.command.getData(), s.prefs, this);
+            }
         }
     }
 
@@ -322,7 +359,12 @@ public class FormView extends Activity
 
     /** Update temp model to current values */
     private void updateTempModel() {
-        Model tmp = Session.current.tempModel;
+        Model tmp;
+        if (this.command == null) {
+            tmp = Session.current.tempModel;
+        } else {
+            tmp = this.cmdTempModel;
+        }
         int structIndex = -1;
         for (int j = 0; j < this.table.getChildCount(); j++) {
             structIndex++;
@@ -371,7 +413,12 @@ public class FormView extends Activity
     private void loadDataAndMeta() {
         if (this.callId == 0) {
             this.showLoadingDialog(LOADING_DATA);
-            String className = Session.current.tempModel.getClassName();
+            String className;
+            if (this.command == null) {
+                className = Session.current.tempModel.getClassName();
+            } else {
+                className = this.command.getData().getClassName();
+            }
             this.callId = DataLoader.loadRelFields(this, className,
                                                        new Handler(this),
                                                        false);
@@ -380,12 +427,19 @@ public class FormView extends Activity
 
     private void loadData() {
         if (this.callId == 0) {
-            String className = Session.current.tempModel.getClassName();
-            Integer id = (Integer) Session.current.tempModel.get("id");
+            String className;
+            Integer id;
+            if (this.command == null) {
+                className = Session.current.tempModel.getClassName();
+                id = (Integer) Session.current.tempModel.get("id");
+            } else {
+                className = this.command.getData().getClassName();
+                id = (Integer) this.command.getData().get("id");
+            }
             // Add id to list to load for edit
             List<Integer> ids = new ArrayList<Integer>();
             if (id != null) {
-                ids.add((Integer)Session.current.tempModel.get("id"));
+                ids.add(id);
             }
             // Call (relies on DataLoader returning well with no id)
             this.callId = DataLoader.loadData(this, className, ids,
@@ -518,9 +572,11 @@ public class FormView extends Activity
         case DataLoader.DATA_OK:
             this.callId = 0;
             List<Model> dataList = (List<Model>)((Object[])msg.obj)[1];
-            if (dataList.size() > 0) {
-                // Refresh edited model (not done when creating)
-                Session.current.editedModel = dataList.get(0);
+            if (this.command == null) {
+                if (dataList.size() > 0) {
+                    // Refresh edited model (not done when creating)
+                    Session.current.editedModel = dataList.get(0);
+                }
             }
             this.initView();
             this.refreshDisplay();
@@ -574,12 +630,18 @@ public class FormView extends Activity
     @Override
     public boolean onPrepareOptionsMenu(android.view.Menu menu) {
         this.updateTempModel();
-        // Enable/disable save
-        MenuItem save = menu.findItem(MENU_SAVE_ID);
-        save.setEnabled(Session.current.editedIsDirty());
-        // Remove delete for creation
-        if (Session.current.editedModel == null) {
+        if (this.command == null) {
+            // Enable/disable save
+            MenuItem save = menu.findItem(MENU_SAVE_ID);
+            save.setEnabled(Session.current.editedIsDirty());
+            // Remove delete for creation
+            if (Session.current.editedModel == null) {
+                menu.removeItem(MENU_DEL_ID);
+            }
+        } else {
+            // Keep only save
             menu.removeItem(MENU_DEL_ID);
+            menu.removeItem(MENU_LOGOUT_ID);
         }
         return true;
     }
@@ -592,8 +654,17 @@ public class FormView extends Activity
             Start.logout(this);
             break;
         case MENU_SAVE_ID:
-            // Send save call
-            this.sendSave();
+            if (this.command == null) {
+                // Send save call
+                this.sendSave();
+            } else {
+                // Update command and get back to pending requests
+                this.command.getData().merge(this.cmdTempModel);
+                DataCache db = new DataCache(this);
+                db.storeData(this.command.getData().getClassName(),
+                             this.command.getData());
+                this.finish();
+            }
             break;
         case MENU_DEL_ID:
             // Ask for confirmation

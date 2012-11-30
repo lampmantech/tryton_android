@@ -701,6 +701,7 @@ public class DataCache extends SQLiteOpenHelper {
             for (String field : fields) {
                 if (!data.hasAttribute(field)) {
                     models.remove(i);
+                    System.out.println("rejected by " + field);
                     i--;
                     break;
                 }

@@ -19,6 +19,8 @@ package org.tryton.client;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -65,9 +67,6 @@ public class PendingRequests extends Activity implements Handler.Callback {
         this.progressBar = (ProgressBar) this.findViewById(R.id.pending_progress);
         this.progressBar.setMax(this.initialCallCount);
         this.update();
-        if (this.callId == 0) {
-            this.sendNextCommand();
-        }
     }
 
     public void onSaveInstanceState(Bundle outState) {
@@ -82,6 +81,13 @@ public class PendingRequests extends Activity implements Handler.Callback {
         super.onDestroy();
         if (this.kill) {
             DelayedRequester.current.updateNotification(this);
+        }
+    }
+    
+    public void onResume() {
+        super.onResume();
+        if (this.callId == 0) {
+            this.sendNextCommand();
         }
     }
 
@@ -177,12 +183,41 @@ public class PendingRequests extends Activity implements Handler.Callback {
             break;
         case TrytonCall.CALL_SAVE_NOK:
         case TrytonCall.CALL_DELETE_NOK:
+            this.callId = 0;
             Exception e = (Exception) msg.obj;
-            if (!AlertBuilder.showUserError(e, this)
-                && !AlertBuilder.showUserError(e, this)) {
+            final int what = msg.what;
+            DialogInterface.OnCancelListener l = new DialogInterface.OnCancelListener() {
+                    public void onCancel (DialogInterface dialog) {
+                        DelayedRequester.Command cmd = DelayedRequester.current.getNextCommand();
+                        if (what == TrytonCall.CALL_SAVE_NOK) {
+                            // Restore the negative id
+                            cmd.getData().set("id", currentTempId);
+                            currentTempId = 0;
+                            // Edit the command
+                            FormView.setup(cmd);
+                            Intent i = new Intent(PendingRequests.this,
+                                                  FormView.class);
+                            PendingRequests.this.startActivity(i);
+                        } else {
+                            // Skip the call
+                            DataCache db = new DataCache(PendingRequests.this);
+                            db.storeData(cmd.getData().getClassName(),
+                                         cmd.getData());
+                            db.addOne(cmd.getData().getClassName());
+                            next();
+                        }
+                    }
+                };
+            if (!AlertBuilder.showUserError(e, this, l)
+                && !AlertBuilder.showUserError(e, this, l)) {
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
                 b.setTitle(R.string.error);
                 b.setMessage(R.string.network_error);
+                b.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    public void onCancel (DialogInterface dialog) {
+                        PendingRequests.this.finish();
+                    }
+                });
                 b.show();
                 ((Exception)msg.obj).printStackTrace();
             }

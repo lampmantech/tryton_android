@@ -19,6 +19,7 @@ package org.tryton.client.tools;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 
 /** Utility class to present popup messages. */
 public class AlertBuilder {
@@ -26,6 +27,11 @@ public class AlertBuilder {
     /** Show Tryton user error. Does nothing and returns false if e is
      * not a Tryton user error. */
     public static boolean showUserError(Exception e, Context ctx) {
+        return showUserError(e, ctx, null);
+    }
+
+    public static boolean showUserError(Exception e, Context ctx,
+                                        DialogInterface.OnCancelListener l) {
         String [] msg = TrytonCall.getUserError(e);
         if (msg == null) {
             return false;
@@ -36,13 +42,19 @@ public class AlertBuilder {
         } else {
             b.setMessage(msg[0] + "\n" + msg[1]);
         }
+        b.setOnCancelListener(l);
         b.show();
-        return true;
+        return true;        
     }
 
     /** Show Tryton user error. Does nothing and returns false if e is
      * not a Tryton user error. */
     public static boolean showUserWarning(Exception e, Context ctx) {
+        return showUserWarning(e, ctx, null);
+    }
+
+    public static boolean showUserWarning(Exception e, Context ctx,
+                                          DialogInterface.OnCancelListener l) {
         String [] msg = TrytonCall.getUserWarning(e);
         if (msg == null) {
             return false;
@@ -53,6 +65,7 @@ public class AlertBuilder {
         } else {
             b.setMessage(msg[0] + "\n" + msg[1]);
         }
+        b.setOnCancelListener(l);
         b.show();
         return true;
     }
