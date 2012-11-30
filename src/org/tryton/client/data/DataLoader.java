@@ -431,6 +431,15 @@ public class DataLoader {
         final Handler fwdHandler = newHandler(callId, ctx);
         new Thread() {
             public void run() {
+                if (ids == null) {
+                    // Request inexisting value, return empty list
+                    List<Model> data = new ArrayList<Model>();
+                    Message m = fwdHandler.obtainMessage();
+                    m.what = DATA_OK;
+                    m.obj = new Object[]{className, data};
+                    m.sendToTarget();
+                    return;
+                }
                 if (!forceRefresh) {
                     // Load from cache
                     DataCache db = new DataCache(ctx);
