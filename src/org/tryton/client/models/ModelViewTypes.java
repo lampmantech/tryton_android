@@ -86,8 +86,23 @@ public class ModelViewTypes implements Serializable {
         List<String> fields = new ArrayList<String>();
         for (String type : this.getTypes()) {
             ModelView v = this.views.get(type);
-            for (String fieldName : v.getFields().keySet()) {
-                if (!fields.contains(fieldName)) {
+            for (Model field : v.getStructure()) {
+                String className = field.getClassName();
+                String fieldName = field.getString("name");
+                if (className.equals("label")) {
+                    // ignore
+                } else if (className.equals("graph.axis.x")
+                           || className.equals("graph.axis.y")) {
+                    // Graph axis, get subfields
+                    @SuppressWarnings("unchecked")
+                    List<Model> axisFields = (List<Model>) field.get("axis");
+                    for (Model axisModel : axisFields) {
+                        if (!fields.contains(fieldName)) {
+                            fields.add(fieldName);
+                        }
+                    }
+                } else  if (!fields.contains(fieldName)) {
+                    // Standard field
                     fields.add(fieldName);
                 }
             }
