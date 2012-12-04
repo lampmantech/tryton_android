@@ -25,15 +25,15 @@
              android:layout_height="fill_parent"
              android:orientation="vertical"
              style="@style/main_container">
+  <Button android:id="@+id/tomany_add"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:onClick="add"
+          android:text="@string/tomany_add" />
   <!-- List of linked values. Uses weight to fill all available space left -->
   <ListView android:id="@+id/tomany_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="1"
             style="@style/main_container" />
-  <Button android:id="@+id/tomany_add"
-          android:layout_width="fill_parent"
-          android:layout_height="wrap_content"
-          android:onClick="add"
-          android:text="@string/tomany_add" />
 </LinearLayout>

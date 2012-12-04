@@ -24,7 +24,18 @@
              android:layout_width="fill_parent"
              android:layout_height="fill_parent"
              android:orientation="vertical">
-  <!-- Pagination header -->
+  <!-- Values list. -->
+  <Button android:id="@+id/pick_create"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:onClick="create"
+          android:text="@string/general_new_record" />
+  <ListView android:id="@+id/pickone_list"
+                      android:layout_width="fill_parent"
+                      android:layout_height="fill_parent"
+                      android:layout_weight="1"
+                      style="@style/main_container" />
+  <!-- Pagination footer -->
   <LinearLayout android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:padding="@dimen/content_margin"
@@ -49,16 +60,4 @@
                  android:src="@drawable/tryton_go_next"
                  android:visibility="invisible" />
   </LinearLayout>
-  <!-- Values list. -->
-  <ListView android:id="@+id/pickone_list"
-                      android:layout_width="fill_parent"
-                      android:layout_height="fill_parent"
-                      android:layout_weight="1"
-                      style="@style/main_container" />
-  <Button android:id="@+id/pick_create"
-          android:layout_width="fill_parent"
-          android:layout_height="wrap_content"
-          android:onClick="create"
-          android:text="@string/general_new_record" />
-
 </LinearLayout>

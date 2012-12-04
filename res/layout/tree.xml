@@ -25,7 +25,20 @@
              android:layout_width="fill_parent"
              android:layout_height="fill_parent"
              android:orientation="vertical">
-  <!-- Pagination header -->
+  <!-- List. Only one is displayed at once by setting the other invisible -->
+  <ListView android:id="@+id/tree_list"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            style="@style/main_container" />
+  <ExpandableListView android:id="@+id/tree_sum_list"
+                      android:layout_width="fill_parent"
+                      android:layout_height="fill_parent"
+                      android:layout_weight="1"
+                      android:visibility="gone"
+                      android:groupIndicator="@drawable/expander_group"
+                      style="@style/main_container" />
+  <!-- Pagination footer -->
   <LinearLayout android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:padding="@dimen/content_margin"
@@ -50,15 +63,4 @@
                  android:src="@drawable/tryton_go_next"
                  android:visibility="invisible" />
   </LinearLayout>
-  <!-- List. Only one is displayed at once by setting the other invisible -->
-  <ListView android:id="@+id/tree_list"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            style="@style/main_container" />
-  <ExpandableListView android:id="@+id/tree_sum_list"
-                      android:layout_width="fill_parent"
-                      android:layout_height="fill_parent"
-                      android:visibility="gone"
-                      android:groupIndicator="@drawable/expander_group"
-                      style="@style/main_container" />
 </LinearLayout>
