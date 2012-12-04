@@ -41,6 +41,7 @@ import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.data.DataLoader;
 import org.tryton.client.data.Session;
 import org.tryton.client.data.MenuCache;
+import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.views.MenuEntryAdapter;
 import org.tryton.client.views.MenuEntryItem;
 
@@ -62,6 +63,8 @@ public class Menu extends Activity
     private List<Boolean> pickedEntries; // For caching
     private int callId;
     private int mode;
+    /** The list of entries selected to cache. It is null when loading is not
+     * running */
     private List<MenuEntry> entriesToCache;
     private int cacheProgress;
 
@@ -256,17 +259,10 @@ public class Menu extends Activity
             this.callId = 0;
             this.cacheProgress++;
             if (this.cacheProgress < this.entriesToCache.size()) {
-                this.updateCachingMessage();
-                this.callId = DataLoader.loadFullEntry(this,
-                                                       this.entriesToCache.get(this.cacheProgress),
-                                                       new Handler(this), true);
-                if (this.callId == -1) {
-                    // Simulate a loading done message to load next
-                    Message m = new Message();
-                    m.what = DataLoader.MENUDATA_OK;
-                    this.handleMessage(m);
-                }
+                // Load next
+                this.loadCache();
             } else {
+                // Caching done
                 this.hideLoadingDialog();
                 this.entriesToCache = null;
                 this.cacheProgress = 0;
@@ -275,9 +271,29 @@ public class Menu extends Activity
             }
             break;
         case TrytonCall.NOT_LOGGED:
-            // TODO: this is brutal
-            // Logout
-            Start.logout(this);
+            this.callId = 0;
+            // Ask for relog
+            this.hideLoadingDialog();
+            AlertBuilder.showRelog(this, new Handler(this));
+            break;
+        case AlertBuilder.RELOG_CANCEL:
+            if (this.entriesToCache == null) {
+                // Cancel menu loading relog
+                this.finish();
+            } else {
+                // Cancel caching
+                this.cancelCache(null);
+            }
+            break;
+        case AlertBuilder.RELOG_OK:
+            if (this.entriesToCache == null) {
+                // Restart menu loading
+                this.showLoadingDialog();
+                DataLoader.loadMenu(this, new Handler(this), false);
+            } else {
+                // Restart caching
+                this.loadCache();
+            }
             break;
         }
         return true;
@@ -308,10 +324,31 @@ public class Menu extends Activity
             this.pickedEntries.add(position, selected);
         }
     }
-    
-    public void loadCache(View v) {
+
+    private void loadCache() {
+        if (this.callId == 0) {
+            if (this.loadingDialog == null) {
+                this.showCachingDialog(this.cacheProgress);
+            }
+            MenuEntry toCache = this.entriesToCache.get(this.cacheProgress);
+            this.callId = DataLoader.loadFullEntry(this, toCache,
+                                                   new Handler(this), true);
+            if (this.callId == -1) {
+                // Simulate a loading done message to load next
+                Message m = new Message();
+                m.what = DataLoader.MENUDATA_OK;
+                this.handleMessage(m);
+            } else {
+                this.updateCachingMessage();
+            }
+        }
+    }
+
+    public void startCaching(View v) {
+        // Reset cache values
         this.cacheProgress = 0;
         this.entriesToCache = new ArrayList<MenuEntry>();
+        // Setup cache values
         for (int i = 0; i < this.entries.size(); i++) {
             boolean selected = this.pickedEntries.get(i);
             if (selected) {
@@ -327,20 +364,10 @@ public class Menu extends Activity
                 i--;
             }
         }
+        DataLoader.initEntriesLoading();
+        // Run (or not)
         if (this.entriesToCache.size() > 0) {
-            this.showCachingDialog(0);
-            DataLoader.initEntriesLoading();
-            this.callId = DataLoader.loadFullEntry(this,
-                                                   this.entriesToCache.get(0),
-                                                   new Handler(this), true);
-            if (this.callId == -1) {
-                // Simulate a loading done message to load next
-                Message m = new Message();
-                m.what = DataLoader.MENUDATA_OK;
-                this.handleMessage(m);
-            } else {
-                this.updateCachingMessage();
-            }
+            this.loadCache();
         } else {
             this.entriesToCache = null;
             this.mode = MODE_NAV;

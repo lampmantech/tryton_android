@@ -510,6 +510,12 @@ public class DataLoader {
                 msg.what = MENUDATA_NOK;
                 forwardMessage(this.callId, msg, this.ctx);
                 break;
+            case TrytonCall.NOT_LOGGED:
+                msg = this.obtainMessage();
+                msg.what = TrytonCall.NOT_LOGGED;
+                msg.obj = MENUDATA_NOK;
+                forwardMessage(this.callId, msg, this.ctx);
+                break;
             }
         }
     }
@@ -705,6 +711,11 @@ public class DataLoader {
             case DATA_NOK:
                 Message msg = this.parent.obtainMessage();
                 msg.what = MODELDATA_NOK;
+                msg.sendToTarget();
+                break;
+            case TrytonCall.NOT_LOGGED:
+                msg = this.parent.obtainMessage();
+                msg.what = TrytonCall.NOT_LOGGED;
                 msg.sendToTarget();
                 break;
             }
