@@ -98,6 +98,7 @@ public class FormView extends Activity
     private int callId;
     private int currentLoadingMsg;
     private boolean kill; // Check if edit is finished when destroying activity
+    private int lastFailMessage; // For relog to resend last call
 
     private LinearLayout table;
 
@@ -106,6 +107,7 @@ public class FormView extends Activity
         super.onCreate(state);
         boolean loadData = false;
         boolean loadView = false;
+        AlertBuilder.updateRelogHandler(new Handler(this), this);
         // Init data
         if (state != null) {
             this.view = (ModelView) state.getSerializable("view");
@@ -558,10 +560,29 @@ public class FormView extends Activity
             this.hideLoadingDialog();
             break;
         case TrytonCall.NOT_LOGGED:
-            // TODO: this is brutal
-            // Logout
+            this.callId = 0;
+            // Ask for relog
+            this.lastFailMessage = (Integer) msg.obj;
             this.hideLoadingDialog();
-            Start.logout(this);
+            AlertBuilder.showRelog(this, new Handler(this));
+            break;
+        case AlertBuilder.RELOG_CANCEL:
+            if (this.lastFailMessage == TrytonCall.CALL_DELETE_NOK) {
+                // Nothing
+            } else if (this.lastFailMessage == TrytonCall.CALL_SAVE_NOK) {
+                // Nothing
+            } else {
+                this.finish();
+            }
+            break;
+        case AlertBuilder.RELOG_OK:
+            if (this.lastFailMessage == TrytonCall.CALL_DELETE_NOK) {
+                this.sendDelete();
+            } else if (this.lastFailMessage == TrytonCall.CALL_SAVE_NOK) {
+                this.sendSave();
+            } else {
+                this.loadViewAndData();
+            }
             break;
         }
         return true;

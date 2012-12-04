@@ -223,6 +223,24 @@ public class PendingRequests extends Activity implements Handler.Callback {
                 ((Exception)msg.obj).printStackTrace();
             }
             break;
+        case TrytonCall.NOT_LOGGED:
+            this.callId = 0;
+            // Restore the negative id
+            if (this.currentTempId != 0) {
+                DelayedRequester.Command cmd = DelayedRequester.current.getNextCommand();
+                Model data = cmd.getData();
+                cmd.getData().set("id", currentTempId);
+                this.currentTempId = 0;
+            }
+            // Ask for relog
+            AlertBuilder.showRelog(this, new Handler(this));
+            break;
+        case AlertBuilder.RELOG_CANCEL:
+            this.finish();
+            break;
+        case AlertBuilder.RELOG_OK:
+            this.sendNextCommand();
+            break;
         }
         return true;
     }

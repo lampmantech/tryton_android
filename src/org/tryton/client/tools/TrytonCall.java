@@ -316,6 +316,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_PREFERENCES_NOK;
                     } else {
                         m.what = CALL_PREFERENCES_NOK;
                         m.obj = e;
@@ -539,6 +540,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_MENUS_NOK;
                     } else {
                         m.what = CALL_MENUS_NOK;
                         m.obj = e;
@@ -617,8 +619,13 @@ public class TrytonCall {
                     Object[] ret = new Object[]{type, view};
                     m.obj = ret;
                 } catch (JSONRPCException e) {
-                    m.what = CALL_VIEW_NOK;
-                    m.obj = e;
+                    if (isNotLogged(e)) {
+                        m.what = NOT_LOGGED;
+                        m.obj = CALL_VIEW_NOK;
+                    } else {
+                        m.what = CALL_VIEW_NOK;
+                        m.obj = e;
+                    }
                 }
                 sendMessage(callId, m);
             }
@@ -697,6 +704,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_VIEWS_NOK;
                     } else {
                         m.what = CALL_VIEWS_NOK;
                         m.obj = e;
@@ -886,6 +894,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_DATACOUNT_NOK;
                     } else {
                         m.what = CALL_DATACOUNT_NOK;
                         m.obj = e;
@@ -960,6 +969,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_DATA_NOK;
                     } else {
                         m.what = CALL_DATA_NOK;
                         m.obj = e;
@@ -1023,6 +1033,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_DATA_NOK;
                     } else {
                         m.what = CALL_DATA_NOK;
                         m.obj = e;
@@ -1094,6 +1105,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_RELDATA_NOK;
                     } else {
                         m.what = CALL_RELDATA_NOK;
                         m.obj = e;
@@ -1204,6 +1216,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_SAVE_NOK;
                     } else {
                         m.what = CALL_SAVE_NOK;
                         m.obj = e;
@@ -1259,6 +1272,7 @@ public class TrytonCall {
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
+                        m.obj = CALL_DELETE_NOK;
                     } else {
                         m.what = CALL_DELETE_NOK;
                         m.obj = e;

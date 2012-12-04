@@ -77,6 +77,7 @@ public class GraphView extends Activity
         super.onCreate(state);
         boolean loadData = false;
         boolean loadView = false;
+        AlertBuilder.updateRelogHandler(new Handler(this), this);
         // Init data
         if (state != null) {
             this.view = (ModelView) state.getSerializable("view");
@@ -303,9 +304,17 @@ public class GraphView extends Activity
             }
             break;
         case TrytonCall.NOT_LOGGED:
-            // TODO: this is brutal
-            // Logout
-            Start.logout(this);
+            this.callDataId = 0;
+            this.callCountId = 0;
+            // Ask for relog
+            this.hideLoadingDialog();
+            AlertBuilder.showRelog(this, new Handler(this));
+            break;
+        case AlertBuilder.RELOG_CANCEL:
+            this.finish();
+            break;
+        case AlertBuilder.RELOG_OK:
+            this.loadViewAndData();
             break;
         }
         return true;

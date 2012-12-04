@@ -97,6 +97,7 @@ public class TreeView extends Activity
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
+        AlertBuilder.updateRelogHandler(new Handler(this), this);
         // Init data
         if (state != null) {
             this.origin = (MenuEntry) state.getSerializable("origin");
@@ -457,9 +458,17 @@ public class TreeView extends Activity
             this.updateList();
             break;
         case TrytonCall.NOT_LOGGED:
-            // TODO: this is brutal
-            // Logout
-            Start.logout(this);
+            this.callDataId = 0;
+            this.callCountId = 0;
+            // Ask for relog
+            this.hideLoadingDialog();
+            AlertBuilder.showRelog(this, new Handler(this));
+            break;
+        case AlertBuilder.RELOG_CANCEL:
+            this.finish();
+            break;
+        case AlertBuilder.RELOG_OK:
+            this.loadViewsAndData();
             break;
         }
         return true;

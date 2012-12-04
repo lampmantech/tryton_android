@@ -42,6 +42,7 @@ import org.tryton.client.models.Model;
 import org.tryton.client.models.ModelView;
 import org.tryton.client.models.ModelViewTypes;
 import org.tryton.client.models.RelField;
+import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.views.TreeFullAdapter;
 
@@ -75,6 +76,7 @@ public class ToManyEditor extends Activity
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
+        AlertBuilder.updateRelogHandler(new Handler(this), this);
         // Init data
         if (state != null) {
             this.parentView = (ModelView) state.getSerializable("parentView");
@@ -368,9 +370,16 @@ public class ToManyEditor extends Activity
             ((Exception)msg.obj).printStackTrace();
             break;
         case TrytonCall.NOT_LOGGED:
-            // TODO: this is brutal
-            // Logout
-            Start.logout(this);
+            this.callId = 0;
+            // Ask for relog
+            this.hideLoadingDialog();
+            AlertBuilder.showRelog(this, new Handler(this));
+            break;
+        case AlertBuilder.RELOG_CANCEL:
+            this.finish();
+            break;
+        case AlertBuilder.RELOG_OK:
+            this.loadViewsAndData();
             break;
         }
         return true;
