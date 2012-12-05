@@ -893,8 +893,8 @@ public class DataCache extends SQLiteOpenHelper {
             v.put("count", count - 1);
             db.update(COUNT_TABLE, v, "className = ?",
                       new String[]{className});
-            c.close();
         }
+        c.close();
         db.close();
         // TODO: mark relational model to be refreshed
     }
