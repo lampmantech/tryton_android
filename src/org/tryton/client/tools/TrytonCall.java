@@ -882,15 +882,11 @@ public class TrytonCall {
             public void run() {
                 Message m = h.obtainMessage();
                 try {
-                    Object resp = c.call("model." + modelName + ".search",
+                    Object resp = c.call("model." + modelName + ".search_count",
                                          userId, cookie, new JSONArray(),
-                                         0, 9999999, JSONObject.NULL,
-                                         prefs.json());
-                    if (resp instanceof JSONArray) {
-                        int count = ((JSONArray)resp).length();
-                        m.what = CALL_DATACOUNT_OK;
-                        m.obj = new Object[]{modelName, count};
-                    }
+                                          prefs.json());
+                    m.what = CALL_DATACOUNT_OK;
+                    m.obj = new Object[]{modelName, (Integer) resp};
                 } catch (JSONRPCException e) {
                     if (isNotLogged(e)) {
                         m.what = NOT_LOGGED;
