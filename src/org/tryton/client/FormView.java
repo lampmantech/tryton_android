@@ -553,7 +553,7 @@ public class FormView extends Activity
             if (dataList.size() > 0) {
                 // Refresh edited model (not done when creating
                 // as data is not loaded)
-                Session.current.editedModel = dataList.get(0);
+                Session.current.updateEditedModel(dataList.get(0));
             }
             this.initView();
             this.refreshDisplay();

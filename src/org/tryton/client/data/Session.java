@@ -126,6 +126,14 @@ public class Session {
         this.editedModel = null;
         this.pushStack();
     }
+    /** Update the currently edited model with new values.
+     * Mainly for updating from tree to form view. */
+    @SuppressWarnings("unchecked")
+    public void updateEditedModel(Model updated) {
+        this.editedModel = updated;
+        this.editStack.remove(this.editStack.size() - 4);
+        this.editStack.add(this.editStack.size() - 3, this.editedModel);
+    }
 
     /** Finish editing the current model
      * and return back to the previous, if any */
@@ -139,6 +147,7 @@ public class Session {
         Model parent = (Model) this.editStack.get(this.editStack.size() - 8);
         Model tmpParent = (Model) this.editStack.get(this.editStack.size() - 7);
         if (tmpParent.get(this.linkToParent) == null) {
+            // Get original id list and add the new to it
             List<Integer> ids = new ArrayList<Integer>();
             if (parent.get(this.linkToParent) != null) {
                 List<Integer> pIds = (List<Integer>)parent.get(this.linkToParent);
@@ -149,6 +158,7 @@ public class Session {
                 tmpParent.set(this.linkToParent, ids);
             }
         } else {
+            // Ids already set, just add it to the list
             List<Integer> ids = (List<Integer>)tmpParent.get(this.linkToParent);
             if (!ids.contains(newId)) {
                 ids.add(newId);
