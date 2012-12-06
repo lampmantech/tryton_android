@@ -386,12 +386,16 @@ public class ToManyEditor extends Activity
         case DataLoader.DATA_NOK:
         case DataLoader.RELFIELDS_NOK:
             this.hideLoadingDialog();
-                this.callId = 0;
-            AlertDialog.Builder b = new AlertDialog.Builder(this);
-            b.setTitle(R.string.error);
-            b.setMessage(R.string.network_error);
-            b.show();
-            ((Exception)msg.obj).printStackTrace();
+            this.callId = 0;
+            Exception e = (Exception) msg.obj;
+            if (!AlertBuilder.showUserError(e, this)
+                && !AlertBuilder.showUserError(e, this)) {
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setTitle(R.string.error);
+                b.setMessage(R.string.network_error);
+                b.show();
+                ((Exception)msg.obj).printStackTrace();
+            }
             break;
         case TrytonCall.NOT_LOGGED:
             this.callId = 0;
