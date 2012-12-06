@@ -197,9 +197,20 @@ public class Session {
     }
     /** Update a one2many to be saved along the parent */
     public void updateOne2Many() {
+        Model parent = (Model) this.editStack.get(this.editStack.size() - 8);
         Model tmpParent = (Model) this.editStack.get(this.editStack.size() - 7);
         Model oldSubmodel = this.editedModel;
         Model submodel = this.tempModel;
+        // Set the field in parent to mark it as dirty
+        if (tmpParent.get(this.linkToParent) == null) {
+            if (parent.get(this.linkToParent) != null) {
+                @SuppressWarnings("unchecked")
+                List<Integer> ids = (List<Integer>) parent.get(this.linkToParent);
+                List<Integer> tmpIds = new ArrayList<Integer>();
+                tmpIds.addAll(ids);
+                tmpParent.set(this.linkToParent, tmpIds);
+            }
+        }
         tmpParent.editOne2Many(this.linkToParent, oldSubmodel, submodel);
     }
 
@@ -217,6 +228,11 @@ public class Session {
         for (String attr : this.tempModel.getAttributeNames()) {
             Object value = this.editedModel.get(attr);
             Object tmpValue = this.tempModel.get(attr);
+            // one2many operations
+            if (this.tempModel.getOne2ManyOperations(attr) != null
+                && this.tempModel.getOne2ManyOperations(attr).size() > 0) {
+                return true;
+            }
             // Special case of decimal null representation
             if (value instanceof Map && ((Map)value).containsKey("decimal")
                 && FieldsConvertion.numericToDouble((Map)value) == null) {
