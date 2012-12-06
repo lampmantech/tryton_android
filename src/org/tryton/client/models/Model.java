@@ -204,6 +204,10 @@ public class Model implements Serializable {
         ((List<Model>)this.attributes.get(fieldName)).add(null);
     }
     public void editOne2Many(String fieldName, Model oldValue, Model newValue) {
+        // If there was no create/edit setup the list
+        if (this.one2ManyOperations.get(fieldName) == null) {
+            this.one2ManyOperations.put(fieldName, new ArrayList<Model>());
+        }
         // identify old and replace
         List<Model> one2many = this.one2ManyOperations.get(fieldName);
         for (int i = 0; i < one2many.size(); i++) {
@@ -211,8 +215,11 @@ public class Model implements Serializable {
             if (m.innerId == oldValue.innerId) {
                 one2many.remove(i);
                 one2many.add(i, newValue);
+                return;
             }
         }
+        // Not found in current records, add it
+        this.one2ManyOperations.get(fieldName).add(newValue);
     }
     public List<Model> getOne2ManyOperations(String fieldName) {
         return this.one2ManyOperations.get(fieldName);

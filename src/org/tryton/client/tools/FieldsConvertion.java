@@ -209,6 +209,9 @@ public class FieldsConvertion {
                         if (m.hasAttribute("id")) {
                             // Update
                             cmd.put("write");
+                            JSONArray jsIds = new JSONArray();
+                            jsIds.put(m.get("id"));
+                            cmd.put(jsIds);
                         } else {
                             // Create
                             cmd.put("create");

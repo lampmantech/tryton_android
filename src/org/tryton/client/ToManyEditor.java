@@ -354,11 +354,29 @@ public class ToManyEditor extends Activity
             this.callId = 0;
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
+            System.out.println(data);
             // Add one2many data if any
             Model m = Session.current.tempModel;
             List<Model> one2many = m.getOne2ManyOperations(this.fieldName);
             if (one2many != null) {
-                data.addAll(one2many);
+                // Add new records and merge edited ones
+                for (Model newM : one2many) {
+                    if (newM.hasAttribute("id")) {
+                        // Replace the existing one
+                        Integer id = (Integer) newM.get("id");
+                        for (int i = 0; i < data.size(); i++) {
+                            Model oldM = data.get(i);
+                            if (oldM.get("id").equals(id)) {
+                                data.remove(i);
+                                data.add(i, newM);
+                                break;
+                            }
+                        }
+                    } else {
+                        // New, add
+                        data.add(newM);
+                    }
+                }
             }
             this.data = data;
             this.updateList();

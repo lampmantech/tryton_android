@@ -180,8 +180,19 @@ public class Session {
 
     /** Add a one2many to be saved along the parent */
     public void addOne2Many() {
+        Model parent = (Model) this.editStack.get(this.editStack.size() - 8);
         Model tmpParent = (Model) this.editStack.get(this.editStack.size() - 7);
         Model submodel = this.tempModel;
+        // Make sure parent is up-to-date with the field ids to add the new one
+        if (tmpParent.get(this.linkToParent) == null) {
+            if (parent.get(this.linkToParent) != null) {
+                @SuppressWarnings("unchecked")
+                List<Integer> ids = (List<Integer>) parent.get(this.linkToParent);
+                List<Integer> tmpIds = new ArrayList<Integer>();
+                tmpIds.addAll(ids);
+                tmpParent.set(this.linkToParent, tmpIds);
+            }
+        }
         tmpParent.addNewOne2Many(this.linkToParent, submodel);
     }
     /** Update a one2many to be saved along the parent */
