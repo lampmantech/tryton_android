@@ -755,8 +755,9 @@ public class FormView extends Activity
             // Enable/disable save
             MenuItem save = menu.findItem(MENU_SAVE_ID);
             save.setEnabled(Session.current.editedIsDirty());
-            // Remove delete for creation
-            if (Session.current.editedModel == null) {
+            // Remove delete for creation and many2many
+            if (Session.current.editedModel == null
+                || Session.current.linkToSelf == null) {
                 menu.removeItem(MENU_DEL_ID);
             }
         } else {
