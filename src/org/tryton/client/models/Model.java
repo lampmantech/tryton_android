@@ -221,6 +221,24 @@ public class Model implements Serializable {
         // Not found in current records, add it
         this.one2ManyOperations.get(fieldName).add(newValue);
     }
+    public void deleteOne2Many(String fieldName, Model oldValue) {
+        // Remove the operation from the list
+        List<Model> one2many = this.one2ManyOperations.get(fieldName);
+        if (one2many != null) {
+            for (int i = 0; i < one2many.size(); i++) {
+                Model m = one2many.get(i);
+                if (m.innerId == oldValue.innerId) {
+                    one2many.remove(i);
+                    break;
+                }
+            }
+        }
+        // Remove from ids
+        @SuppressWarnings("unchecked")
+        List<Integer> ids = (List<Integer>) this.get(fieldName);
+        // if it has an id, remove it, or remove a null
+        ids.remove(oldValue.get("id"));
+    }
     public List<Model> getOne2ManyOperations(String fieldName) {
         return this.one2ManyOperations.get(fieldName);
     }

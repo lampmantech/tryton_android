@@ -213,6 +213,25 @@ public class Session {
         }
         tmpParent.editOne2Many(this.linkToParent, oldSubmodel, submodel);
     }
+    
+    public void deleteOne2Many() {
+        deleteOne2Many(this.editedModel);
+    }
+    public void deleteOne2Many(Model m) {
+        Model parent = (Model) this.editStack.get(this.editStack.size() - 8);
+        Model tmpParent = (Model) this.editStack.get(this.editStack.size() - 7);
+        // Make sure parent is up-to-date with the field ids to remove one
+        if (tmpParent.get(this.linkToParent) == null) {
+            if (parent != null && parent.get(this.linkToParent) != null) {
+                @SuppressWarnings("unchecked")
+                List<Integer> ids = (List<Integer>) parent.get(this.linkToParent);
+                List<Integer> tmpIds = new ArrayList<Integer>();
+                tmpIds.addAll(ids);
+                tmpParent.set(this.linkToParent, tmpIds);
+            }
+        }
+        tmpParent.deleteOne2Many(this.linkToParent, m);
+    }
 
     public boolean isEditingSub() {
         return this.linkToParent != null;

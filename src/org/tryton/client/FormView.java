@@ -268,8 +268,7 @@ public class FormView extends Activity
             switch (which) {
             case DialogInterface.BUTTON_POSITIVE:
                 dialog.dismiss();
-                // Show loading dialog and send delete call
-                this.sendDelete();
+                this.delete();
                 break;
                 // There is no listener bound to negative: default is dismiss.
             }
@@ -573,6 +572,21 @@ public class FormView extends Activity
             } else {
                 // Send the call, must update the parent on return to add the id
                 this.sendSave();
+            }
+        }
+    }
+
+    private void delete() {
+        // If it is the top level model, actually save
+        if (!Session.current.isEditingSub()) {
+            this.sendDelete();
+        } else {
+            if (Session.current.linkToSelf != null) {
+                // It is a one2many field
+                Session.current.deleteOne2Many();
+                this.endQuit();
+            } else {
+                this.sendDelete();
             }
         }
     }

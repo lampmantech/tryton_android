@@ -354,7 +354,6 @@ public class ToManyEditor extends Activity
             this.callId = 0;
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
-            System.out.println(data);
             // Add one2many data if any
             Model m = Session.current.tempModel;
             List<Model> one2many = m.getOne2ManyOperations(this.fieldName);
@@ -416,9 +415,15 @@ public class ToManyEditor extends Activity
     /** Handler for item long click actions */
     public void onLongClickDialog(DialogInterface dialog, int which) {
         // Delete selected item
-        Session s = Session.current;
-        List<Integer> ids = this.getIds(true);
-        ids.remove(this.longClickedIndex);
+        if (Session.current.linkToSelf != null) {
+            // It is a one2many field
+            Session.current.deleteOne2Many(this.data.get(this.longClickedIndex));
+        } else {
+            // It is a many2many field
+            List<Integer> ids = this.getIds(true);
+            ids.remove(this.longClickedIndex);
+        }
+        this.data.remove(this.longClickedIndex);
         this.updateList();
     }
 
