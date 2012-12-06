@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.tryton.client.data.DataCache;
@@ -194,19 +195,51 @@ public class FieldsConvertion {
                 }
             } else if (oVal instanceof List) {
                 // x2many, add action
-                List<Integer> ids = (List<Integer>) oVal;
+                List<Integer> allIds = (List<Integer>) oVal;
+                List<Integer> ids = new ArrayList<Integer>();
+                ids.addAll(allIds);
+                // Remove null values in ids as they are handled separately
+                while (ids.remove(null)) { /* loop on remove */ }
                 JSONArray cmds = new JSONArray();
+                // Check created/updated submodels (one2many only)
+                System.out.println(attr + " " + model.getOne2ManyOperations(attr));
+                if (model.getOne2ManyOperations(attr) != null) {
+                    for (Model m : model.getOne2ManyOperations(attr)) {
+                        JSONArray cmd = new JSONArray();
+                        if (m.hasAttribute("id")) {
+                            // Update
+                            cmd.put("write");
+                        } else {
+                            // Create
+                            cmd.put("create");
+                        }
+                        // Set attributes
+                        JSONObject args = new JSONObject();
+                        for (String mAttr : m.getAttributeNames()) {
+                            try {
+                                args.put(mAttr, m.get(mAttr));
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        cmd.put(args);
+                        cmds.put(cmd);
+                    }
+                }
                 // Compare with the previous list for commands
                 if (previousModel == null) {
-                    // Creation, just set
-                    JSONArray cmd = new JSONArray();
-                    cmd.put("set");
-                    JSONArray args = new JSONArray();
-                    for (int id : ids) {
-                        args.put(id);
+                    if (ids.size() > 0) {
+                        // Size > 0 to not interfere with write/create
+                        // Creation, just set
+                        JSONArray cmd = new JSONArray();
+                        cmd.put("set");
+                        JSONArray args = new JSONArray();
+                        for (int id : ids) {
+                            args.put(id);
+                        }
+                        cmd.put(args);
+                        cmds.put(cmd);
                     }
-                    cmd.put(args);
-                    cmds.put(cmd);
                 } else {
                     List<Integer> oldIds = (List<Integer>)previousModel.get(attr);
                     JSONArray dels = new JSONArray();

@@ -252,7 +252,7 @@ public class FormView extends Activity
             switch (which) {
             case DialogInterface.BUTTON_POSITIVE:
                 dialog.dismiss();
-                this.sendSave();
+                this.save();
                 break;
             case DialogInterface.BUTTON_NEGATIVE:
                 dialog.dismiss();
@@ -391,7 +391,6 @@ public class FormView extends Activity
                         tmp.set(fieldName, null);
                     }
                 }
-
             }
         }
     }
@@ -452,57 +451,16 @@ public class FormView extends Activity
             t.show();
             // Update data with fresh one
             Model m = (Model) msg.obj;
-            String className = Session.current.tempModel.getClassName();
-            DataCache db = new DataCache(this);
-            if (m != null) {
-                db.storeData(m.getClassName(), m);
-            } else {
-                // It is saved but not given back, use local data
-                Model base = Session.current.editedModel;
-                Model edit = Session.current.tempModel;
-                for (String attr : edit.getAttributeNames()) {
-                    base.set(attr, edit.get(attr));
-                }
-                db.storeData(className, base);
-            }
-            TreeView.setDirty();
-            // Update session and local data count if required
             if (Session.current.editedModel == null) {
-                // Creation: add one to data count and
-                // reset session for a new record
-                db.addOne(className);
-                if (Session.current.linkToParent != null) {
-                    String linkToParent = Session.current.linkToParent;
-                    String linkToSelf = Session.current.linkToSelf;
-                    // Add the id to parent
-                    if (m != null) {
-                        int id = (Integer) m.get("id");
-                        Session.current.addToParent(id);
-                    }
-                    // Create new record
-                    Session.current.finishEditing();
-                    Session.current.editNewModel(className, linkToParent,
-                                                 linkToSelf);
-                } else {
-                    Session.current.finishEditing();
-                    Session.current.editNewModel(className);
-                }
-                this.refreshDisplay();
+                this.postCreate(m);
             } else {
-                // Edition: clear edition and return back to tree
-                this.kill = true;
-                this.finish();
+                this.postUpdate(m);
             }
             break;
         case TrytonCall.CALL_DELETE_OK:
             this.callId = 0;
             this.hideLoadingDialog();
-            // Update local db
-            db = new DataCache(this);
-            db.deleteData(Session.current.editedModel);
-            TreeView.setDirty();
-            this.kill = true;
-            this.finish();
+            this.postDelete();
             break;
         case TrytonCall.CALL_SAVE_NOK:
         case TrytonCall.CALL_DELETE_NOK:
@@ -592,6 +550,33 @@ public class FormView extends Activity
     // Save/Delete/Queue section //
     ///////////////////////////////
 
+    private void save() {
+        // If it is the top level model, actually save
+        if (!Session.current.isEditingSub()) {
+            this.sendSave();
+        } else {
+            if (Session.current.linkToSelf != null) {
+                // It is a one2many field that is edited. It will be propagated
+                // with parent save
+                Toast t = Toast.makeText(this, R.string.data_send_done,
+                                         Toast.LENGTH_SHORT);
+                t.show();
+                if (Session.current.editedModel == null) {
+                    // Create
+                    Session.current.addOne2Many();
+                    this.endNew(Session.current.tempModel);
+                } else {
+                    // Update
+                    Session.current.updateOne2Many();
+                    this.endQuit();
+                }
+            } else {
+                // Send the call, must update the parent on return to add the id
+                this.sendSave();
+            }
+        }
+    }
+
     /** Show dialog and send save call to the server. Callback is in handler. */
     private void sendSave() {
         if (DelayedRequester.current.getQueueSize() > 0) {
@@ -642,29 +627,7 @@ public class FormView extends Activity
         // Make it pending (also sets temp id for create)
         DelayedRequester.current.queueCreate(queuedModel,
                                              this.view, this);
-        // Save locally
-        DataCache db = new DataCache(this);
-        db.addOne(queuedModel.getClassName());
-        db.storeData(queuedModel.getClassName(), queuedModel);
-        // Update parent if necessary
-        if (Session.current.linkToParent != null) {
-            // Add the id to parent
-            int id = (Integer) queuedModel.get("id");
-            Session.current.addToParent(id);
-            // Create new record
-            Session.current.finishEditing();
-            String linkToParent = Session.current.linkToParent;
-            String linkToSelf = Session.current.linkToSelf;
-            Session.current.editNewModel(queuedModel.getClassName(),
-                                         linkToParent,
-                                         linkToSelf);
-        } else {
-            // Just create a new record
-            Session.current.finishEditing();
-            Session.current.editNewModel(queuedModel.getClassName());
-        }
-        TreeView.setDirty();
-        this.refreshDisplay();
+        this.postCreate(queuedModel);
     }
     
     /** Add a update call to the queue, update db and return */
@@ -677,24 +640,71 @@ public class FormView extends Activity
         // Make it pending
         DelayedRequester.current.queueUpdate(queuedModel,
                                              this.view, this);
-        // Save locally and continue
-        DataCache db = new DataCache(this);
-        db.storeData(queuedModel.getClassName(), queuedModel);
-        // Clear edition and return back to tree
-        this.kill = true;
-        TreeView.setDirty();
-        this.finish();
+        this.postUpdate(queuedModel);
     }
 
     /** Add a delete call to the queue, update db and return */
     private void queueDelete() {
         Model newModel = Session.current.tempModel;
         DelayedRequester.current.queueDelete(newModel, this);
+        this.postDelete();
+    }
+
+    /////////////////////
+    // Post processing //
+    /////////////////////
+
+    /** Delete in database and go back */
+    private void postDelete() {
         // Delete from local cache and go back
         DataCache db = new DataCache(this);
         db.deleteData(Session.current.editedModel);
+        this.endQuit();
+    }
+
+    private void postCreate(Model newModel) {
+        // Save locally
+        DataCache db = new DataCache(this);
+        db.addOne(newModel.getClassName());
+        db.storeData(newModel.getClassName(), newModel);
+        // Update parent if necessary
+        if (Session.current.linkToParent != null) {
+            // Add the id to parent
+            int id = (Integer) newModel.get("id");
+            Session.current.addToParent(id);
+        }
+        this.endNew(newModel);
+    }
+
+    private void postUpdate(Model updated) {
+        // Save locally and continue
+        DataCache db = new DataCache(this);
+        db.storeData(updated.getClassName(), updated);
+        this.endQuit();
+    }
+
+    private void endNew(Model newModel) {
+        if (Session.current.linkToParent != null) {
+            // Create new record
+            String linkToParent = Session.current.linkToParent;
+            String linkToSelf = Session.current.linkToSelf;
+            Session.current.finishEditing();
+            Session.current.editNewModel(newModel.getClassName(),
+                                         linkToParent,
+                                         linkToSelf);
+        } else {
+            // Just create a new record
+            Session.current.finishEditing();
+            Session.current.editNewModel(newModel.getClassName());
+        }
         TreeView.setDirty();
+        this.refreshDisplay();
+    }
+
+    private void endQuit() {
+        // Clear edition and return back to tree
         this.kill = true;
+        TreeView.setDirty();
         this.finish();
     }
 
@@ -753,7 +763,7 @@ public class FormView extends Activity
         case MENU_SAVE_ID:
             if (this.command == null) {
                 // Send save call
-                this.sendSave();
+                this.save();
             } else {
                 // Update command and get back to pending requests
                 this.command.getData().merge(Session.current.tempModel);

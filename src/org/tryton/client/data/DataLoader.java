@@ -422,13 +422,18 @@ public class DataLoader {
 
 
     public static int loadData(final Context ctx, final String className,
-                               final List<Integer> ids,
+                               final List<Integer> allIds,
                                final List<RelField> relFields,
                                final ModelViewTypes views,
                                final Handler h, final boolean forceRefresh) {
         final int callId = callSequence++;
         handlers.put(callId, h);
         final Handler fwdHandler = newHandler(callId, ctx);
+        // Ignore null ids as they are stored in the model itself
+        // Just remove them from the list
+        final List<Integer> ids = new ArrayList<Integer>();
+        ids.addAll(allIds);
+        while (ids.remove(null)) { /* loop on remove */ }
         new Thread() {
             public void run() {
                 if (ids == null) {

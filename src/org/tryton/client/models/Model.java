@@ -43,12 +43,21 @@ public class Model implements Serializable {
     private Map<String, Object> attributes;
     private Map<String, Model> toOne;
     private Map<String, List<Model>> toMany;
+    /** List of not saved models indexed by one2many field name.
+     * These models may not have an id field. Other relationnal fields
+     * are directly saved. */
+    private Map<String, List<Model>> one2ManyOperations;
+    /** Id used internally to verify if 2 models are the same
+     * (for one2many create and update) */
+    private long innerId;
 
     public Model(String className) {
         this.className = className;
         this.attributes = new TreeMap<String, Object>();
         this.toOne = new TreeMap<String, Model>();
         this.toMany = new TreeMap<String, List<Model>>();
+        this.one2ManyOperations = new TreeMap<String, List<Model>>();
+        this.innerId = (long) (Math.random() * (Long.MAX_VALUE - 1));
     }
     
     /** Convert JSONObject to a map of attributes. */
@@ -179,6 +188,34 @@ public class Model implements Serializable {
             this.toMany.put(name, new ArrayList<Model>());
         }
         this.toMany.get(name).add(value);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void addNewOne2Many(String fieldName, Model newModel) {
+        if (this.one2ManyOperations.get(fieldName) == null) {
+            this.one2ManyOperations.put(fieldName, new ArrayList<Model>());
+        }
+        this.one2ManyOperations.get(fieldName).add(newModel);
+        // Add null to the field ids to indicate something was new
+        if (!this.hasAttribute(fieldName)
+            || this.get(fieldName) == null) {
+            this.attributes.put(fieldName, new ArrayList<Integer>());
+        }
+        ((List<Model>)this.attributes.get(fieldName)).add(null);
+    }
+    public void editOne2Many(String fieldName, Model oldValue, Model newValue) {
+        // identify old and replace
+        List<Model> one2many = this.one2ManyOperations.get(fieldName);
+        for (int i = 0; i < one2many.size(); i++) {
+            Model m = one2many.get(i);
+            if (m.innerId == oldValue.innerId) {
+                one2many.remove(i);
+                one2many.add(i, newValue);
+            }
+        }
+    }
+    public List<Model> getOne2ManyOperations(String fieldName) {
+        return this.one2ManyOperations.get(fieldName);
     }
 
     /** Set human readable form for debugging */

@@ -46,7 +46,9 @@ public class Session {
      * is beeing edited. TempModel always has the id of the original model
      * when editing and does not have an id when creating. */
     public Model tempModel;
+    /** Relationnal field name in parent */
     public String linkToParent;
+    /** Many2one field in current linked to parent's one2many field */
     public String linkToSelf;
     /** Stack to allow to edit multiple models at once (for relationnal).
      * The top of the stack is always editedModel, tempModel and linkField. */
@@ -102,8 +104,13 @@ public class Session {
      * name of the field that links to new model. */
     public void editModel(Model data, String parentField, String childField) {
         this.tempModel = new Model(data.getClassName());
-        this.tempModel.set("id", data.get("id"));
-        this.tempModel.set(childField, (Integer) this.editedModel.get("id"));
+        if (data.hasAttribute("id")) {
+            // When editing a new one2many record, the record has no id
+            this.tempModel.set("id", data.get("id"));
+        }
+        if (this.editedModel != null && this.editedModel.hasAttribute("id")) {
+            this.tempModel.set(childField, (Integer) this.editedModel.get("id"));
+        }
         this.editedModel = data;
         this.linkToParent = parentField;
         this.linkToSelf = childField;
@@ -120,7 +127,12 @@ public class Session {
     public void editNewModel(String className, String parentField,
                              String childField) {
         this.tempModel = new Model(className);
-        this.tempModel.set(childField, (Integer) this.editedModel.get("id"));
+        if (this.editedModel != null && this.editedModel.hasAttribute("id")) {
+            // When creating record the parent has no id, it will be given
+            // when the whole is saved. When the parent exists the id can be
+            // propagated
+            this.tempModel.set(childField, (Integer) this.editedModel.get("id"));
+        }
         this.linkToParent = parentField;
         this.linkToSelf = childField;
         this.editedModel = null;
@@ -164,6 +176,24 @@ public class Session {
                 ids.add(newId);
             }
         }
+    }
+
+    /** Add a one2many to be saved along the parent */
+    public void addOne2Many() {
+        Model tmpParent = (Model) this.editStack.get(this.editStack.size() - 7);
+        Model submodel = this.tempModel;
+        tmpParent.addNewOne2Many(this.linkToParent, submodel);
+    }
+    /** Update a one2many to be saved along the parent */
+    public void updateOne2Many() {
+        Model tmpParent = (Model) this.editStack.get(this.editStack.size() - 7);
+        Model oldSubmodel = this.editedModel;
+        Model submodel = this.tempModel;
+        tmpParent.editOne2Many(this.linkToParent, oldSubmodel, submodel);
+    }
+
+    public boolean isEditingSub() {
+        return this.linkToParent != null;
     }
 
     public boolean editedIsDirty() {

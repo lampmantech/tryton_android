@@ -354,6 +354,12 @@ public class ToManyEditor extends Activity
             this.callId = 0;
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
+            // Add one2many data if any
+            Model m = Session.current.tempModel;
+            List<Model> one2many = m.getOne2ManyOperations(this.fieldName);
+            if (one2many != null) {
+                data.addAll(one2many);
+            }
             this.data = data;
             this.updateList();
             this.hideLoadingDialog();
