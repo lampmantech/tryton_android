@@ -202,7 +202,6 @@ public class FieldsConvertion {
                 while (ids.remove(null)) { /* loop on remove */ }
                 JSONArray cmds = new JSONArray();
                 // Check created/updated submodels (one2many only)
-                System.out.println(attr + " " + model.getOne2ManyOperations(attr));
                 if (model.getOne2ManyOperations(attr) != null) {
                     for (Model m : model.getOne2ManyOperations(attr)) {
                         JSONArray cmd = new JSONArray();
