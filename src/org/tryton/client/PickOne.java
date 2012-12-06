@@ -33,6 +33,7 @@ import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.view.MenuItem;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -429,6 +430,33 @@ public class PickOne extends Activity
             break;
         case AlertBuilder.RELOG_OK:
             this.loadViewsAndData();
+            break;
+        }
+        return true;
+    }
+
+    //////////////////
+    // Menu section //
+    //////////////////
+    private static final int MENU_CLEAR_ID = 0;
+    /** Called on menu initialization */
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        // Create and add clear entry
+        MenuItem clear = menu.add(android.view.Menu.NONE, MENU_CLEAR_ID, 100,
+                                   this.getString(R.string.general_clear));
+        clear.setIcon(R.drawable.tryton_clear);
+        return true;
+    }
+
+    /** Called on menu selection */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case MENU_CLEAR_ID:
+            Session.current.tempModel.set(this.fieldName, null);
+            Session.current.tempModel.set2One(this.fieldName, null);
+            this.finish();
             break;
         }
         return true;

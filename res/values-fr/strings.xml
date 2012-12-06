@@ -39,6 +39,7 @@ the original label is set after the tag -->
   <string name="general_new_record">Créer un nouvel enregistrement</string>
   <string name="general_graph">Vue graphique</string> <!-- NEW -->
   <string name="general_reload">Recharger</string>
+  <string name="general_clear">Effacer</string>
   
   <!-- Login labels -->
   <string name="login_user">Nom d\'utilisateur</string>
