@@ -185,7 +185,7 @@ public class Session {
         Model submodel = this.tempModel;
         // Make sure parent is up-to-date with the field ids to add the new one
         if (tmpParent.get(this.linkToParent) == null) {
-            if (parent.get(this.linkToParent) != null) {
+            if (parent != null && parent.get(this.linkToParent) != null) {
                 @SuppressWarnings("unchecked")
                 List<Integer> ids = (List<Integer>) parent.get(this.linkToParent);
                 List<Integer> tmpIds = new ArrayList<Integer>();
@@ -203,7 +203,7 @@ public class Session {
         Model submodel = this.tempModel;
         // Set the field in parent to mark it as dirty
         if (tmpParent.get(this.linkToParent) == null) {
-            if (parent.get(this.linkToParent) != null) {
+            if (parent != null && parent.get(this.linkToParent) != null) {
                 @SuppressWarnings("unchecked")
                 List<Integer> ids = (List<Integer>) parent.get(this.linkToParent);
                 List<Integer> tmpIds = new ArrayList<Integer>();
