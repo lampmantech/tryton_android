@@ -48,7 +48,8 @@ import org.tryton.client.tools.AlertBuilder;
 import org.tryton.client.tools.TrytonCall;
 import org.tryton.client.views.TreeFullAdapter;
 
-/** Activity to pick one record in a list, mainly for one2many fields. */
+/** Activity to pick one record in a list, mainly for one2many fields
+ * or picking a many2many record. */
 public class PickOne extends Activity
     implements OnItemClickListener, Handler.Callback,
                DialogInterface.OnCancelListener {
@@ -443,10 +444,14 @@ public class PickOne extends Activity
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
         // Create and add clear entry
-        MenuItem clear = menu.add(android.view.Menu.NONE, MENU_CLEAR_ID, 100,
-                                   this.getString(R.string.general_clear));
-        clear.setIcon(R.drawable.tryton_clear);
-        return true;
+        if (this.isOneValue()) {
+            MenuItem clear = menu.add(android.view.Menu.NONE, MENU_CLEAR_ID, 100,
+                                      this.getString(R.string.general_clear));
+            clear.setIcon(R.drawable.tryton_clear);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Called on menu selection */
