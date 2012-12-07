@@ -332,7 +332,9 @@ public class FormViewFactory {
                                 // float
                                 dval = (Double)oval;
                             }
-                            value = String.valueOf(dval);
+                            if (dval != null) {
+                                value = String.valueOf(dval);
+                            }
                         }
                     }
                 }
