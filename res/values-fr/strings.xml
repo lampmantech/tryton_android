@@ -41,7 +41,9 @@ the original label is set after the tag -->
   <string name="general_reload">Recharger</string>
   <string name="general_clear">Effacer</string>
 
-  <string name="general_not_supported">Non disponible sur mobile</string>
+  <!-- Unsupported temp strings -->
+  <string name="general_not_supported">Non disponible sur mobile</string> <!-- NEW -->
+  <string name="general_no_tree_view">Aucune vue liste disponible</string> <!-- NEW -->
   
   <!-- Login labels -->
   <string name="login_user">Nom d\'utilisateur</string>

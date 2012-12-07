@@ -76,6 +76,11 @@ public class ModelViewTypes implements Serializable {
         return this.viewIds.keySet();
     }
 
+    /** Check if a view is defined for the given type (either loaded or not) */
+    public boolean hasView(String type) {
+        return this.viewIds.containsKey(type);
+    }
+
     public String getModelName() {
         return this.modelName;
     }

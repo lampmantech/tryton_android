@@ -400,7 +400,21 @@ public class TreeView extends Activity
             @SuppressWarnings("unchecked")
             Object[] ret = (Object[]) msg.obj;
             this.viewTypes = (ModelViewTypes) ret[1];
-            this.loadDataAndMeta(this.refreshing);
+            // Check if a tree view is available
+            if (this.viewTypes.hasView("tree")) {
+                this.loadDataAndMeta(this.refreshing);
+            } else {
+                // No tree view defined, show error and quit
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setTitle(R.string.error);
+                b.setMessage(R.string.general_no_tree_view);
+                b.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        public void onCancel(DialogInterface dialog) {
+                            TreeView.this.finish();
+                        }
+                    });
+                b.show();
+            }
             break;
         case DataLoader.VIEWS_NOK:
         case DataLoader.DATA_NOK:
