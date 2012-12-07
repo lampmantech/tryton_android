@@ -661,6 +661,17 @@ public class TrytonCall {
                         JSONArray jsViews = (JSONArray) oViews;
                         JSONObject jsView = jsViews.getJSONObject(0);
                         String model = jsView.getString("res_model");
+                        if (model == null || model.equals("")) {
+                            // Case of non unique model related vue
+                            // (as dashboard) not supported yet
+                            // Send empty views as if there were no one
+                            ModelViewTypes modelViews = new ModelViewTypes(null);
+                            m.what = CALL_VIEWS_OK;
+                            Object[] ret = new Object[]{entry, modelViews};
+                            m.obj = ret;
+                            sendMessage(callId, m);
+                            return;
+                        }
                         String name = jsView.getString("rec_name");
                         JSONArray jsViewTypes = jsView.getJSONArray("views");
                         // Get each view
