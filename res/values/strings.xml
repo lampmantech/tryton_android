@@ -38,6 +38,8 @@ the original label is set after the tag -->
   <string name="general_graph">Graph view</string> <!-- NEW -->
   <string name="general_reload">Reload</string>
   <string name="general_clear">Clear</string>
+
+  <string name="general_not_supported">Not available on mobile device</string>
   
   <!-- Login labels -->
   <string name="login_user">User name</string>

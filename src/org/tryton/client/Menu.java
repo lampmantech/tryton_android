@@ -31,6 +31,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -310,10 +311,23 @@ public class Menu extends Activity
                 Intent i = new Intent(this, Menu.class);
                 this.startActivity(i);
             } else if (clickedMenu.getActionType() != null) {
-                // Setup a tree view and go to it
-                TreeView.setup(clickedMenu);
-                Intent i = new Intent(this, TreeView.class);
-                this.startActivity(i);
+                String action = clickedMenu.getActionType();
+                if (action.equals("ir.action.act_window")) {
+                    // Setup a tree view and go to it
+                    TreeView.setup(clickedMenu);
+                    Intent i = new Intent(this, TreeView.class);
+                    this.startActivity(i);
+                } else if (action.equals("ir.action.wizard")) {
+                    Toast t = Toast.makeText(this,
+                                             R.string.general_not_supported,
+                                             Toast.LENGTH_SHORT);
+                    t.show();
+                } else {
+                    Toast t = Toast.makeText(this,
+                                             R.string.general_not_supported,
+                                             Toast.LENGTH_SHORT);
+                    t.show();
+                }
             }
         } else {
             MenuEntryItem item = (MenuEntryItem) v;
