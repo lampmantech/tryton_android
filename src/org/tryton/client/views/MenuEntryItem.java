@@ -105,19 +105,25 @@ public class MenuEntryItem extends RelativeLayout {
                                                          ctx);
             this.icon.setImageDrawable(folderIcon);
         } else if (this.entry.getActionType() != null) {
-            if (this.entry.getActionType().equals("ir.action.wizard")) {
+            String actionType = this.entry.getActionType();
+            if (actionType.equals("ir.action.wizard")) {
                 Drawable wizardIcon = SVGFactory.getDrawable("tryton-executable",
                                                              R.raw.tryton_executable,
                                                              ctx);
                 this.icon.setImageDrawable(wizardIcon);
-            } else if (this.entry.getActionType().equals("ir.action.report")) {
+            } else if (actionType.equals("ir.action.report")) {
                 Drawable reportIcon = SVGFactory.getDrawable("tryton-print",
                                                              R.raw.tryton_print,
                                                              ctx);
                 this.icon.setImageDrawable(reportIcon);
-            } else if (this.entry.getActionType().equals("ir.action.url")) {
+            } else if (actionType.equals("ir.action.url")) {
                 Drawable urlIcon = SVGFactory.getDrawable("tryton-web-browser",
                                                           R.raw.tryton_web_browser,
+                                                          ctx);
+                this.icon.setImageDrawable(urlIcon);
+            } else if (actionType.equals("ir.action.act_window")) {
+                Drawable urlIcon = SVGFactory.getDrawable("tryton-open",
+                                                          R.raw.tryton_open,
                                                           ctx);
                 this.icon.setImageDrawable(urlIcon);
             } else {
