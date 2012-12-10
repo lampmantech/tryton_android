@@ -143,13 +143,7 @@ public class PickOne extends Activity
 
     public void onResume() {
         super.onResume();
-        // Load data if there isn't anyone or setup the list
-        // or update existing data
-        if (this.relFields == null || this.data == null) {
-            this.loadDataAndMeta();
-        } else {
-            this.loadData();
-        }
+        this.loadDataAndMeta();
     }
     
     public void onSaveInstanceState(Bundle outState) {

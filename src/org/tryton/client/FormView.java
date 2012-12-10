@@ -686,7 +686,13 @@ public class FormView extends Activity
             int id = (Integer) newModel.get("id");
             Session.current.addToParent(id);
         }
-        this.endNew(newModel);
+        if (!Session.current.isEditingTop()
+            && Session.current.linkToParent == null) {
+            // Quit when creating a new many2many
+            this.endQuit();
+        } else {
+            this.endNew(newModel);
+        }
     }
 
     private void postUpdate(Model updated) {

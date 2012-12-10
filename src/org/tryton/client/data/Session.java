@@ -264,7 +264,11 @@ public class Session {
         }
         tmpParent.deleteOne2Many(this.linkToParent, m);
     }
-    
+
+    public boolean isEditingTop() {
+        return this.editStack.size() <= 4;
+    }
+
     /** Check if current edited model is a subrecord of a main record.
      * I.e. the parent model has a link to the edited model. */
     public boolean isEditingSub() {
