@@ -264,9 +264,19 @@ public class Session {
         }
         tmpParent.deleteOne2Many(this.linkToParent, m);
     }
-
+    
+    /** Check if current edited model is a subrecord of a main record.
+     * I.e. the parent model has a link to the edited model. */
     public boolean isEditingSub() {
         return this.linkToParent != null;
+    }
+
+    public boolean isEditingOne2Many() {
+        return this.linkToParent != null && this.linkToSelf != null;
+    }
+    
+    public boolean isEditingMany2Many() {
+        return this.linkToParent != null && this.linkToSelf == null;
     }
 
     public boolean isEditingCommand() {

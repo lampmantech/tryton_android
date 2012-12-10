@@ -416,8 +416,7 @@ public class ToManyEditor extends Activity
     /** Handler for item long click actions */
     public void onLongClickDialog(DialogInterface dialog, int which) {
         // Delete selected item
-        if (Session.current.linkToSelf != null) {
-            // It is a one2many field
+        if (Session.current.isEditingOne2Many()) {
             Session.current.deleteOne2Many(this.data.get(this.longClickedIndex));
         } else {
             // It is a many2many field

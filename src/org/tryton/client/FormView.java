@@ -554,7 +554,7 @@ public class FormView extends Activity
         if (!Session.current.isEditingSub()) {
             this.sendSave();
         } else {
-            if (Session.current.linkToSelf != null) {
+            if (Session.current.isEditingOne2Many()) {
                 // It is a one2many field that is edited. It will be propagated
                 // with parent save
                 Toast t = Toast.makeText(this, R.string.data_send_done,
@@ -581,8 +581,7 @@ public class FormView extends Activity
         if (!Session.current.isEditingSub()) {
             this.sendDelete();
         } else {
-            if (Session.current.linkToSelf != null) {
-                // It is a one2many field
+            if (Session.current.isEditingOne2Many()) {
                 Session.current.deleteOne2Many();
                 this.endQuit();
             } else {
@@ -682,7 +681,7 @@ public class FormView extends Activity
         db.addOne(newModel.getClassName());
         db.storeData(newModel.getClassName(), newModel);
         // Update parent if necessary
-        if (Session.current.linkToParent != null) {
+        if (Session.current.isEditingSub()) {
             // Add the id to parent
             int id = (Integer) newModel.get("id");
             Session.current.addToParent(id);
@@ -698,7 +697,7 @@ public class FormView extends Activity
     }
 
     private void endNew(Model newModel) {
-        if (Session.current.linkToParent != null) {
+        if (Session.current.isEditingSub()) {
             // Create new record
             String linkToParent = Session.current.linkToParent;
             String linkToSelf = Session.current.linkToSelf;
