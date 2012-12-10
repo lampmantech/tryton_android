@@ -450,7 +450,7 @@ public class FormView extends Activity
             t.show();
             // Update data with fresh one
             Model m = (Model) msg.obj;
-            if (Session.current.editedModel == null) {
+            if (Session.current.isCreatingModel()) {
                 this.postCreate(m);
             } else {
                 this.postUpdate(m);
@@ -478,7 +478,7 @@ public class FormView extends Activity
                     if (msg.what == TrytonCall.CALL_DELETE_NOK) {
                         this.queueDelete();
                     } else {
-                        if (Session.current.editedModel != null) {
+                        if (!Session.current.isCreatingModel()) {
                             this.queueUpdate();
                         } else {
                             this.queueCreate();
@@ -560,7 +560,7 @@ public class FormView extends Activity
                 Toast t = Toast.makeText(this, R.string.data_send_done,
                                          Toast.LENGTH_SHORT);
                 t.show();
-                if (Session.current.editedModel == null) {
+                if (Session.current.isCreatingModel()) {
                     // Create
                     Session.current.addOne2Many();
                     this.endNew(Session.current.tempModel);
@@ -598,7 +598,7 @@ public class FormView extends Activity
             Toast t = Toast.makeText(this, R.string.data_send_queued,
                                      Toast.LENGTH_SHORT);
             t.show();
-            if (Session.current.editedModel != null) {
+            if (!Session.current.isCreatingModel()) {
                 this.queueUpdate();
             } else {
                 this.queueCreate();
@@ -755,9 +755,9 @@ public class FormView extends Activity
             MenuItem save = menu.findItem(MENU_SAVE_ID);
             save.setEnabled(Session.current.editedIsDirty());
             // Remove delete for creation and many2many
-            if (Session.current.editedModel == null
+            if (Session.current.isCreatingModel()
                 || (Session.current.isEditingSub()
-                    && Session.current.linkToSelf == null)) {
+                    && Session.current.isEditingMany2Many())) {
                 menu.removeItem(MENU_DEL_ID);
             }
         } else {

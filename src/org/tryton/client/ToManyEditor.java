@@ -232,12 +232,12 @@ public class ToManyEditor extends Activity
             if (forUpdate) {
                 // Make a copy of the original to edit
                 ids = new ArrayList<Integer>();
-                if (s.editedModel != null) {
+                if (!s.isCreatingModel()) {
                     ids.addAll((List<Integer>)s.editedModel.get(this.fieldName));
                 }
                 s.tempModel.set(this.fieldName, ids);
             } else {
-                if (s.editedModel != null) {
+                if (!s.isCreatingModel()) {
                     ids = (List<Integer>) s.editedModel.get(this.fieldName);
                 } else {
                     ids = new ArrayList<Integer>();

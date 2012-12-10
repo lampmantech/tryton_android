@@ -282,6 +282,11 @@ public class Session {
     public boolean isEditingCommand() {
         return this.editedCmdIndex != -1;
     }
+    /** Check if a new model is being created. If true it also means that
+     * editedModel cannot be used. */
+    public boolean isCreatingModel() {
+        return this.editedModel == null;
+    }
 
     public boolean editedIsDirty() {
         if (this.editedModel == null) {
