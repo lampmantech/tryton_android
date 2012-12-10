@@ -25,6 +25,7 @@ import java.util.Map;
 import org.tryton.client.R;
 import org.tryton.client.models.Model;
 import org.tryton.client.models.Preferences;
+import org.tryton.client.tools.FieldsConvertion;
 
 /** Factory to convert various data types to string for tree views. */
 public class TreeViewFactory {
@@ -67,13 +68,14 @@ public class TreeViewFactory {
         } else if (type.equals("sha")) {
             System.out.println("Sha type not supported yet");
         } else if (type.equals("float") || type.equals("numeric")) {
-            double dval = 0;
+            Double dval = null;
             if (value instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> mVal = (Map<String, Object>) value;
-                dval = Double.parseDouble((String)mVal.get("decimal"));
+                dval = FieldsConvertion.numericToDouble((Map)value);
             } else {
                 dval = (Double)value;
+            }
+            if (dval == null) {
+                return "";
             }
             // Set default format
             String digits = (String) field.get("digits");
