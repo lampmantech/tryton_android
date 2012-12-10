@@ -757,7 +757,8 @@ public class FormView extends Activity
             save.setEnabled(Session.current.editedIsDirty());
             // Remove delete for creation and many2many
             if (Session.current.editedModel == null
-                || Session.current.linkToSelf == null) {
+                || (Session.current.isEditingSub()
+                    && Session.current.linkToSelf == null)) {
                 menu.removeItem(MENU_DEL_ID);
             }
         } else {

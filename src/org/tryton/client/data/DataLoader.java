@@ -432,7 +432,9 @@ public class DataLoader {
         // Ignore null ids as they are stored in the model itself
         // Just remove them from the list
         final List<Integer> ids = new ArrayList<Integer>();
-        ids.addAll(allIds);
+        if (allIds != null) {
+            ids.addAll(allIds);
+        }
         while (ids.remove(null)) { /* loop on remove */ }
         new Thread() {
             public void run() {

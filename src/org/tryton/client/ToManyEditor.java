@@ -284,7 +284,7 @@ public class ToManyEditor extends Activity
             Session.current.editNewModel(this.className, this.fieldName,
                                          relField);
         } else {
-            Session.current.editNewModel(this.className);
+            Session.current.editNewModel(this.className, this.fieldName);
         }
         this.openForm();
     }
@@ -292,10 +292,12 @@ public class ToManyEditor extends Activity
     private void edit(Model model) {
         Model parentField = this.parentView.getField(this.fieldName);
         if (parentField.hasAttribute("relation_field")) {
+            // Edit a many2one field
             String relField = parentField.getString("relation_field");
             Session.current.editModel(model, this.fieldName, relField);
         } else {
-            Session.current.editModel(model);
+            // Edit a many2many
+            Session.current.editModel(model, this.fieldName);
         }
         this.openForm();
     }

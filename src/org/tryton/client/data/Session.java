@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.tryton.client.models.Model;
 import org.tryton.client.models.Preferences;
+import org.tryton.client.tools.DelayedRequester;
 import org.tryton.client.tools.FieldsConvertion;
 
 /** The user session that is stored in memory and is flushed when the
@@ -53,9 +54,12 @@ public class Session {
     /** Stack to allow to edit multiple models at once (for relationnal).
      * The top of the stack is always editedModel, tempModel and linkField. */
     private List editStack;
+    /** Index of the bloc in stack that correspond to the edited command */
+    private int editedCmdIndex;
     
     private Session() {
         this.editStack = new ArrayList();
+        this.editedCmdIndex = -1;
     }
 
     /** Push editing models on stack */
@@ -88,7 +92,10 @@ public class Session {
             this.tempModel = null;
             this.linkToParent = null;
             this.linkToSelf = null;
-        }        
+        }
+        if (this.editedCmdIndex >= this.editStack.size() / 4) {
+            this.editedCmdIndex = -1;
+        }
     }
 
     /** Set session to edit a record. */
@@ -99,6 +106,12 @@ public class Session {
         this.linkToParent = null;
         this.linkToSelf = null;
         this.pushStack();
+    }
+    /** Set session to edit a command.
+     * Only one command can be edited in session. */
+    public void editCommand(DelayedRequester.Command cmd) {
+        this.editedCmdIndex = this.editStack.size() / 4;
+        this.editModel(cmd.getData());
     }
     /** Set session to edit a one2many subrecord. ParentField is the 
      * name of the field that links to new model. */
@@ -116,6 +129,15 @@ public class Session {
         this.linkToSelf = childField;
         this.pushStack();
     }
+    /** Set session to edit a many2many subrecord. */
+    public void editModel(Model data, String parentField) {
+        this.tempModel = new Model(data.getClassName());
+        this.tempModel.set("id", data.get("id"));
+        this.editedModel = data;
+        this.linkToParent = parentField;
+        this.linkToSelf = null;
+        this.pushStack();
+    }
     /** Set session to create a new record. */
     public void editNewModel(String className) {
         this.editedModel = null;
@@ -124,6 +146,15 @@ public class Session {
         this.linkToSelf = null;
         this.pushStack();
     }
+    /** Set session to create a new many2many subrecord. */
+    public void editNewModel(String className, String parentField) {
+        this.tempModel = new Model(className);
+        this.linkToParent = parentField;
+        this.linkToSelf = null;
+        this.editedModel = null;
+        this.pushStack();
+    }
+    /** Set session to create a new one2many subrecord. */
     public void editNewModel(String className, String parentField,
                              String childField) {
         this.tempModel = new Model(className);
@@ -235,6 +266,10 @@ public class Session {
 
     public boolean isEditingSub() {
         return this.linkToParent != null;
+    }
+
+    public boolean isEditingCommand() {
+        return this.editedCmdIndex != -1;
     }
 
     public boolean editedIsDirty() {

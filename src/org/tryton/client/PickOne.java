@@ -82,6 +82,8 @@ public class PickOne extends Activity
     private ImageButton nextPage, previousPage;
     private ProgressDialog loadingDialog;
 
+    /** Check if this instance is configured for many2one or one2one field.
+     * If false it is a many2many pick. */
     private boolean isOneValue() {
         Model field = this.parentView.getField(this.fieldName);
         String type = (String) field.get("type");
@@ -119,6 +121,10 @@ public class PickOne extends Activity
         this.pagination = (TextView) this.findViewById(R.id.pickone_pagination);
         this.nextPage = (ImageButton) this.findViewById(R.id.pickone_next_btn);
         this.previousPage = (ImageButton) this.findViewById(R.id.pickone_prev_btn);
+        // Disable create new when editing a pending command
+        if (Session.current.isEditingCommand()) {
+            this.findViewById(R.id.pick_create).setVisibility(View.GONE);
+        }
         // Get the view if not set
         if (this.view == null) {
             ModelViewTypes viewTypes = this.parentView.getSubview(this.fieldName);
