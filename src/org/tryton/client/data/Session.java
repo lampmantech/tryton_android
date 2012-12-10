@@ -115,7 +115,8 @@ public class Session {
     }
     /** Set session to edit a one2many subrecord. ParentField is the 
      * name of the field that links to new model. */
-    public void editModel(Model data, String parentField, String childField) {
+    public void editOne2Many(Model data, String parentField,
+                             String childField) {
         this.tempModel = new Model(data.getClassName());
         if (data.hasAttribute("id")) {
             // When editing a new one2many record, the record has no id
@@ -130,7 +131,7 @@ public class Session {
         this.pushStack();
     }
     /** Set session to edit a many2many subrecord. */
-    public void editModel(Model data, String parentField) {
+    public void editMany2Many(Model data, String parentField) {
         this.tempModel = new Model(data.getClassName());
         this.tempModel.set("id", data.get("id"));
         this.editedModel = data;
@@ -147,7 +148,7 @@ public class Session {
         this.pushStack();
     }
     /** Set session to create a new many2many subrecord. */
-    public void editNewModel(String className, String parentField) {
+    public void editNewMany2Many(String className, String parentField) {
         this.tempModel = new Model(className);
         this.linkToParent = parentField;
         this.linkToSelf = null;
@@ -155,8 +156,8 @@ public class Session {
         this.pushStack();
     }
     /** Set session to create a new one2many subrecord. */
-    public void editNewModel(String className, String parentField,
-                             String childField) {
+    public void editNewOne2Many(String className, String parentField,
+                                String childField) {
         this.tempModel = new Model(className);
         if (this.editedModel != null && this.editedModel.hasAttribute("id")) {
             // When creating record the parent has no id, it will be given

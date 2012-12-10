@@ -703,9 +703,9 @@ public class FormView extends Activity
             String linkToParent = Session.current.linkToParent;
             String linkToSelf = Session.current.linkToSelf;
             Session.current.finishEditing();
-            Session.current.editNewModel(newModel.getClassName(),
-                                         linkToParent,
-                                         linkToSelf);
+            Session.current.editNewOne2Many(newModel.getClassName(),
+                                            linkToParent,
+                                            linkToSelf);
         } else {
             // Just create a new record
             Session.current.finishEditing();

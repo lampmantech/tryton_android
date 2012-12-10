@@ -352,8 +352,8 @@ public class PickOne extends Activity
         Model parentField = this.parentView.getField(this.fieldName);
         if (parentField.hasAttribute("relation_field")) {
             String relField = parentField.getString("relation_field");
-            Session.current.editNewModel(this.className, this.fieldName,
-                                         relField);
+            Session.current.editNewOne2Many(this.className, this.fieldName,
+                                            relField);
         } else {
             Session.current.editNewModel(this.className);
         }

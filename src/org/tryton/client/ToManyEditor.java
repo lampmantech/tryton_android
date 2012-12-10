@@ -281,10 +281,10 @@ public class ToManyEditor extends Activity
         Model parentField = this.parentView.getField(this.fieldName);
         if (parentField.hasAttribute("relation_field")) {
             String relField = parentField.getString("relation_field");
-            Session.current.editNewModel(this.className, this.fieldName,
-                                         relField);
+            Session.current.editNewOne2Many(this.className, this.fieldName,
+                                            relField);
         } else {
-            Session.current.editNewModel(this.className, this.fieldName);
+            Session.current.editNewMany2Many(this.className, this.fieldName);
         }
         this.openForm();
     }
@@ -294,10 +294,9 @@ public class ToManyEditor extends Activity
         if (parentField.hasAttribute("relation_field")) {
             // Edit a many2one field
             String relField = parentField.getString("relation_field");
-            Session.current.editModel(model, this.fieldName, relField);
+            Session.current.editOne2Many(model, this.fieldName, relField);
         } else {
-            // Edit a many2many
-            Session.current.editModel(model, this.fieldName);
+            Session.current.editMany2Many(model, this.fieldName);
         }
         this.openForm();
     }
