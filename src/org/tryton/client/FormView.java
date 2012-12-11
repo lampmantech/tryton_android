@@ -99,6 +99,7 @@ public class FormView extends Activity
     private int currentLoadingMsg;
     private boolean kill; // Check if edit is finished when destroying activity
     private int lastFailMessage; // For relog to resend last call
+    private boolean dirtyQuit; // Check if save is send by dirty dialog
 
     private LinearLayout table;
 
@@ -252,6 +253,7 @@ public class FormView extends Activity
             switch (which) {
             case DialogInterface.BUTTON_POSITIVE:
                 dialog.dismiss();
+                this.dirtyQuit = true;
                 this.save();
                 break;
             case DialogInterface.BUTTON_NEGATIVE:
@@ -563,7 +565,11 @@ public class FormView extends Activity
                 if (Session.current.isCreatingModel()) {
                     // Create
                     Session.current.addOne2Many();
-                    this.endNew(Session.current.tempModel);
+                    if (!this.dirtyQuit) {
+                        this.endNew(Session.current.tempModel);
+                    } else {
+                        this.endQuit();
+                    }
                 } else {
                     // Update
                     Session.current.updateOne2Many();
@@ -691,7 +697,11 @@ public class FormView extends Activity
             // Quit when creating a new many2many
             this.endQuit();
         } else {
-            this.endNew(newModel);
+            if (this.dirtyQuit) {
+                this.endQuit();
+            } else {
+                this.endNew(newModel);
+            }
         }
     }
 
