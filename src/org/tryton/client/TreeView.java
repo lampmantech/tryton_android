@@ -403,6 +403,9 @@ public class TreeView extends Activity
             // Check if a tree view is available
             if (this.viewTypes.hasView("tree")) {
                 this.loadDataAndMeta(this.refreshing);
+            } else if (this.viewTypes.hasView("graph")) {
+                this.startGraphActivity();
+                this.finish();
             } else {
                 // No tree view defined, show error and quit
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
@@ -573,18 +576,22 @@ public class TreeView extends Activity
             this.loadDataAndMeta(this.refreshing);
             break;
         case MENU_GRAPH_ID:
-            ModelView graphView = this.viewTypes.getView("graph");
-            if (graphView != null) {
-                GraphView.setup(graphView);
-            } else {
-                GraphView.setup(this.viewTypes.getViewId("graph"),
-                                this.viewTypes.getModelName());
-            }
-            i = new Intent(this, GraphView.class);
-            this.startActivity(i);
+            this.startGraphActivity();
             break;
         }
         return true;
     }
 
+    /** Start a graph activity */
+    private void startGraphActivity() {
+        ModelView graphView = this.viewTypes.getView("graph");
+        if (graphView != null) {
+            GraphView.setup(graphView);
+        } else {
+            GraphView.setup(this.viewTypes.getViewId("graph"),
+                            this.viewTypes.getModelName());
+        }
+        Intent i = new Intent(this, GraphView.class);
+        this.startActivity(i);
+    }
 }
