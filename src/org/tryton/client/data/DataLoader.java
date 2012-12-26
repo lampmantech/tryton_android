@@ -245,24 +245,23 @@ public class DataLoader {
         final Handler fwdHandler = newHandler(callId, ctx);
         new Thread() {
             public void run() {
-                // Check if views are available from cache
-                ModelViewTypes views = null;
-                DataCache db = new DataCache(ctx);
-                views = db.loadViews(origin.getId());
-                if (views != null) {
-                    Message m = fwdHandler.obtainMessage();
-                    m.what = VIEWS_OK;
-                    m.obj = new Object[] {origin, views};
-                    m.sendToTarget();
-                    return;
-                } else {
-                    Session s = Session.current;
-                    int tcId = TrytonCall.getViews(s.userId, s.cookie,
-                                                          s.prefs,
-                                                          origin,
-                                                          fwdHandler);
-                    trytonCalls.put(callId, tcId);
+                if (!forceRefresh) {
+                    // Check if views are available from cache
+                    ModelViewTypes views = null;
+                    DataCache db = new DataCache(ctx);
+                    views = db.loadViews(origin.getId());
+                    if (views != null) {
+                        Message m = fwdHandler.obtainMessage();
+                        m.what = VIEWS_OK;
+                        m.obj = new Object[] {origin, views};
+                        m.sendToTarget();
+                        return;
+                    }
                 }
+                Session s = Session.current;
+                int tcId = TrytonCall.getViews(s.userId, s.cookie,
+                                               s.prefs, origin, fwdHandler);
+                trytonCalls.put(callId, tcId);
             }
         }.start();
         return callId;
@@ -276,27 +275,28 @@ public class DataLoader {
         final Handler fwdHandler = newHandler(callId, ctx);
         new Thread() {
             public void run() {
-                // Check if the view is available from cache
-                ModelView view = null;
-                DataCache db = new DataCache(ctx);
-                if (viewId != 0) {
-                    view = db.loadView(viewId, className);
-                } else {
-                    view = db.loadDefaultView(className, type);
+                if (!forceRefresh) {
+                    // Check if the view is available from cache
+                    ModelView view = null;
+                    DataCache db = new DataCache(ctx);
+                    if (viewId != 0) {
+                        view = db.loadView(viewId, className);
+                    } else {
+                        view = db.loadDefaultView(className, type);
+                    }
+                    if (view != null) {
+                        Message m = fwdHandler.obtainMessage();
+                        m.what = VIEWS_OK;
+                        m.obj = new Object[]{type, view};
+                        m.sendToTarget();
+                        return;
+                    }
                 }
-                if (view != null) {
-                    Message m = fwdHandler.obtainMessage();
-                    m.what = VIEWS_OK;
-                    m.obj = new Object[]{type, view};
-                    m.sendToTarget();
-                    return;
-                } else {
-                    Session s = Session.current;
-                    int tcId = TrytonCall.getView(s.userId, s.cookie,
-                                                  s.prefs, className, viewId,
-                                                  type, fwdHandler);
-                    trytonCalls.put(callId, tcId);
-                }
+                Session s = Session.current;
+                int tcId = TrytonCall.getView(s.userId, s.cookie,
+                                              s.prefs, className, viewId,
+                                              type, fwdHandler);
+                trytonCalls.put(callId, tcId);
             }
         }.start();
         return callId;
