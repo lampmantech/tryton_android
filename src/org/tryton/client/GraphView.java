@@ -75,7 +75,7 @@ public class GraphView extends Activity
     private ProgressDialog loadingDialog;
 
     @Override
-        public void onCreate(Bundle state) {
+    public void onCreate(Bundle state) {
         super.onCreate(state);
         boolean loadData = false;
         boolean loadView = false;
