@@ -24,6 +24,7 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.MenuItem;
 import android.widget.FrameLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +69,7 @@ public class GraphView extends Activity
     private int totalDataCount = -1;
     private List<RelField> relFields;
     private List<Model> data;
+    private boolean refreshing;
 
     private FrameLayout graphLayout;
     private ProgressDialog loadingDialog;
@@ -83,6 +85,7 @@ public class GraphView extends Activity
             this.view = (ModelView) state.getSerializable("view");
             this.viewId = state.getInt("viewId");
             this.className = state.getString("className");
+            this.refreshing = state.getBoolean("refreshing");
             if (this.callCountId != 0) {
                 DataLoader.update(this.callCountId, new Handler(this));
                 this.showLoadingDialog();
@@ -129,7 +132,7 @@ public class GraphView extends Activity
             if (loadView) {
                 this.loadViewAndData();
             } else {
-                this.loadDataAndMeta();
+                this.loadDataAndMeta(this.refreshing);
             }
         }
     }
@@ -142,6 +145,7 @@ public class GraphView extends Activity
         outState.putInt("totalDataCount", this.totalDataCount);
         outState.putInt("callCountId", this.callCountId);
         outState.putInt("callDataId", this.callDataId);
+        outState.putBoolean("refreshing", this.refreshing);
         if (this.data != null) {
             outState.putSerializable("data_count", this.data.size());
             for (int i = 0; i < this.data.size(); i++) {
@@ -177,6 +181,7 @@ public class GraphView extends Activity
         DataLoader.cancel(this.callDataId);
         this.callCountId = 0;
         this.callDataId = 0;
+        this.refreshing = false;
         this.loadingDialog = null;
         this.finish();
     }
@@ -201,18 +206,18 @@ public class GraphView extends Activity
     
     /** Load data count and rel fields, required for data.
      * Requires that views are loaded. */
-    private void loadDataAndMeta() {
+    private void loadDataAndMeta(boolean refresh) {
         if (this.callCountId == 0) {
             this.showLoadingDialog();
             this.callCountId = DataLoader.loadDataCount(this, this.className,
                                                         new Handler(this),
-                                                        false);
+                                                        refresh);
         }
         if (this.callDataId == 0) {
             this.showLoadingDialog();
             this.callDataId = DataLoader.loadRelFields(this, this.className,
                                                        new Handler(this),
-                                                       false);
+                                                       refresh);
         }
     }
 
@@ -249,7 +254,7 @@ public class GraphView extends Activity
             @SuppressWarnings("unchecked")
             Object[] ret = (Object[]) msg.obj;
             this.view = (ModelView) ret[1];
-            this.loadDataAndMeta();
+            this.loadDataAndMeta(this.refreshing);
             break;
         case DataLoader.DATACOUNT_OK:
             this.callCountId = 0;
@@ -260,7 +265,7 @@ public class GraphView extends Activity
                 // Wait for relfields callback
             } else {
                 // Load data
-                this.loadData(false);
+                this.loadData(this.refreshing);
             }
             break;
         case DataLoader.RELFIELDS_OK:
@@ -271,11 +276,12 @@ public class GraphView extends Activity
                 // Wait for data count callback
             } else {
                 // Load data
-                this.loadData(false);
+                this.loadData(this.refreshing);
             }
             break;
         case DataLoader.DATA_OK:
             this.callDataId = 0;
+            this.refreshing = false;
             ret = (Object[]) msg.obj;
             List<Model> data = (List<Model>) ret[1];
             this.data = data;
@@ -287,6 +293,7 @@ public class GraphView extends Activity
         case DataLoader.DATACOUNT_NOK:
             // Close the loading dialog if present
             this.hideLoadingDialog();
+            this.refreshing = false;
             if (msg.what == DataLoader.DATACOUNT_NOK) {
                 this.callCountId = 0;
             } else {
@@ -315,6 +322,40 @@ public class GraphView extends Activity
             break;
         case AlertBuilder.RELOG_OK:
             this.loadViewAndData();
+            break;
+        }
+        return true;
+    }
+
+    //////////////////
+    // Menu section //
+    //////////////////
+    private static final int MENU_LOGOUT_ID = 0;
+    private static final int MENU_REFRESH_ID = 1;
+    /** Called on menu initialization */
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        // Create and add logout entry
+        MenuItem logout = menu.add(android.view.Menu.NONE, MENU_LOGOUT_ID, 100,
+                                   this.getString(R.string.general_logout));
+        logout.setIcon(R.drawable.tryton_log_out);
+        // Set refresh
+        MenuItem refresh = menu.add(android.view.Menu.NONE, MENU_REFRESH_ID, 30,
+                                 this.getString(R.string.general_reload));
+        refresh.setIcon(R.drawable.tryton_refresh);
+        return true;
+    }
+
+    /** Called on menu selection */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case MENU_LOGOUT_ID:
+            Start.logout(this);
+            break;
+        case MENU_REFRESH_ID:
+            this.refreshing = true;
+            this.loadDataAndMeta(this.refreshing);
             break;
         }
         return true;
