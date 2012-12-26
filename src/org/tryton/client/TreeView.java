@@ -272,7 +272,6 @@ public class TreeView extends Activity
         } else {
             FormView.setup(this.viewTypes.getViewId("form"));
         }
-        FormView.setup(formView);
         Session.current.editModel(clickedData);
         Intent i = new Intent(this, FormView.class);
         this.startActivity(i);
