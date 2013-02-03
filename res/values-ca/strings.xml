@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tryton Android
+    Copyright (C) 2013 Sergi Almacellas Abellana <sergi@koolpi.com>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!-- Labels are picked to match the python desktop client, labels marked with a NEW
+are not used in the desktop client and should be translated directly.
+Those with a AND are present but differs because of size or other reason. In this case
+the original label is set after the tag -->
+<resources>
+  <string name="app_name">Tryton</string>
+
+  <!-- General strings -->
+  <string name="general_yes">Si</string>
+  <string name="general_no">No</string>
+  <string name="general_ok">D\'acord</string>
+  <string name="general_cancel">Cancel·la</string>
+  <string name="general_config">Configuració</string> <!-- NEW -->
+  <string name="general_preferences">Preferències...</string>
+  <string name="general_logout">Disconecta</string>
+  <string name="general_about">Quant a...</string>
+  <string name="general_true">Si</string> <!-- NEW -->
+  <string name="general_false">No</string> <!-- NEW -->
+  <string name="general_new_record">Crea un nou registre</string>
+  <string name="general_graph">Vista de gràfic</string> <!-- NEW -->
+  <string name="general_reload">Recarrega</string>
+  <string name="general_clear">Esborra</string>
+
+  <!-- Unsupported temp strings -->
+  <string name="general_not_supported">No disponible al dispositiu mòbil</string> <!-- NEW -->
+  <string name="general_no_tree_view">La vista d\'arbre no està disponible</string> <!-- NEW -->
+
+  <!-- Login labels -->
+  <string name="login_user">Nom d\'usuari</string>
+  <string name="login_password">Contrasenya</string>
+  <string name="login_send">Conecta</string>
+  <string name="login_server_unavailable">No s\'ha pogut conectar al servidor</string>
+  <string name="login_bad_login">Error de conexió!\nNom d\'usuari o contrasenya incorrectes!</string>
+  <string name="login_logging_in">Conectant</string> <!-- NEW -->
+  <string name="login_popup_title">Tryton</string>
+
+  <!-- Menu labels -->
+  <string name="menu_loading">Carregant el menú</string> <!-- NEW -->
+  <string name="menu_cache">Carregant dades</string> <!-- NEW -->
+  <string name="menu_caching">Guardant %s a la cache...</string> <!-- NEW -->
+
+  <!-- View labels -->
+  <string name="view_loading">Carregant vistes</string> <!-- NEW -->
+  <string name="data_loading">Carregant informació</string> <!-- NEW -->
+  <string name="tree_switch_mode_summary">Mode resumit</string> <!-- NEW -->
+  <string name="tree_switch_mode_extended">Mode Extès</string> <!-- NEW -->
+  <string name="tree_pagination">%1$d - %2$d de %3$d</string> <!-- NEW -->
+  <string name="form_save">Desa</string>
+  <string name="form_delete">Elimina...</string>
+  <string name="form_delete_title">Confirmació</string>
+  <string name="form_delete_message">Esteu segurs que voleu eliminar aquest registre?</string>
+  <string name="form_dirty_title">Confirmació</string>
+  <string name="form_dirty_message">Aquest registre ha estat modificat. Voleu guardar-lo?</string>
+  <string name="tomany_add">Afegir</string>
+  <string name="tomany_remove">Esborra</string>
+  <string name="tomany_add_new">Crea un nou registre</string>
+  <string name="tomany_delete">Elimina</string> <!-- AND: Delete selected record -->
+  <string name="data_send">Enviant la informació</string> <!-- NEW -->
+  <string name="data_send_done">Registre guardat!</string>
+  <string name="data_send_queued">Operació encuada</string> <!-- NEW -->
+
+  <!-- Configuration labels -->
+  <string name="config_host_title">Servidor</string> <!-- AND: Host: -->
+  <string name="config_host_desc">URL del vostre servidor Tryton</string> <!-- NEW -->
+  <string name="config_port_title">Port</string> <!-- AND Port: -->
+  <string name="config_port_desc">Port del vostre servidor Tryton</string> <!-- NEW -->
+  <string name="config_ssl_title">Utilitza SSL</string> <!-- NEW -->
+  <string name="config_ssl_desc">Marqueu-ho si el vostre servidor utilitza SSL</string> <!-- NEW -->
+  <string name="config_database_title">Base de dades</string> <!-- AND: Database: -->
+  <string name="config_database_desc">La base de dades del servidor on us voleu conectar</string> <!-- NEW -->
+  <string name="config_user_preferences">Preferències d\'usuari</string> <!-- NEW -->
+  <string name="config_autologout_title">Sortir automàticament</string> <!-- NEW -->
+  <string name="config_autologout_desc">Sortir automàticament al tancar l\'aplicació amb la tecla enrere</string> <!-- NEW -->
+  <string name="config_offlineuse_title">Us sense conexió</string> <!-- NEW -->
+  <string name="config_offlineuse_desc">Guarda les modificacions i les envia manualment quan el servidor estigui disponible</string> <!-- NEW -->
+
+  <!-- Delayed requester labels -->
+  <string name="requester_pending_one">1 sol·licitud pendent</string>
+  <string name="requester_pending">%d sol·licituds pendents</string>
+  <string name="requester_message">Feu clic per enviar</string>
+
+  <!-- About labels -->
+  <string name="about_author">Realitzar per Scil (http://scil.coop), financiat per Bio Eco Forests (http://bioecoforests.com)</string> <!-- NEW -->
+  <string name="about_licence">Aquest programa és programari lliure: podeu redistribuir i / o modificar-lo sota els termes de la Llicència pública general de GNU tal com la publica la Free Software Foundation, bé de la versió 3 de la Llicència, o (si ho preferiu) qualsevol versió posterior. Vegeu http://www.gnu.org/licenses/.</string> <!-- NEW -->
+  <string name="about_source">Obteniu el codi font de l\'aplicació a http://trac.scil.coop/tryton_android</string> <!-- NEW -->
+  <string name="about_svg_android">Aquesta aplicació fa us de svg-android, amb llicència Apache License version 2.0. Vegeu http://www.apache.org/licenses/LICENSE-2.0.</string> <!-- NEW -->
+  <string name="about_jsonrpc">Aquesta aplicació utiliza android-json-rpc, amb llicència MIT.</string> <!-- NEW -->
+</resources>
