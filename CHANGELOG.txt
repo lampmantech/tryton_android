@@ -1,0 +1,1191 @@
+commit 2ea7792057bd13b5d30916d7936a3e0a3e41aaf4
+Date:   Mon Feb 4 00:55:56 2013 +0100
+
+    Catalan translation
+
+commit 87b7ba64b889671775739c023ed339c1bca7f377
+Date:   Wed Jan 30 09:28:12 2013 +0100
+
+    Spanish translation
+
+commit 57e9ba8c52f67e9cc12eed1b3ba31e7edaee3430
+Date:   Tue Jan 15 15:44:28 2013 +0100
+
+    Manifest for publication
+
+commit 178daaec0fbe34618d2579b4a524bdbf5c9e1b88
+Date:   Wed Dec 26 14:57:58 2012 +0100
+
+    Form id check fix on item click
+
+commit 350f1ba7a0258f9d012baec48533f8c2bd6af9e6
+Date:   Wed Dec 26 14:57:30 2012 +0100
+
+    Take forceRefresh in account for loading views
+
+commit 86027592992d42e77057ac2478c3dba4f2beb202
+Date:   Wed Dec 26 14:33:23 2012 +0100
+
+    Indentation fix
+
+commit 98f901a314095363700d03f3f815852b58a05c44
+Date:   Wed Dec 26 14:32:34 2012 +0100
+
+    Add refresh and logout menu to graph view
+
+commit f4897e829a04baf85bbb26d4533bc147df61b974
+Date:   Wed Dec 26 14:30:10 2012 +0100
+
+    Display GraphView even if there is no TreeView
+
+commit c6f26a789bd30f4653865f8eff6489937e1f15e9
+Date:   Tue Dec 11 09:48:12 2012 +0100
+
+    Close form on creation when saving with back button
+
+commit 848c1e7634c2a3d71fac70dc4e006b8579b80208
+Date:   Mon Dec 10 11:57:25 2012 +0100
+
+    Fix nullpointerexception on local empty decimal
+
+commit aba9380abe06fca11c547a9bcd5afa49a5ed17ca
+Date:   Mon Dec 10 11:36:32 2012 +0100
+
+    Return to many2many list after saving a new many2many
+
+commit 3273644a36f6bce16dba16e9ded153316e54df4f
+Date:   Mon Dec 10 11:06:58 2012 +0100
+
+    Use clearer create/edit check
+
+commit ebeec5f36b66a8518956ae9cf1295dfa628b6b44
+Date:   Mon Dec 10 10:49:35 2012 +0100
+
+    Use clearer session edit type check
+
+commit 7a1fb667cc63f212236873602836fe7b0c4d3062
+Date:   Mon Dec 10 10:38:32 2012 +0100
+
+    Rename editModel functions in session for clearer code
+
+commit 1772c46bc6e471cd91c2c3bc7e2e3b01bcaf81a1
+Date:   Mon Dec 10 10:01:16 2012 +0100
+
+    Disable many2many creation on command edit and many2many deletion on subfield
+
+commit 44f9a833719b8ba6b667b3bb8409786b61a7543f
+Date:   Fri Dec 7 17:00:23 2012 +0100
+
+    Show error when a view is not bound to a specific model
+
+commit 7e16f74dcb33d2d1275e8045f5b3804a174fe2ba
+Date:   Fri Dec 7 16:34:30 2012 +0100
+
+    Show error when no tree view is set for a menu entry
+
+commit ab2bc049fe101dfe0578aa439c4b54de215a0603
+Date:   Fri Dec 7 16:08:50 2012 +0100
+
+    Default icon for ir.action.act_window menu entries
+
+commit c3404250012ac2debec42da013d1b3e000d42389
+Date:   Fri Dec 7 14:51:29 2012 +0100
+
+    Fix "null" string value on decimal refresh in form view
+
+commit 36b5906d15c94f6e9dc7a8f5535087651c172e84
+Date:   Fri Dec 7 14:33:00 2012 +0100
+
+    Don't show clear menu in PickOne for many2many field
+
+commit b1214c53d63d0b13f0b9acde101a2b7e25a0099f
+Date:   Fri Dec 7 14:11:09 2012 +0100
+
+    Align buttons on pre-caching
+
+commit e712b9b41ce6654cbf3b8b5dee9e60c2024b5dcb
+Date:   Fri Dec 7 09:41:05 2012 +0100
+
+    Show not supported message on non ir.action.act_window actions
+
+commit 305cb3f831dfd632f5d8de384da1a5654e2f0177
+Date:   Thu Dec 6 16:56:43 2012 +0100
+
+    Clear current value in PickOne
+
+commit 0f0c90b0802e1005e8c6e4506bc690ad08692df6
+Date:   Thu Dec 6 15:39:12 2012 +0100
+
+    Remove Sysout
+
+commit 5e29b00d0c1da55e186ba5392f7ec4f66e544fd6
+Date:   Thu Dec 6 15:37:32 2012 +0100
+
+    Disable delete on many2many edit
+
+commit b39f5f1c094614be9214ee3915ec14df212bdf54
+Date:   Thu Dec 6 15:27:34 2012 +0100
+
+    Fix one2many record deletion
+
+commit 3d6a6053c7d410c3e8326d6f0d0cea5c71e45700
+Date:   Thu Dec 6 14:31:49 2012 +0100
+
+    Show user error on ToManyEditor
+
+commit 478f67ae90eca83557a0bc2e5a80011fdb280eaa
+Date:   Thu Dec 6 14:18:42 2012 +0100
+
+    Fix nullpointer exception on one2many creation
+
+commit 89b00fef2ac34a6125899ab0e4c0be2b7c294b67
+Date:   Thu Dec 6 14:00:22 2012 +0100
+
+    Fix dirty checking on one2many field edition
+
+commit 6803f0249dfa7893d586d20a24beb0e7fb78f32d
+Date:   Thu Dec 6 12:29:54 2012 +0100
+
+    Fix one2many records update
+
+commit 22fdaa8cb5fa331c22505792b2a6130be785780e
+Date:   Thu Dec 6 11:48:26 2012 +0100
+
+    Fix one2many record creation
+
+commit 738e35d78ecedf779958fb4dd974d6ac5b99aa39
+Date:   Wed Dec 5 09:59:06 2012 +0100
+
+    Fix ToMany edition list override
+
+commit 3c280e316add467d5c89e2945e159ff9cf213610
+Date:   Wed Dec 5 09:33:31 2012 +0100
+
+    Close local database cursor on delete
+
+commit 72b9ba3b7659ca1864f870614a4c6131b83a21a6
+Date:   Wed Dec 5 09:04:42 2012 +0100
+
+    Use search_count for getting data count
+
+commit f969865da3f5ea9b9befd1587e88be9ee82208a5
+Date:   Tue Dec 4 12:19:08 2012 +0100
+
+    Navigation bar at the bottom of the screen
+
+commit e8f1757c80ec7b7ca0a928a66cddd394a78d0eb8
+Date:   Tue Dec 4 12:05:44 2012 +0100
+
+    Handle session timeout on pre-caching
+
+commit e8eb0101537f1e3f3a7bf2b3f83f6826701ee416
+Date:   Tue Dec 4 10:08:07 2012 +0100
+
+    Ask for relog on session timeout
+
+commit 2ca94f2f0a890052f56af7fdceaaabb5509fa8af
+Date:   Fri Nov 30 16:04:50 2012 +0100
+
+    Factorize rec_name generation
+
+commit 806bc4941c6200cb885209ad9db3242686bc66a9
+Date:   Fri Nov 30 15:59:39 2012 +0100
+
+    Update rec_name on delayed update
+
+commit f1aa7980a67783e36f113979baba5d06c01021d3
+Date:   Fri Nov 30 15:40:32 2012 +0100
+
+    Don't send call to server when a queue is pending
+
+commit 3915204d585e92a3b4a60e40b261de2065ec503e
+Date:   Fri Nov 30 15:32:25 2012 +0100
+
+    Clarify queuing code on form
+
+commit 385c4b11746218adefe2cba65734c23b79559f61
+Date:   Fri Nov 30 14:35:34 2012 +0100
+
+    Graph pan limits
+
+commit ba7b06d10a223fe27bc79e4d6df5137aa4f0f6de
+Date:   Fri Nov 30 13:52:30 2012 +0100
+
+    Format date graph label according to preferences
+
+commit 8511ca8a633f6e2160370259a6c2346a450ea6b8
+Date:   Fri Nov 30 13:51:38 2012 +0100
+
+    Fix getAllFieldNames for graph structure
+
+commit f7e710fe5d7bb13ccf4afbcd8d3c22f9ebf1502f
+Date:   Fri Nov 30 12:03:40 2012 +0100
+
+    Offline use option, message queued interface
+
+commit bbf21f26994047485eef6e956f074c258af77e9c
+Date:   Fri Nov 30 11:40:07 2012 +0100
+
+    Use session for command editing
+
+commit bacfd258f69dc898a7f72c25d9a5e99b8c296c61
+Date:   Fri Nov 30 11:39:34 2012 +0100
+
+    Fix nullpointerexception on empty pending relational field
+
+commit 6183a9bdb30bdba8eb3e90a9106dd52bbfed3792
+Date:   Fri Nov 30 11:20:38 2012 +0100
+
+    Use visible fields to check local data instead of all fields
+
+commit d3a61ab4573ee92f7ebecaa3b8f8911469af3a4a
+Date:   Fri Nov 30 10:40:01 2012 +0100
+
+    Set null on NO_VALUE in form to set attribute if necessary
+
+commit 039bc2f6fa350eed9c4cf74a131eab745150d50d
+Date:   Fri Nov 30 10:31:08 2012 +0100
+
+    Open edit form on delayed command error
+
+commit f3072577966ac54bb495477fe77ff30785dc5cd7
+Date:   Fri Nov 30 08:20:49 2012 +0100
+
+    Store view along command and model
+
+commit 30bb511a546b943f56e7d5006efc9e197785c20d
+Date:   Thu Nov 29 18:41:08 2012 +0100
+
+    Update ids when linking to delayed new records
+
+commit f15104d784c683d5a67ad31c5fbe3279cd239dea
+Date:   Thu Nov 29 17:16:29 2012 +0100
+
+    Update data count on tree refresh
+
+commit f0150cc9452367c1b14dfe94c0873ddc767132eb
+Date:   Thu Nov 29 16:52:48 2012 +0100
+
+    Fix compile warning
+
+commit d4925a2ae1f9da35e0d0efb163d2113ba525f0c2
+Date:   Thu Nov 29 16:35:06 2012 +0100
+
+    Simple case queues operations
+
+commit ef26586643d97d474ecebfae9f217a1b627522c6
+Date:   Thu Nov 29 16:23:40 2012 +0100
+
+    Don't log no request queue file found exception
+
+commit 2d92797ce28572f25dd1b2f630111a52ca115e63
+Date:   Thu Nov 29 16:20:52 2012 +0100
+
+    Show error on form data loading error
+
+commit ea7ae789ec25e192b7a3a2eb261b07c03c64772c
+Date:   Thu Nov 29 15:34:56 2012 +0100
+
+    Send requests interface
+
+commit 3d7c8fdd52726058a815ef8cdd2c877ff26d0351
+Date:   Thu Nov 29 14:04:29 2012 +0100
+
+    Update local data on queuing request
+
+commit 19e48c52a9c8535e392860bdc7ea701848f91e99
+Date:   Thu Nov 29 12:21:17 2012 +0100
+
+    Save queue and restore it on startup
+
+commit 1c02513116e5ae7ee0e54ec4c569b5fc1cb1623c
+Date:   Thu Nov 29 11:22:11 2012 +0100
+
+    French errors translation
+
+commit 5b0e9ceb27e2da587a95765c4a8563adca27dc82
+Date:   Thu Nov 29 11:19:05 2012 +0100
+
+    Simple notification on request queuing
+
+commit 71de937c5e63ce6f70b27eeda965a021138a7947
+Date:   Thu Nov 29 09:10:01 2012 +0100
+
+    Don't use system icon for expandable list
+
+commit f78d0b2279bc6479b05915f3ac764f1ff809f315
+Date:   Thu Nov 29 08:51:22 2012 +0100
+
+    Fix month display on date buttons
+
+commit 3159b5fbfc2e8f0057863d91b6bd580f2a2576b3
+Date:   Thu Nov 29 08:48:30 2012 +0100
+
+    Form view in 1 column
+
+commit 592c340a476ee73c9a98aec1f14e92a3a9302895
+Date:   Thu Nov 29 08:25:49 2012 +0100
+
+    French translation
+
+commit 70c38caedb9e91e4c6d7da66d132649a47bb4248
+Date:   Wed Nov 28 17:17:49 2012 +0100
+
+    Sort graph x values
+
+commit 068f23cf35e2a3e00011ce5f2b6778258b002cfc
+Date:   Wed Nov 28 16:26:48 2012 +0100
+
+    Graph fill attribute
+
+commit 0071ef26a9480b68ec5a7434f9dd7620c25b9f21
+Date:   Wed Nov 28 16:14:36 2012 +0100
+
+    Graph color attribute
+
+commit 70818d51c7fae5fb44f912ee9b05de35eef437bd
+Date:   Wed Nov 28 15:59:11 2012 +0100
+
+    Default colors for charts
+
+commit 9528ad3733a2253d39592adb55d12e1682f604db
+Date:   Wed Nov 28 15:41:54 2012 +0100
+
+    Quick and dirty charts
+
+commit ccb7bdd17b00e0c57b2c42ffdf4d355a6b2d9ed4
+Date:   Wed Nov 28 09:18:24 2012 +0100
+
+    Pragma notes on view ids and built state
+
+commit c84a3c7e8795ad112056342dba94c39fc35cd109
+Date:   Wed Nov 28 08:32:10 2012 +0100
+
+    Cancel pre-caching
+
+commit 6aff5191f023876feafab140821da212812d43f0
+Date:   Wed Nov 28 08:09:00 2012 +0100
+
+    Numeric number format catch
+
+commit db59d6edc1e2519ec80a54dc1605b60cf411ddfa
+Date:   Tue Nov 27 18:31:40 2012 +0100
+
+    Fix bugs on precaching
+
+commit d52c43d7bebb97f0fb476e5c59c501ff6954d3f7
+Date:   Tue Nov 27 16:39:20 2012 +0100
+
+    Dirty check to reload tree after edit
+
+commit 357046a874d76ecde5831aad10161772e6a0f0aa
+Date:   Tue Nov 27 15:38:27 2012 +0100
+
+    Fix form view override when explicitely giving a view
+
+commit ce266ef540f5b68f7d64b87373b041ddd2bef5e3
+Date:   Tue Nov 27 15:13:38 2012 +0100
+
+    Close menu picking for caching with back key
+
+commit a3add763db0dbd6ea2827da41b02d2215b2c68bd
+Date:   Tue Nov 27 14:49:57 2012 +0100
+
+    Fix crash on ToManyEditor edit/add with undefined subviews
+
+commit 83338bb5a731ea61ac2ab9114c2e87dedc5e1cfe
+Date:   Tue Nov 27 12:36:49 2012 +0100
+
+    Sysout!
+
+commit 024790954b7595824d3574b334cd16438a555c71
+Date:   Tue Nov 27 12:34:58 2012 +0100
+
+    Fix cache relfields loading
+
+commit 2cde9fe31a5a1f48056437cf5f6e0c42a395f405
+Date:   Tue Nov 27 11:15:23 2012 +0100
+
+    Fix id/rec_name data loading where full data where expected
+
+commit ebd2f110a3a4a9ea6dd18ffb7c94982445d43843
+Date:   Tue Nov 27 10:59:29 2012 +0100
+
+    Factorize 2 lines of code
+
+commit 7d304a79c2dac8085f5acda0788f57e6b50ed87b
+Date:   Tue Nov 27 10:35:33 2012 +0100
+
+    Show server and database on login screen
+
+commit 5749b3b7952a21fe2891e7355c617b326cade06f
+Date:   Tue Nov 27 10:27:16 2012 +0100
+
+    Use Tryton demo server as default configuration
+
+commit 6906ea1b92c85bb2e9e0ff8c20b6a57b93c3a6d0
+Date:   Tue Nov 27 10:08:40 2012 +0100
+
+    Fix crash on empty numeric field when picking relationnal value
+
+commit 6175f1cfe610d0a09735ab4d427895d5bf7359c2
+Date:   Tue Nov 27 10:03:51 2012 +0100
+
+    Don't erase previously edited values when picking a relationnal value
+
+commit 8c93a64ed646d227fc3536c5d7c4b3f29fc6cbb5
+Date:   Tue Nov 27 09:34:48 2012 +0100
+
+    Restaured black background
+
+commit 297c06abe647a7af3cfb6881929a27d48da03f6c
+Date:   Fri Nov 23 18:41:37 2012 +0100
+
+    Fix partially-loaded ModelViewType crash on subfields
+
+commit ecff44322e08a94f0267c712aa13eded4ebaf2bb
+Date:   Fri Nov 23 17:18:05 2012 +0100
+
+    Fix errors on form when creating a new record
+
+commit f4c0b7921a0b28ffba6cbabce85c3369dd73e0c8
+Date:   Fri Nov 23 16:59:57 2012 +0100
+
+    Force tree and form types in pre-caching
+
+commit dc737d4e5737a3b5163ac45a028cf02478e90f3d
+Date:   Fri Nov 23 16:22:12 2012 +0100
+
+    PickOne and ToManyEditor always uses a tree typed view
+
+commit 2165e87922a43279378ccd4942915a13ce83c63b
+Date:   Fri Nov 23 15:59:41 2012 +0100
+
+    Parse view_ids when declared without mode
+
+commit 7c89b328881a658be8f57df308fcd34c32c87675
+Date:   Fri Nov 23 15:59:16 2012 +0100
+
+    Documentation on ModelViewTypes
+
+commit 84f825de99f39adca789ac56057c10e9acb4b5d3
+Date:   Fri Nov 23 14:26:48 2012 +0100
+
+    Rewrite pre-caching
+
+commit ea055317369f85025772f86e0ff8658c6f0c06bb
+Date:   Thu Nov 22 15:47:05 2012 +0100
+
+    Load views on demand (breaks pre-caching)
+
+commit ab27d67d5c90acafe40503c7fa17f9382e7c1bd2
+Date:   Wed Nov 21 21:06:29 2012 +0100
+
+    Move view cache into DataCache, fix some bugs
+
+commit abdb682cf6dd89754638d56fa5bd57df3cc97632
+Date:   Wed Nov 21 15:47:39 2012 +0100
+
+    Graph icon
+
+commit 0790eceb49a8c1f2ec6220bbbe53fb30412fa7b8
+Date:   Wed Nov 21 15:34:26 2012 +0100
+
+    Fix preload processus
+
+commit 310f17cafc2030bfd23a2a79d0e79352181cfb05
+Date:   Tue Nov 20 15:46:27 2012 +0100
+
+    Fix nullpointer on numeric value editing
+
+commit 1a1531e0b4948a32e6af3a40a7350be49dd08fdf
+Date:   Tue Nov 20 15:35:14 2012 +0100
+
+    Load only fields listed in views
+
+commit 94b0fc46b5df2d3893db5fdebd5bab1de25472d8
+Date:   Tue Nov 20 10:36:57 2012 +0100
+
+    Preload menu entry data
+
+commit 32905ef47cd3affb03b70a346d3daf1125ba958e
+Date:   Mon Nov 19 10:50:08 2012 +0100
+
+    Prevent requesting multiple time the same id at one from the server
+
+commit e3533b1dac964c6eb69480db704ae353a5ede624
+Date:   Mon Nov 19 10:45:52 2012 +0100
+
+    Don't send read call to server with no requested id
+
+commit 1f7e4302a9c49df0538d3501926dc652f24e3457
+Date:   Mon Nov 19 10:32:27 2012 +0100
+
+    Increase TrytonCall chunk size and remove debug sysout
+
+commit 28e400a4da7f539ee5c2d708a749e6e3b8cb0287
+Date:   Mon Nov 19 10:29:34 2012 +0100
+
+    Paginated picker for Many2One field
+
+commit 02d019bfb6054295ea117b6870dfd1f5af5fd7cf
+Date:   Mon Nov 19 10:01:02 2012 +0100
+
+    Paginated record picking for many2many, async form data loading
+
+commit eb8a022fcba498ebb8b239d3376f67cddfd18e58
+Date:   Sat Nov 17 11:10:54 2012 +0100
+
+    Full async tree loading
+
+commit 5f16ead1318868c8e2189e6361731ad98543c5bd
+Date:   Fri Nov 16 19:22:48 2012 +0100
+
+    Show lock along server version when ssl is used
+
+commit 9042d250b5b287355333fdae4c510b0d63d03bd8
+Date:   Fri Nov 16 18:39:21 2012 +0100
+
+    Separate host, port and ssl in configuration
+
+commit 0233eab1fcd5ec64aa66ba75b2aba1280de2b7b2
+Date:   Fri Nov 16 16:59:27 2012 +0100
+
+    Full async menu loading
+
+commit bb586f5fd4c7714d55b1a572cb927a6f752b6f9f
+Date:   Fri Nov 16 11:11:10 2012 +0100
+
+    Reload tree
+
+commit fe3667edfef7b8f654564d36083624c55aee7eeb
+Date:   Fri Nov 16 10:03:37 2012 +0100
+
+    Save user to limit typing
+
+commit 421ece676f29844532bde97122453dbb7d9410a2
+Date:   Fri Nov 16 09:40:11 2012 +0100
+
+    Styling
+
+commit 24df9145783882767b481326bca3b285f2afe4d4
+Merge: ed24597 83613f6
+Date:   Fri Nov 16 09:08:09 2012 +0100
+
+    Branches mess
+
+commit ed245976fbd28253f8b15306c454169095368746
+Date:   Thu Nov 15 17:20:38 2012 +0100
+
+    Remove debug sysout
+
+commit 5eb28ccd7414f96a79f7a196c23ef6793b1a430e
+Date:   Thu Nov 15 17:17:56 2012 +0100
+
+    Update one2many list when creating a new many2one record
+
+commit c965f8388a70dd910f3a87a29c75b86c9adbc431
+Date:   Thu Nov 15 15:46:43 2012 +0100
+
+    Hide many2one field on subrecords and auto set value
+
+commit 6579248914fe37434c95198238c0ac762d9126a3
+Date:   Thu Nov 15 14:24:50 2012 +0100
+
+    Edit subrecord on click
+
+commit e550cb97e8aeeb5a9d32de4b1aad788e69ede9a8
+Date:   Thu Nov 15 11:31:14 2012 +0100
+
+    Tryton icons
+
+commit 83613f681b7bb2dec6e6fd8fb8301d3f63930294
+Date:   Thu Nov 15 17:20:38 2012 +0100
+
+    Remove debug sysout
+
+commit 89463b61df8e2ab66144603843ec3eb751d1a973
+Date:   Thu Nov 15 17:17:56 2012 +0100
+
+    Update one2many list when creating a new many2one record
+
+commit 5b9c660fe961998ca16c109a3daa9611d1f353f3
+Date:   Thu Nov 15 15:46:43 2012 +0100
+
+    Hide many2one field on subrecords and auto set value
+
+commit 20105010a84756837463c5ce3a7d729fa4099c11
+Date:   Thu Nov 15 14:24:50 2012 +0100
+
+    Edit subrecord on click
+
+commit 6dede5b23590f2fc10fe34f6cdb84d4720774c99
+Date:   Thu Nov 15 10:44:02 2012 +0100
+
+    Loading popup cancel and recreate, cancel calls
+
+commit ecc799386c5fe0f4cdd8422ec25e70931c49a9c5
+Date:   Wed Nov 14 18:26:01 2012 +0100
+
+    Hide loading when menu list is updated instead of when data are received
+
+commit 0c0a9de1c0727683421eccfe487af00289dc82f6
+Date:   Wed Nov 14 16:16:55 2012 +0100
+
+    Allow null value
+
+commit b71495c03db5b33cf2afa48989bed840c3f604f7
+Date:   Wed Nov 14 15:07:41 2012 +0100
+
+    Create subrecords
+
+commit 9bead86a49e74e2d1f21cc470c2e903ecad5e2a7
+Merge: 4f82e69 9844ede
+Date:   Tue Nov 13 17:25:48 2012 +0100
+
+    Remove debug System.out
+
+commit 4f82e69ee40c7b31eb6df4fed1621f7918368bde
+Date:   Tue Nov 13 16:31:30 2012 +0100
+
+    Selection and x2one text color
+
+commit acea50fcf3bc685992436f364bd35013cd8f0391
+Date:   Tue Nov 13 16:16:16 2012 +0100
+
+    Different color for required field labels
+
+commit 9844edeb6717227cc52e219bd69fd7a2dda700c3
+Date:   Tue Nov 13 16:16:16 2012 +0100
+
+    Different color for required field labels
+
+commit 64034bad5e8be5e6244ebdab88c882e030446d9f
+Date:   Tue Nov 13 15:39:45 2012 +0100
+
+    Show UserError and UserWarning when appropriate
+
+commit cb7d3b756fbffbab39aadc5685c3e69a53fad640
+Date:   Tue Nov 13 15:03:31 2012 +0100
+
+    Delete record (without relationnal update)
+
+commit 560d3c18e75d2ff5e8695daa4c69500f4e6601d9
+Date:   Tue Nov 13 11:48:15 2012 +0100
+
+    Remove references to android.R.string to use custom ones
+
+commit 75449af98a09c8eaffe823b1cff147d993ed000e
+Date:   Tue Nov 13 11:42:33 2012 +0100
+
+    Take translations from the desktop client and add tags for translators
+
+commit 0de02b241bf7415612de367437ae6f49b01e2f6b
+Date:   Tue Nov 13 11:23:23 2012 +0100
+
+    Confirmation of dirty model on form exit
+
+commit 7cb5848e5d5cea80452f6c8c1c13f08268070430
+Date:   Tue Nov 13 10:54:16 2012 +0100
+
+    Behaviour of form when saving
+    
+    Back to list in edition mode, clear form for a new record when adding
+
+commit 3938f2e981501ece825ea146283b5de6b119c2dc
+Date:   Tue Nov 13 10:40:29 2012 +0100
+
+    Fix local data count
+
+commit 65aa95577048b8f4d7d07e669a23dd5c1d4984ed
+Date:   Tue Nov 13 10:01:38 2012 +0100
+
+    Prevent "1-0 of 0" in tree view header
+
+commit ff42610299f66a3ebccc8eecbe4dccd83ceb8a20
+Date:   Tue Nov 13 09:54:24 2012 +0100
+
+    Show only one progress dialog for meta and data loading in tree view
+
+commit d1a3adce75c60309ce39d9c0b2b3c01ee22b82de
+Date:   Tue Nov 13 09:40:06 2012 +0100
+
+    Add of GPLv3 license in COPYING
+
+commit 43297cd6836a7d2fa0477c44f28c45d4c01076e3
+Date:   Mon Nov 12 17:11:49 2012 +0100
+
+    Save x2many and decimal fields
+
+commit 9f515cc5146d36cf4a6492b35abce0230e297c03
+Date:   Mon Nov 12 10:34:47 2012 +0100
+
+    Display first column of form in about 1/3rd of the screen
+
+commit ed221314c9452acc8d68239ef6c85ec662239ba8
+Date:   Mon Nov 12 10:14:53 2012 +0100
+
+    Readonly fields
+
+commit 3a973a11f795e6d8743dce2f1f849236dd9d3dc2
+Date:   Mon Nov 12 10:03:01 2012 +0100
+
+    Use rec_name on summary mode instead of first 2 fields
+
+commit 85491fd3a8645417242af19f033e09f296b82b61
+Date:   Mon Nov 12 09:44:00 2012 +0100
+
+    Fix value of int and bigint on form
+
+commit 9a70eda5b62898175749a853c09de2db8f63dd08
+Date:   Mon Nov 12 09:37:51 2012 +0100
+
+    Load only rec_name from server on quick load
+
+commit 1b7efede9ce7f65c3e73f4efe3db20506d341aaf
+Date:   Mon Nov 12 09:33:23 2012 +0100
+
+    Use rec_name instead on name for model display
+
+commit 4a5f763320befb43e5fac1531b1f83076a8a47af
+Date:   Fri Nov 9 17:18:48 2012 +0100
+
+    Check for null value in form view factory
+
+commit 4f8f7b7f5d81994311c1fbca77b9a19553919d8a
+Date:   Fri Nov 9 11:58:55 2012 +0100
+
+    Better looking pagination header
+
+commit 6a2d3c092049ed03ad3cce8186129fff9e44dccf
+Date:   Fri Nov 9 11:41:37 2012 +0100
+
+    One2many and many2many editor
+
+commit f4ecd15ba467e89cb2ed66a8c55095ca0b4f224e
+Date:   Thu Nov 8 15:59:34 2012 +0100
+
+    Use form view in to many editor if tree view is not available
+
+commit e36ca3eb98e04b05b584726bb7495429f47036d5
+Date:   Thu Nov 8 15:10:27 2012 +0100
+
+    Fix non relationnal fields saving (except numeric) and no value on xTo one
+    
+    Uses a reformating before sending and use server data format in the client
+
+commit ee78f7d69e3d89a8b02493169f85e07b2b38c84a
+Date:   Thu Nov 8 10:16:05 2012 +0100
+
+    Fix of getting form values and dirty check
+
+commit 1a4e917b16d7fd5228fc6b1af8bf61d75d30adfd
+Date:   Thu Nov 8 09:48:52 2012 +0100
+
+    Show x2many field with title on a full line in form
+
+commit 9bf34acfb9a881b56e439de59539853c4ab47f02
+Date:   Wed Nov 7 18:07:12 2012 +0100
+
+    Migrate HashMap to TreeMap to prevent LoadFactor error
+
+commit ecda4f9ca1edb9b0edb8cdaf37f53a2940673c73
+Date:   Wed Nov 7 18:01:14 2012 +0100
+
+    Save form
+
+commit 8bcc777108a3d6e687b11a1abce14cbd2eef38d9
+Date:   Wed Nov 7 15:17:35 2012 +0100
+
+    Dirty model simple check on form view
+
+commit 47f5772f2053b045d25d0c8aca583356ad7f140d
+Date:   Wed Nov 7 11:12:56 2012 +0100
+
+    Remove log of no cache exception
+
+commit 6e008e28bcbc19d2e4f840105809eea878b83bc6
+Date:   Wed Nov 7 11:04:05 2012 +0100
+
+    x2many values listing in form (not writable)
+
+commit e4e72f0ec9f507b999235fbd3e2fd66c0c2af1f5
+Date:   Mon Nov 5 18:39:08 2012 +0100
+
+    Remove debugging sysout
+
+commit 623d2e7bb3f84f1193cd4e7cfa7ff76aa85c6619
+Date:   Mon Nov 5 18:37:33 2012 +0100
+
+    many2one and one2one form widget
+
+commit af00b2a4f9dbe03524c6b693e810e16b753dd764
+Date:   Mon Nov 5 18:30:03 2012 +0100
+
+    Show last line of form view
+
+commit 76de5b75f7770d11d64bca1bc7e9d39b0057a37c
+Date:   Mon Nov 5 18:06:32 2012 +0100
+
+    Load relationnal data on needed fields in form view for selection
+
+commit 1f418f35a1058eb128a9be2b52c8b18aa3b60824
+Date:   Mon Nov 5 15:14:35 2012 +0100
+
+    No value entry in selection field
+
+commit 6ebce3c9ed5de34e5707732c45792b3a100e89b5
+Date:   Mon Nov 5 15:09:36 2012 +0100
+
+    Display date and time values directly
+
+commit c7920a605aa759244dcb0e9b89137973ef50b70a
+Date:   Mon Nov 5 15:02:18 2012 +0100
+
+    Datetime form widget
+
+commit e70f5ba647dd053d6bea1ec4ebad7c8d98e9e28c
+Date:   Mon Nov 5 14:34:17 2012 +0100
+
+    Time picker in a popup, fixed some date or time bugs
+
+commit f4b2a53a5bdcb53fb13e4d473c7397f71bd3c6c0
+Date:   Mon Nov 5 12:25:00 2012 +0100
+
+    Enable to go to form on click from summary tree view
+
+commit c01bc165250d101ea5ea427ecaff6dd0786a38cc
+Date:   Mon Nov 5 12:19:34 2012 +0100
+
+    Factorisation of date and numeric formatting
+
+commit 80816ba5272ae41ea55d69100677d8cac4fe4ae2
+Date:   Mon Nov 5 12:03:57 2012 +0100
+
+    Date picker in a popup for form view
+
+commit 80491ca95ef872f9031264697fcbddde8b1738f1
+Date:   Mon Nov 5 10:56:12 2012 +0100
+
+    Single field extented tree view enhancement
+
+commit a3324119bef91f951d4e6da207ea10629b0bee7a
+Date:   Mon Nov 5 10:46:11 2012 +0100
+
+    Force mixture of extended/summary in tree when not enough fields
+    
+    Use extented display mode but the number of entries of the summary mode
+
+commit ebd672663fab276901c3b10d5e0b7fe896f7c225
+Date:   Mon Nov 5 10:35:34 2012 +0100
+
+    Fix bug on constraint failure when updating data
+
+commit 69a48053fde55cd45128697d3078462e7431a0d8
+Date:   Mon Nov 5 10:21:43 2012 +0100
+
+    Selection widget styling
+
+commit 8541403e68036bbbb82608fe24315dec75bf9be2
+Date:   Mon Nov 5 10:02:25 2012 +0100
+
+    User preferences screen available on menu
+
+commit 76c3e90e0b5b79e357a504ebcfddcf681213a69b
+Date:   Mon Nov 5 09:31:15 2012 +0100
+
+    Use summary mode in tree view by default
+
+commit f4f005f160609339a43e0b564c0ab20280eeaee4
+Date:   Fri Nov 2 16:37:20 2012 +0100
+
+    Digits constraint on float and numeric field in form view
+
+commit 7634f90d01004306cf73d87856b499f3c2454f58
+Date:   Fri Nov 2 15:34:39 2012 +0100
+
+    Clear database on db/host change
+
+commit 6228ab7c499afa37580a1a72cf5e8ddaffd6abac
+Date:   Fri Nov 2 15:09:48 2012 +0100
+
+    Cache data, implied to rework loading processus
+
+commit 28af7d40e34c0625e136681469bd7edf8a108fb0
+Date:   Wed Oct 31 17:04:02 2012 +0100
+
+    Set relationnal data along id. Prepare manual serialization.
+
+commit 1b932fffdd4b665e470562c8c2c651b77518b8ed
+Date:   Wed Oct 31 15:26:50 2012 +0100
+
+    [SVGAndroid] Correct warnings
+
+commit a92212082c6212213c6752f240a1ef7465780872
+Date:   Wed Oct 31 15:13:16 2012 +0100
+
+    Display all warnings, corrected them
+
+commit aff18169758683eb449b899f4aabbee6e07cf7cd
+Date:   Wed Oct 31 10:33:47 2012 +0100
+
+    Base of form view (factory, simple types, get values)
+
+commit 410e12868b74732693eb7c6e420adb52c64a8af7
+Date:   Tue Oct 30 12:16:12 2012 +0100
+
+    Save password in session instead of double login
+
+commit dc7c77ecb606a020fee21698c1f009b39fcb0100
+Date:   Tue Oct 30 12:13:43 2012 +0100
+
+    Xml syntax
+
+commit f11fbf515a08406cc7826ec4752611b925780729
+Date:   Tue Oct 30 11:25:46 2012 +0100
+
+    Auto logout on quit option
+
+commit 4ff78306d4243765018d65c257706ecc7c783f49
+Date:   Tue Oct 30 11:07:31 2012 +0100
+
+    Separators in about
+
+commit a08f7d23f6975de020125b534d70b601b3048288
+Date:   Tue Oct 30 10:55:13 2012 +0100
+
+    Enable/disable next/previous page buttons
+
+commit 3817455257ffc75ea57c6fac8328cb8b3af4e1cc
+Date:   Mon Oct 29 18:03:33 2012 +0100
+
+    Paging in tree view, brutally logout on session timeout
+
+commit 19dd2afa95c5c19e25d6b1adaf1e5c35b54cbddf
+Date:   Mon Oct 29 17:18:35 2012 +0100
+
+    [JSONRPC] Use multithread compatible connections
+
+commit d597a0b4b2776c26fadc05009f9225aebd411f6f
+Date:   Mon Oct 29 15:08:39 2012 +0100
+
+    [SVGParser] Support for inherited fill and stroke color with groups
+
+commit 19776f73c59ace2eb5b63e3b3792c5f32f4ea25a
+Date:   Mon Oct 29 12:26:31 2012 +0100
+
+    Cache views
+    
+    Remove all JSON* attributes for models for serialization
+
+commit 307b3bf395784b62e90561fb1dcebd5244bfc1ee
+Date:   Fri Oct 26 11:06:04 2012 +0200
+
+    Activity stack state for Start fixed (on startup and logout)
+
+commit c1931a1bf4dce0d2da429097c6c1416557b19aba
+Date:   Fri Oct 26 10:30:02 2012 +0200
+
+    Relationnal fields
+
+commit 68765385715905aff3e20dd1a1a9d524ad6dc3f3
+Date:   Thu Oct 25 17:21:36 2012 +0200
+
+    Keep data in TreeView state bundle
+
+commit da1359d95379c2b486492124ef1fd00131cb4cfb
+Date:   Thu Oct 25 17:07:54 2012 +0200
+
+    Disable summary mode if there's not enough fields
+
+commit 36f8a56dc27eda0c9a53687a8132b925a2f29f4b
+Date:   Thu Oct 25 16:59:38 2012 +0200
+
+    Show loading data message when appropriate
+
+commit 1eaba8a38323d8f3937ac533ac557cdacc14809d
+Date:   Thu Oct 25 16:34:56 2012 +0200
+
+    Alert on bad login instead of Toast
+
+commit 4982f9935615c33d16907264d019ebbabb2862e3
+Date:   Thu Oct 25 11:00:33 2012 +0200
+
+    Remove debugging System.out
+
+commit 5c92aa3eee6729a4a9a0d829c9bc8fccc451ea6e
+Date:   Thu Oct 25 10:59:14 2012 +0200
+
+    Don't crash on empty path string
+
+commit 1ae72b68232046bde24077a813aead0232881d38
+Date:   Thu Oct 25 10:44:08 2012 +0200
+
+    Show warning on compile and correct them
+
+commit 41b53321107018a853d582335f5c30d11ced4dd1
+Date:   Thu Oct 25 09:54:08 2012 +0200
+
+    Add copy-child entry for menus with an action and children
+
+commit 57ba6398ac8c3f7d958b54656cac6bf1f1bf5295
+Date:   Thu Oct 25 09:31:52 2012 +0200
+
+    Expandable/summary tree modes
+
+commit ceb7c9e3029ccf07537b8d03f2c380adc2c53daa
+Date:   Wed Oct 24 16:28:43 2012 +0200
+
+    Logout icon
+
+commit e74d5734cb31373fc459092beae5ee692090e117
+Date:   Wed Oct 24 16:21:21 2012 +0200
+
+    Logout from tree view
+
+commit b3260c83134ca1417dec0709acf3c9c43577c9d4
+Date:   Wed Oct 24 16:01:29 2012 +0200
+
+    Format numeric and float to digits and locale settings
+
+commit f3659d3165c88fc218bfe158dc049afb16453db8
+Date:   Wed Oct 24 14:15:30 2012 +0200
+
+    Tree view factory for simple types and selection
+
+commit f00d9705f61d12d7a8e500a7ffafde179fba7295
+Date:   Tue Oct 23 15:02:54 2012 +0200
+
+    SVG factory and caching
+
+commit cc777e4b282aa53bc889e10fa643881360afed16
+Date:   Tue Oct 23 12:14:00 2012 +0200
+
+    Commenting
+
+commit 8d3de28451bda812a47681b3a204b910321a7243
+Date:   Tue Oct 23 11:53:00 2012 +0200
+
+    About
+
+commit 93ddc49253fac82596211b4d4833d65028c5e9b6
+Date:   Tue Oct 23 10:49:20 2012 +0200
+
+    Single line login
+
+commit 763eebba63d1cbd136984b0980077f5bc9f17ec0
+Date:   Tue Oct 23 10:45:02 2012 +0200
+
+    Basic tree view
+
+commit d79e865121c87c6c9ee89fe10e9965acec69498a
+Date:   Mon Oct 22 17:08:36 2012 +0200
+
+    Call for views
+
+commit 93f2d3dc951789976f7c6832b9e102bef4e4c7f9
+Date:   Mon Oct 22 17:08:11 2012 +0200
+
+    Report and web default icon
+
+commit b8f41a762dd044f0cd8ccb6ffc19dcddc2a5ad99
+Date:   Fri Oct 19 11:34:34 2012 +0200
+
+    Removed local.properties from versionning and add a sample
+
+commit 947481d26a23c0a50ba512a12ca910674d1af950
+Date:   Thu Oct 18 17:55:56 2012 +0200
+
+    Default icon for parent menu entries
+
+commit 96efe54eac567588a7107ac419f586cd8eeb2528
+Date:   Thu Oct 18 17:14:39 2012 +0200
+
+    Sizing menu icons
+
+commit f43f7b5327764e495c5a28a6c8528952d8a974a0
+Date:   Thu Oct 18 17:05:34 2012 +0200
+
+    Cache menus
+
+commit 5e3a683ae8d5546316613e8db800bfb325db1e51
+Date:   Thu Oct 18 16:15:11 2012 +0200
+
+    Use HTTP 1.1 in JSONRPC lib (ticket #34)
+
+commit e64e2091f7d8eb104c9160ae8b4637b9f8118744
+Date:   Thu Oct 18 15:37:37 2012 +0200
+
+    Log out
+
+commit eacda338caa8f3643c7ac31ecaf6196903ae99a5
+Date:   Thu Oct 18 13:44:34 2012 +0200
+
+    Robustness on uncolored svg radial gradient
+
+commit 76fb62ee568d0ddd05be1d02b021d00d680dc2bd
+Date:   Thu Oct 18 12:22:41 2012 +0200
+
+    Basic SSL support (ticket #32)
+    
+    Use encryption but allow any certificate
+
+commit c3a13a195bd950a1dca02e536b024bb59952c7e5
+Date:   Thu Oct 18 10:36:37 2012 +0200
+
+    Minor indentation fix
+
+commit 5b5686f0e789f7c8f8878ae98cb3183a68a5d8e2
+Date:   Wed Oct 17 17:44:25 2012 +0200
+
+    Menu svg icons with the inclusion of svg-android and some patches to it
+
+commit 6476d612628607e7b4bb86d675b445c64ba66fea
+Date:   Mon Oct 15 16:22:19 2012 +0200
+
+    Get menus and navigate in tree
+
+commit c86990e69c4894a3a5cee5d038c65a3a226fcbf7
+Date:   Fri Oct 5 11:07:01 2012 +0200
+
+    Threading Tryton calls
+
+commit e5493f66a249662a5846ef753c50a6456a9def80
+Date:   Thu Oct 4 17:11:27 2012 +0200
+
+    Get user preferences
+
+commit b651e9c5ddcbad95b44b8d8347c6a57e7d6459fa
+Date:   Thu Oct 4 15:31:32 2012 +0200
+
+    Save credential in memory, quit login screen after success
+
+commit 94a426cc6c0c4ffea0bae349e4f38e4484e6ab37
+Date:   Thu Oct 4 15:06:00 2012 +0200
+
+    Error checking in Tryton calls
+
+commit ae1508c6b79107cbde0638de33ab244e2ae89e4b
+Date:   Thu Oct 4 11:40:43 2012 +0200
+
+    JSONRPC call for server version
+
+commit 72657e54eb7bb77f5113927bb3e875d91319a0d1
+Date:   Wed Oct 3 15:07:03 2012 +0200
+
+    Login screen UI
+
+commit f2f14f7f3035d63e6bfbb347919f67e98ef232e8
+Date:   Wed Oct 3 14:23:09 2012 +0200
+
+    Launcher icon
+
+commit e2f83d6d8c863cf44bcf565629c632cfc3d1a5b7
+Date:   Wed Oct 3 14:14:51 2012 +0200
+
+    Configuration screen (ticket #1)
+
+commit 397cdf8ed496e5d0cd0178fc35e0c2d9ad4d6cfc
+Date:   Thu Sep 27 09:20:00 2012 +0200
+
+    Project build
