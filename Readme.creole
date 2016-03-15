@@ -1,11 +1,13 @@
-Tryton Android is an Android client for the Tryton ERP system. It lets you
-access and edit your enterprise information (accounting, invoice,
-production, stocks, and more) from your Android terminal. It is a generic
-client like the gtk client, and should be compatible with all Tryton modules.
-It uses an SVG parser for Android.
+Tryton Android is an Android client for the Tryton ERP system
+http://www.tryton.org.
+
+It lets you access and edit your enterprise information (accounting,
+invoice, production, stocks, and more) from your Android terminal. It
+is an incomplete but generic client, and should be compatible with
+all Tryton modules.  It uses an SVG parser for Android.
 
 This is a fork of the original repository at:
-https://projects.bioecoforests.com/projects/tryton-android/repository
+* https://projects.bioecoforests.com/projects/tryton-android/repository
 
 The original code was commissioned by http://projects.bioecoforests.com/
 and coded by http://scil.coop/
@@ -15,7 +17,9 @@ It depends on three Java libraries:
 * svg-android
 * achartengine
 
-See thw Wiki:
+=== Documentation ===
+
+See the Wiki:
 https://github.com/lampmantech/tryton_android/wiki
 
 
